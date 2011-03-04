@@ -65,7 +65,8 @@ struct Variable
   unsigned int Component;
 };
 
-itk::Index<2> FindPixelOfVariableWithId(std::vector<Variable> variables, unsigned int id);
+itk::Index<2> FindPixelFromId(std::vector<Variable> variables, unsigned int id);
+unsigned int FindIdFromPixelAndComponent(std::vector<Variable> variables, itk::Index<2> pixel, unsigned int component);
 
 void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCharScalarImageType::Pointer mask, FloatVectorImageType::Pointer output)
 {
@@ -126,27 +127,28 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     }
 
   // Create the sparse matrix
-  vnl_sparse_matrix<double> At(numberOfVariables, numberOfVariables);
-  std::cout << "Matrix is " << At.rows() << " rows x " << At.cols() << " cols." << std::endl;
+  vnl_sparse_matrix<double> A(numberOfVariables, numberOfVariables);
+  std::cout << "Matrix is " << A.rows() << " rows x " << A.cols() << " cols." << std::endl;
   vnl_vector<double> b(numberOfVariables);
   std::cout << "b is " << b.size() << std::endl;
   
   for(unsigned int i = 0; i < variables.size(); i++)
     {
+    std::cout << "Constructing matrix values for variable " << i << " of " << variables.size() << std::endl;
     itk::Index<2> originalPixel = variables[i].Pixel;
     itk::Index<2> currentPixel = variables[i].Pixel;
 
     double bvalue = 0.0;
   
     // Setup a row of A that looks like -f_{x,y-1} - f_{x-1,y} + 4f_{x,y} - f_{x+1,y} - f_{x,y+1}
-    At(currentPixel[1], currentPixel[0]) = 4.0;
+    A(i, variables[i].Id) = 4.0;
     bvalue += input->GetPixel(currentPixel)[variables[i].Component];
 
     currentPixel = originalPixel;
     currentPixel[1] -= 1;
     if (mask->GetPixel(currentPixel))
       {
-      At(currentPixel[1], currentPixel[0]) = -1.0;
+      A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
       bvalue += input->GetPixel(currentPixel)[variables[i].Component];
       }
 
@@ -154,7 +156,7 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     currentPixel[0] -= 1;
     if (mask->GetPixel(currentPixel))
       {
-      At(currentPixel[1], currentPixel[0]) = -1.0;
+      A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
       bvalue += input->GetPixel(currentPixel)[variables[i].Component];
       }
 
@@ -162,7 +164,7 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     currentPixel[0] += 1;
     if (mask->GetPixel(currentPixel))
       {
-      At(currentPixel[1], currentPixel[0]) = -1.0;
+      A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
       bvalue += input->GetPixel(currentPixel)[variables[i].Component];
       }
 
@@ -170,7 +172,7 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     currentPixel[1] += 1;
     if (mask->GetPixel(currentPixel))
       {
-      At(currentPixel[1], currentPixel[0]) = -1.0;
+      A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
       bvalue += input->GetPixel(currentPixel)[variables[i].Component];
       }
 
@@ -185,7 +187,7 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
 
   vnl_vector<double> x(b.size());
 
-  vnl_sparse_lu linear_solver(At, vnl_sparse_lu::estimate_condition);
+  vnl_sparse_lu linear_solver(A, vnl_sparse_lu::estimate_condition);
   std::cout << "Determinant: " << linear_solver.determinant() << std::endl;
   //std::cout << "Rcond: " << linear_solver.rcond() << std::endl;
   //std::cout << "Upbnd: " << linear_solver.max_error_bound() << std::endl;
@@ -241,7 +243,7 @@ bool PoissonEditing::VerifyMask(FloatVectorImageType::Pointer image, UnsignedCha
 }
 
 
-itk::Index<2> FindPixelOfVariableWithId(std::vector<Variable> variables, unsigned int id)
+itk::Index<2> FindPixelFromId(std::vector<Variable> variables, unsigned int id)
 {
   for(unsigned int i = 0; i < variables.size(); i++)
     {
@@ -250,11 +252,27 @@ itk::Index<2> FindPixelOfVariableWithId(std::vector<Variable> variables, unsigne
       return variables[i].Pixel;
       }      
     }
-  std::cerr << "FindPixelOfVariableWithId failed!" << std::endl;
+  std::cerr << "FindPixelFromId failed!" << std::endl;
   exit(-1);
 
   // This is to make the compiler not complain about a non-void function not returning a value
   itk::Index<2> index;
   return index;
 }
-  
+
+
+unsigned int FindIdFromPixelAndComponent(std::vector<Variable> variables, itk::Index<2> pixel, unsigned int component)
+{
+  for(unsigned int i = 0; i < variables.size(); i++)
+    {
+    if(variables[i].Pixel == pixel && variables[i].Component == component)
+      {
+      return variables[i].Id;
+      }
+    }
+  std::cerr << "FindIdFromPixelAndComponent failed!" << std::endl;
+  exit(-1);
+
+  // This is to make the compiler not complain about a non-void function not returning a value
+  return 0;
+}
