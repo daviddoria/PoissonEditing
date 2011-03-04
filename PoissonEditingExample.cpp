@@ -83,10 +83,16 @@ int main(int argc, char* argv[])
   castFilter->SetInput(outputImage);
   castFilter->Update();
   
-  typedef  itk::ImageFileWriter< UnsignedCharVectorImageType > WriterType;
-  WriterType::Pointer writer = WriterType::New();
-  writer->SetFileName(outputFilename);
-  writer->SetInput(castFilter->GetOutput());
-  writer->Update();
+  typedef  itk::ImageFileWriter< UnsignedCharVectorImageType > PNGWriterType;
+  PNGWriterType::Pointer pngWriter = PNGWriterType::New();
+  pngWriter->SetFileName(outputFilename);
+  pngWriter->SetInput(castFilter->GetOutput());
+  pngWriter->Update();
+
+  typedef  itk::ImageFileWriter< FloatVectorImageType > MHDWriterType;
+  MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
+  mhdWriter->SetFileName("output.mhd");
+  mhdWriter->SetInput(outputImage);
+  mhdWriter->Update();
 
 }

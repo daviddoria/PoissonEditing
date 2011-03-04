@@ -177,15 +177,15 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
   
   for(unsigned int i = 0; i < variables.size(); i++)
     {
-    std::cout << "Constructing matrix values for variable " << i << " of " << variables.size() << std::endl;
+    //std::cout << "Constructing matrix values for variable " << i << " of " << variables.size() << std::endl;
     itk::Index<2> originalPixel = variables[i].Pixel;
     itk::Index<2> currentPixel = variables[i].Pixel;
 
     double bvalue = 0.0;
   
     // Setup a row of A that looks like -f_{x,y-1} - f_{x-1,y} + 4f_{x,y} - f_{x+1,y} - f_{x,y+1}
-    A(i, variables[i].Id) = 4.0;
-    bvalue += input->GetPixel(currentPixel)[variables[i].Component];
+    A(i, variables[i].Id) = -4.0;
+    //bvalue += input->GetPixel(currentPixel)[variables[i].Component];
 
     currentPixel = originalPixel;
     currentPixel[1] -= 1;
@@ -193,8 +193,11 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
       {
       //A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
       std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      bvalue += input->GetPixel(currentPixel)[variables[i].Component];
+      A(i, PixelComponentToIdMap[mapping]) = 1.0;
+      }
+    else
+      {
+      bvalue -= input->GetPixel(currentPixel)[variables[i].Component];
       }
 
     currentPixel = originalPixel;
@@ -202,8 +205,11 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     if (mask->GetPixel(currentPixel))
       {
       std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      bvalue += input->GetPixel(currentPixel)[variables[i].Component];
+      A(i, PixelComponentToIdMap[mapping]) = 1.0;
+      }
+    else
+      {
+      bvalue -= input->GetPixel(currentPixel)[variables[i].Component];
       }
 
     currentPixel = originalPixel;
@@ -211,8 +217,11 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     if (mask->GetPixel(currentPixel))
       {
       std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      bvalue += input->GetPixel(currentPixel)[variables[i].Component];
+      A(i, PixelComponentToIdMap[mapping]) = 1.0;
+      }
+    else
+      {
+      bvalue -= input->GetPixel(currentPixel)[variables[i].Component];
       }
 
     currentPixel = originalPixel;
@@ -220,8 +229,11 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     if (mask->GetPixel(currentPixel))
       {
       std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      bvalue += input->GetPixel(currentPixel)[variables[i].Component];
+      A(i, PixelComponentToIdMap[mapping]) = 1.0;
+      }
+    else
+      {
+      bvalue -= input->GetPixel(currentPixel)[variables[i].Component];
       }
 
     b[variables[i].Id] = bvalue;
@@ -236,11 +248,9 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
   vnl_vector<double> x(b.size());
 
   vnl_sparse_lu linear_solver(A, vnl_sparse_lu::estimate_condition);
-  std::cout << "Determinant: " << linear_solver.determinant() << std::endl;
-  //std::cout << "Rcond: " << linear_solver.rcond() << std::endl;
-  //std::cout << "Upbnd: " << linear_solver.max_error_bound() << std::endl;
   
-  linear_solver.solve(b,&x);
+  //linear_solver.solve(b,&x);
+  linear_solver.solve_transpose(b,&x);
   
   // Convert solution vector back to image
   Helpers::DeepCopy(input, output);
