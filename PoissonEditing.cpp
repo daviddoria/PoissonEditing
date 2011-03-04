@@ -57,7 +57,7 @@
 
 #include <assert.h>
 
-
+// Every variable in the linear system was produced by a component of a pixel.
 struct Variable
 {
   itk::Index<2> Pixel;
@@ -65,7 +65,6 @@ struct Variable
   unsigned int Component;
 };
 
-itk::Index<2> FindPixelFromId(std::vector<Variable> variables, unsigned int id);
 unsigned int FindIdFromPixelAndComponent(std::vector<Variable> variables, itk::Index<2> pixel, unsigned int component);
 
 void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCharScalarImageType::Pointer mask, FloatVectorImageType::Pointer output)
@@ -240,24 +239,6 @@ bool PoissonEditing::VerifyMask(FloatVectorImageType::Pointer image, UnsignedCha
   std::cout << "Mask is valid!" << std::endl;
   return true;
 
-}
-
-
-itk::Index<2> FindPixelFromId(std::vector<Variable> variables, unsigned int id)
-{
-  for(unsigned int i = 0; i < variables.size(); i++)
-    {
-    if(variables[i].Id == id)
-      {
-      return variables[i].Pixel;
-      }      
-    }
-  std::cerr << "FindPixelFromId failed!" << std::endl;
-  exit(-1);
-
-  // This is to make the compiler not complain about a non-void function not returning a value
-  itk::Index<2> index;
-  return index;
 }
 
 
