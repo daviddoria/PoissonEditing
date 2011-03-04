@@ -67,6 +67,43 @@ struct Variable
 
 unsigned int FindIdFromPixelAndComponent(std::vector<Variable> variables, itk::Index<2> pixel, unsigned int component);
 
+bool operator<(const itk::Index<2>& s1, const itk::Index<2>& s2)
+{
+  if((s1[0] < s2[0]))
+  {
+    return true;
+  }
+
+  if(s1[0] == s2[0])
+    {
+    if(s1[1] < s2[1])
+      {
+      return true;
+      }
+    }
+  return false;
+}
+
+struct MyComparison
+{
+  bool operator()(const std::pair<itk::Index<2>, unsigned int>& s1, const std::pair<itk::Index<2>, unsigned int>& s2) const
+  {
+    if((s1.first < s2.first))
+    {
+      return true;
+    }
+
+    if(s1.first == s2.first)
+      {
+      if(s1.second < s2.second)
+        {
+        return true;
+        }
+      }
+    return false;
+  }
+};
+
 void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCharScalarImageType::Pointer mask, FloatVectorImageType::Pointer output)
 {
   /*
@@ -130,6 +167,13 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
   std::cout << "Matrix is " << A.rows() << " rows x " << A.cols() << " cols." << std::endl;
   vnl_vector<double> b(numberOfVariables);
   std::cout << "b is " << b.size() << std::endl;
+
+  std::map <std::pair<itk::Index<2>, unsigned int>, unsigned int, MyComparison> PixelComponentToIdMap;
+  for(unsigned int i = 0; i < variables.size(); i++)
+    {
+    std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
+    PixelComponentToIdMap[mapping] = i;
+    }
   
   for(unsigned int i = 0; i < variables.size(); i++)
     {
@@ -147,7 +191,9 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     currentPixel[1] -= 1;
     if (mask->GetPixel(currentPixel))
       {
-      A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
+      //A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
+      std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
+      A(i, PixelComponentToIdMap[mapping]) = -1.0;
       bvalue += input->GetPixel(currentPixel)[variables[i].Component];
       }
 
@@ -155,7 +201,8 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     currentPixel[0] -= 1;
     if (mask->GetPixel(currentPixel))
       {
-      A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
+      std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
+      A(i, PixelComponentToIdMap[mapping]) = -1.0;
       bvalue += input->GetPixel(currentPixel)[variables[i].Component];
       }
 
@@ -163,7 +210,8 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     currentPixel[0] += 1;
     if (mask->GetPixel(currentPixel))
       {
-      A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
+      std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
+      A(i, PixelComponentToIdMap[mapping]) = -1.0;
       bvalue += input->GetPixel(currentPixel)[variables[i].Component];
       }
 
@@ -171,7 +219,8 @@ void PoissonEditing::FillRegion(FloatVectorImageType::Pointer input, UnsignedCha
     currentPixel[1] += 1;
     if (mask->GetPixel(currentPixel))
       {
-      A(i, FindIdFromPixelAndComponent(variables, currentPixel, variables[i].Component)) = -1.0;
+      std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
+      A(i, PixelComponentToIdMap[mapping]) = -1.0;
       bvalue += input->GetPixel(currentPixel)[variables[i].Component];
       }
 
