@@ -27,7 +27,7 @@ colorlinks,linkcolor={blue},citecolor={blue},urlcolor={blue},
 ]{hyperref}
 
 
-\title{Poisson Hole Fillin in ITK and VNL}
+\title{Poisson Hole Filling in ITK and VNL}
 
 % 
 % NOTE: This is the last number of the "handle" URL that 
@@ -84,7 +84,7 @@ colorlinks,linkcolor={blue},citecolor={blue},urlcolor={blue},
 % scope of the document.
 \begin{abstract}
 \noindent
-This code provides an implementation of Poisson Hole Filling on ITK images.
+This code provides an implementation of two techniques from ``Poisson Image Editing'' on ITK images. First, we fill a hole in an image given only the pixel values on the boundary. Second, we copy a patch of an image into another image and make the result as smooth as possible.
 
 \end{abstract}
 
@@ -94,38 +94,90 @@ This code provides an implementation of Poisson Hole Filling on ITK images.
 
 %%%%%%%%%%%%%%%%%
 \section{Introduction}
-This code provides an implementation of Poisson Hole Filling on ITK images.
-
-This document is intended only to describe the implementation, not the theory.
+This code provides an implementation of two techniques from ``Poisson Image Editing'' (\cite{PoissonImageEditing}) on ITK images. First, we fill a hole in an image given only the pixel values on the boundary. Second, we copy a patch of an image into another image and make the result as smooth as possible.
 
 %%%%%%%%%%%%%%%%%
-\section{Input}
-
-%%%%%%%%%%%%%%%%%
-\section{Poisson Solver}
-
-%%%%%%%%%%%%%%%%%
-\section{Demonstration}
+\section{Hole Filling}
+The idea here is to fill in a missing region in an image in a plausible way. This is best motivated with an example. In Figure \ref{fig:HoleFilling}, the goal is to remove the plane from the image in Figure \ref{fig:HoleFilling:original}. To do this, we simply specify the region to be removed (shown in Figure \ref{fig:HoleFilling:mask}). The result of the filling is shown in Figure \ref{fig:HoleFilling:filled}.
 
 \begin{figure}[H]
 \centering
 \subfigure[Original image]{
 \includegraphics[width=0.3\linewidth]{images/plane}
-\label{fig:Demonstration:original}
+\label{fig:HoleFilling:original}
 }
 \subfigure[Mask]{
 \includegraphics[width=0.3\linewidth]{images/planeMask}
-\label{fig:Demonstration:mask}
+\label{fig:HoleFilling:mask}
 }
 \subfigure[Filled image]{
 \includegraphics[width=0.3\linewidth]{images/planeFilled}
-\label{fig:Demonstration:filled}
+\label{fig:HoleFilling:filled}
 }
 \caption{A demonstration of Poisson hole filling}
-\label{fig:Demonstration}
+\label{fig:HoleFilling}
 \end{figure}
-%%%%%%%%%%%%%%%%%
-\section{Code Snippet}
+
+\subsection{Input}
+The inputs to this class are:
+\begin{itemize}
+\item An image, $I$.
+\item A mask. Non-zero pixels indicate the region to fill. The mask must be the same size as the image, and must not have non-zero pixels on its border.
+\end{itemize}
+
+\subsection{Concept}
+It has been shown using Calculus of Variations that the best solution for the region inside the hole, $H$, is given by the solution to 
+
+\begin{equation}
+\nabla^2 H = 0
+\end{equation}
+
+while ensuring $H=I$ on the boundary of the hole. This setup is a Laplace equation with Dirchlet (aka ``first order) boundary conditions. 
+
+\subsection{Discrete Solution}
+The Laplace operator is given by
+\begin{equation}
+ \nabla^2 f = \sum_{i=1}^n \frac{\partial^2 f}{\partial x_i^2}
+\end{equation}
+
+A discrete approximation to this function at a pixel $(x,y)$ is given by
+\begin{equation}
+ \nabla^2 f(x,y) = f(x-1,y) + f(x+1,y) + f(x,y-1) + f(x,y+1) - 4f(x,y)
+\end{equation}
+
+Another way to write this is to multiply the pixel and its neighbors by a kernel:
+\begin{equation}
+\begin{pmatrix}
+0 & 1 & 0 \\
+1 & -4 & 1\\
+0 & 1 & 0
+\end{pmatrix}
+\end{equation}
+
+
+From this, for each unknown pixel $u_{i,j}$, the equation is:
+
+\begin{equation}
+\label{eqn:DiscreteLaplacian}
+4 u_{i,j} - u_{i+1,j} - u_{i-1,j} - u_{i,j+1} - u_{i,j-1} = 0
+\end{equation}
+
+To solve the Laplace equation over the entire image, we can write a linear system of equations. We create a variable for every component of every pixel to be filled. That is, if there are $N$ pixels to be filled and each pixel consists of $C$ components (i.e. 3 in the case of an RGB image), there are $NC$ variables in the linear system. 
+
+A sparse matrix $U$ is constructed row by for, one row per variable. In each row, a $4$ is placed in the column corresponding to the variable id. A $-1$ is placed in the column corresponding to the variable id of any non-border 4-connected neighbor.
+
+When one of the pixels appearing in equation \ref{eqn:DiscreteLaplacian} is on the border of the hole (and is therefore known), $u_{.,.}$ is replaced with $p_{.,.}$, the value of the pixel from the original image. In this case, a $-1$ is not placed in the $U$ matrix, but instead the value is moved to the right side of the equation to construct the $b$ vector, the right hand side of the linear system equation.
+
+A vector $H_v$, the vectorized version of the solution to the set of hole pixels, of length $NC$ is created as the unknown vector to be solved in a system of equations.
+
+The linear system is then
+\begin{equation}
+ U^T H_v = b
+\end{equation}
+
+is then solved for $H_v$. The resulting $H_v$ is then remapped back to the pixels corresponding to each variable id to construct $H$.
+
+\subsection{Code Snippet}
 
 Using this class is very straight forward, as shown below:
 
@@ -135,6 +187,88 @@ Using this class is very straight forward, as shown below:
   poissonEditing.SetMask(maskReader->GetOutput());
   poissonEditing.FillRegion(outputImage);
 \end{verbatim}
+
+
+%%%%%%%%%%%%%%%%%
+\section{Region Copying}
+In the problem of region copying (aka seamless cloning), we are interested in copying a region from one image into another image in a visually pleasing way. This is again best motivated with an example. In Figure \ref{fig:RegionCopying}, the goal is to copy the plane from the image with the sky background into the image of the canyon. 
+
+\begin{figure}[H]
+\centering
+\subfigure[Original image]{
+\includegraphics[width=0.2\linewidth]{images/plane}
+\label{fig:RegionCopying:original}
+}
+\subfigure[Mask]{
+\includegraphics[width=0.2\linewidth]{images/planeMask}
+\label{fig:RegionCopying:mask}
+}
+\subfigure[Target Image]{
+\includegraphics[width=0.2\linewidth]{images/planeTarget}
+\label{fig:RegionCopying:target}
+}
+\subfigure[Resulting Image]{
+\includegraphics[width=0.2\linewidth]{images/planeCopyingResult}
+\label{fig:RegionCopying:target}
+}
+\caption{A demonstration of Poisson region copying}
+\label{fig:RegionCopying}
+\end{figure}
+
+\subsection{Input}
+The inputs to this class are:
+\begin{itemize}
+\item A source image, $S$.
+\item A target image, $T$.
+\item A mask, $M$. Non-zero pixels indicate the region to fill. The mask must be the same size as the image, and must not have non-zero pixels on its border.
+\end{itemize}
+
+\subsection{Concept}
+
+In \cite{PoissonImageEditing}, it was argued that a good way to do copy a region of one image into another image is to do something very similar to hole filling, but additionally introduce a ''guidance field``, $G$. That is, the way to copy a region of one image into another is to solve the equation
+
+\begin{equation}
+\nabla^2 H = div(G)
+\end{equation}
+
+The boundary condition this time is again first order and specifies that the resulting $H$ be equal to the target image, $T$, at the hole boundary.
+
+The suggested guidance field $G$ is the gradient of the source image. That is,
+
+\begin{equation}
+G = \nabla S
+\end{equation}
+
+In this case, the right hand side of the equation has become $div(\nabla S)$, which is exactly the Laplacian of $S$.
+
+\subsection{Discrete Solution}
+Just as before, the discrete Laplacian equation is written for each pixel, but this time the right hand side is set to the $\nabla S(i,j)$.
+\begin{equation}
+\label{eqn:DiscreteLaplacian}
+4 u_{i,j} - u_{i+1,j} - u_{i-1,j} - u_{i,j+1} - u_{i,j-1} = \nabla S(i,j)
+\end{equation}
+
+The linear system 
+\begin{equation}
+ U^T H_v = b
+\end{equation}
+
+is created and solved identically as before.
+
+\subsection{Code Snippet}
+
+Using this class is very straight forward, as shown below:
+
+\begin{verbatim}
+  PoissonEditing poissonEditing;
+  poissonEditing.SetImage(imageReader->GetOutput());
+  poissonEditing.SetMask(maskReader->GetOutput());
+  poissonEditing.FillRegion(outputImage);
+\end{verbatim}
+
+
+\bibliography{InsightJournal}
+\bibliographystyle{plain} % MUST include this line or will get ``undefined reference'' errors
 
 \end{document}
 
