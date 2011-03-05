@@ -186,6 +186,9 @@ Using this class is very straight forward, as shown below:
   poissonEditing.SetImage(imageReader->GetOutput());
   poissonEditing.SetMask(maskReader->GetOutput());
   poissonEditing.FillRegion(outputImage);
+
+  Helpers::ClampImage<FloatVectorImageType>(outputImage);
+  Helpers::CastAndWriteImage<FloatVectorImageType>(outputImage, "output.png");
 \end{verbatim}
 
 
@@ -260,12 +263,18 @@ is created and solved identically as before.
 Using this class is very straight forward, as shown below:
 
 \begin{verbatim}
-  PoissonEditing poissonEditing;
-  poissonEditing.SetImage(imageReader->GetOutput());
-  poissonEditing.SetMask(maskReader->GetOutput());
-  poissonEditing.FillRegion(outputImage);
+  PoissonCloning<FloatVectorImageType> poissonCloning;
+  poissonCloning.SetSourceImage(sourceImageReader->GetOutput());
+  poissonCloning.SetTargetImage(targetImageReader->GetOutput());
+  poissonCloning.SetMask(maskReader->GetOutput());
+  poissonCloning.PasteMaskedRegionIntoTargetImage(outputImage);
+
+  Helpers::ClampImage<FloatVectorImageType>(outputImage);
+  Helpers::CastAndWriteImage<FloatVectorImageType>(outputImage, "output.png");
 \end{verbatim}
 
+\section{Note}
+It is important to note that in both problems, the linear system is solved in a least squared sense with no constraints. This allows the resulting image to take invalid values (i.e. greater than 255 or less than 0). The resulting images must therefore be clamped or scaled to ensure the output has an appropriate range.
 
 \bibliography{InsightJournal}
 \bibliographystyle{plain} % MUST include this line or will get ``undefined reference'' errors
