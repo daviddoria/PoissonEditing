@@ -245,10 +245,10 @@ G = \nabla S
 In this case, the right hand side of the equation has become $div(\nabla S)$, which is exactly the Laplacian of $S$.
 
 \subsection{Discrete Solution}
-Just as before, the discrete Laplacian equation is written for each pixel, but this time the right hand side is set to the $\nabla S(i,j)$.
+Just as before, the discrete Laplacian equation is written for each pixel, but this time the right hand side is set to $\nabla^2 S(i,j)$.
 \begin{equation}
 \label{eqn:DiscreteLaplacian}
-4 u_{i,j} - u_{i+1,j} - u_{i-1,j} - u_{i,j+1} - u_{i,j-1} = \nabla S(i,j)
+4 u_{i,j} - u_{i+1,j} - u_{i-1,j} - u_{i,j+1} - u_{i,j-1} = \nabla^2 S(i,j)
 \end{equation}
 
 The linear system 
