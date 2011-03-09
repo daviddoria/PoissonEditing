@@ -38,14 +38,21 @@ class DerivativeToImage
 public:
   DerivativeToImage();
 
+  // These are the two derivative images
   void SetXDerivative(FloatScalarImageType::Pointer image);
   void SetYDerivative(FloatScalarImageType::Pointer image);
 
+  // These are the kernels used to create the derivative images
   void SetXDerivativeOperator(itk::NeighborhoodOperator<float,2>* neighborhoodOperator);
   void SetYDerivativeOperator(itk::NeighborhoodOperator<float,2>* neighborhoodOperator);
 
+  // The image will be reconstructed where the mask is non-zero
+  void SetMask(UnsignedCharScalarImageType::Pointer mask);
+
+  // This is the image which contains the boundary pixels
   void SetImage(typename TImage::Pointer image);
 
+  // The main driver function
   void ReconstructImage(typename TImage::Pointer output);
 
 protected:
@@ -54,6 +61,7 @@ protected:
   std::vector<itk::NeighborhoodOperator<float,2>*> DerivativeOperators;
 
   typename TImage::Pointer Image;
+  typename UnsignedCharScalarImageType::Pointer Mask;
 
 };
 

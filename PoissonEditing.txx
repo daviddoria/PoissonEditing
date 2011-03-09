@@ -173,7 +173,7 @@ void PoissonEditing<TImage>::FillRegion(typename TImage::Pointer output)
   linear_solver.solve_transpose(b,&x);
 
   // Convert solution vector back to image
-  Helpers::DeepCopy(this->Image, output);
+  Helpers::DeepCopy<TImage>(this->Image, output);
   for(unsigned int i = 0; i < variables.size(); i++)
     {
     typename TImage::PixelType pixel = output->GetPixel(variables[i].Pixel);

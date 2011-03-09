@@ -164,7 +164,7 @@ From this, for each unknown pixel $u_{i,j}$, the equation is:
 
 To solve the Laplace equation over the entire image, we can write a linear system of equations. We create a variable for every component of every pixel to be filled. That is, if there are $N$ pixels to be filled and each pixel consists of $C$ components (i.e. 3 in the case of an RGB image), there are $NC$ variables in the linear system. 
 
-A sparse matrix $U$ is constructed row by for, one row per variable. In each row, a $4$ is placed in the column corresponding to the variable id. A $-1$ is placed in the column corresponding to the variable id of any non-border 4-connected neighbor.
+A sparse matrix $U$ is constructed row by row, one row per variable. In each row, a $4$ is placed in the column corresponding to the variable id. A $-1$ is placed in the column corresponding to the variable id of any non-border 4-connected neighbor.
 
 When one of the pixels appearing in equation \ref{eqn:DiscreteLaplacian} is on the border of the hole (and is therefore known), $u_{.,.}$ is replaced with $p_{.,.}$, the value of the pixel from the original image. In this case, a $-1$ is not placed in the $U$ matrix, but instead the value is moved to the right side of the equation to construct the $b$ vector, the right hand side of the linear system equation.
 
@@ -228,7 +228,7 @@ The inputs to this class are:
 
 \subsection{Concept}
 
-In \cite{PoissonImageEditing}, it was argued that a good way to do copy a region of one image into another image is to do something very similar to hole filling, but additionally introduce a ''guidance field``, $G$. That is, the way to copy a region of one image into another is to solve the equation
+In \cite{PoissonImageEditing}, it was argued that a good way to copy a region of one image into another image is to do something very similar to hole filling, but additionally introduce a ''guidance field``, $G$. That is, the way to copy a region of one image into another is to solve the equation
 
 \begin{equation}
 \nabla^2 H = div(G)
@@ -273,8 +273,80 @@ Using this class is very straight forward, as shown below:
   Helpers::CastAndWriteImage<FloatVectorImageType>(outputImage, "output.png");
 \end{verbatim}
 
-\section{Note}
+%%%%%%%%%%%%
+\section{Reconstructing an Image from Its Derivatives}
+For this task, we can use a very similar method. This time, There are two equations to be solved simultaneously:
+\begin{equation}
+\frac{d}{dx}(U) = D_x
+\end{equation}
+\begin{equation}
+\frac{d}{dy}(U) = D_y
+\end{equation}
+
+$D_x$ and $D_y$ are the known derivative images.
+
+We can construct the same type of linear system to solve for the components of $U$ that best satisfy both equations. We use the Sobel operators
+
+\begin{equation}
+S_x =
+\begin{pmatrix}
+-1 & 0 & 1 \\
+-2 & 0 & 2\\
+-1 & 0 & 1
+\end{pmatrix}
+\end{equation}
+
+and
+
+\begin{equation}
+S_x =
+\begin{pmatrix}
+-1 & -2 & -1 \\
+0 & 0 & 0\\
+1 & 2 & 1
+\end{pmatrix}
+\end{equation}
+
+By applying these operators to every pixel in the unknown image $U$, we can write a system of equations, two for each pixel:
+\begin{equation}
+- u_{i-1,j-1} -2 u_{i-1,j} - u_{i-1,j+1} + u_{i+1,j+1} + 2 u_{i+1,j} + u_{i,j+1} = D_x(i,j)
+\end{equation}
+
+\begin{equation}
+- u_{i-1,j-1} -2 u_{i,j-1} - u_{i+1,j+1} + u_{i-1,j-1} + 2 u_{i,j+1} + u_{i+1,j+1} = D_y(i,j)
+\end{equation}
+
+Again, we simply place the coefficient of each term in the column of the matrix corresponding the variable id of the pixel. As usual, we move the term to the right side of the equation (to contribute to the $b$ vector) if the pixel is known.
+
+\begin{figure}[H]
+\centering
+\subfigure[Original image]{
+\includegraphics[width=0.2\linewidth]{images/smiley}
+\label{fig:RegionCopying:original}
+}
+\subfigure[$D_x$]{
+\includegraphics[width=0.2\linewidth]{images/smileyXDerivative}
+\label{fig:RegionCopying:mask}
+}
+\subfigure[$D_y$]{
+\includegraphics[width=0.2\linewidth]{images/smileyYDerivative}
+\label{fig:RegionCopying:target}
+}
+\subfigure[Resulting Image]{
+\includegraphics[width=0.2\linewidth]{images/smileyReconstructed}
+\label{fig:RegionCopying:target}
+}
+\caption{A demonstration of reconstructing an image from its derivatives}
+\label{fig:RegionCopying}
+\end{figure}
+
+%%%%%%%%%%%%
+\section{Notes}
+\subsection{Clamping outputs}
 It is important to note that in both problems, the linear system is solved in a least squared sense with no constraints. This allows the resulting image to take invalid values (i.e. greater than 255 or less than 0). The resulting images must therefore be clamped or scaled to ensure the output has an appropriate range.
+
+\subsection{Efficiency}
+The examples in this document took about 2 minutes to complete on a single core machine.
 
 \bibliography{InsightJournal}
 \bibliographystyle{plain} % MUST include this line or will get ``undefined reference'' errors

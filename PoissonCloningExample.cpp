@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 {
   if(argc < 4)
     {
-    std::cout << "Usage: inputImage mask outputImage" << std::endl;
+    std::cout << "Usage: inputImage mask targetImage outputImage" << std::endl;
     exit(-1);
     }
 
@@ -38,6 +38,8 @@ int main(int argc, char* argv[])
   std::string targetImageFilename = argv[3];
   std::string outputFilename = argv[4];
 
+  std::cout << "Cloning from " << sourceImageFilename << " to " << targetImageFilename
+            << " using mask " << sourceMaskFilename << " and output " << outputFilename << std::endl;
   typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
   ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
   sourceImageReader->SetFileName(sourceImageFilename);
@@ -55,6 +57,7 @@ int main(int argc, char* argv[])
   FloatVectorImageType::Pointer outputImage = FloatVectorImageType::New();
 
   PoissonCloning<FloatVectorImageType> poissonCloning;
+  poissonCloning.SetNumberOfNeighbors(8);
   poissonCloning.SetSourceImage(sourceImageReader->GetOutput());
   poissonCloning.SetTargetImage(targetImageReader->GetOutput());
   poissonCloning.SetMask(maskReader->GetOutput());

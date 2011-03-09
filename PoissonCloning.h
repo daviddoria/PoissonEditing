@@ -43,6 +43,7 @@ public:
   void SetSourceImage(typename TImage::Pointer image);
   void SetTargetImage(typename TImage::Pointer image);
   void SetMask(UnsignedCharScalarImageType::Pointer mask);
+  void SetNumberOfNeighbors(unsigned int);
 
   void PasteMaskedRegionIntoTargetImage(typename TImage::Pointer output);
 
@@ -53,6 +54,8 @@ protected:
   typename TImage::Pointer SourceImage;
   typename TImage::Pointer TargetImage;
   UnsignedCharScalarImageType::Pointer Mask;
+
+  unsigned int NumberOfNeighbors; // This should be 4 or 8
 };
 
 #include "PoissonCloning.txx"

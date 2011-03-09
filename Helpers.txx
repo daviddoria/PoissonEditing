@@ -7,6 +7,24 @@
 namespace Helpers
 {
 
+
+template<typename TImage>
+void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
+{
+  output->SetRegions(input->GetLargestPossibleRegion());
+  output->Allocate();
+
+  itk::ImageRegionConstIterator<TImage> inputIterator(input, input->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<TImage> outputIterator(output, output->GetLargestPossibleRegion());
+
+  while(!inputIterator.IsAtEnd())
+    {
+    outputIterator.Set(inputIterator.Get());
+    ++inputIterator;
+    ++outputIterator;
+    }
+}
+
 template<typename TImage>
 void ExtractComponent(typename TImage::Pointer input, unsigned int component, FloatScalarImageType::Pointer output)
 //void ExtractComponent(typename TImage::Pointer input, unsigned int component, typename itk::Image<typename TImage::PixelType, 2>::Pointer output)
@@ -54,17 +72,28 @@ void CastAndWriteImage(typename TImage::Pointer input, std::string filename)
   pngWriter->Update();
 }
 
-template<typename TImage>
-void WriteScaledImage(typename TImage::Pointer input, std::string filename)
-{
 
+template<typename TImage>
+void CastAndWriteScalarImage(typename TImage::Pointer input, std::string filename)
+{
+  typedef itk::CastImageFilter< TImage, UnsignedCharScalarImageType > CastFilterType;
+  typename CastFilterType::Pointer castFilter = CastFilterType::New();
+  castFilter->SetInput(input);
+  castFilter->Update();
+
+  typedef  itk::ImageFileWriter< UnsignedCharScalarImageType > PNGWriterType;
+  PNGWriterType::Pointer pngWriter = PNGWriterType::New();
+  pngWriter->SetFileName(filename);
+  pngWriter->SetInput(castFilter->GetOutput());
+  pngWriter->Update();
 }
+
 
 template<typename TImage>
 void WriteImage(typename TImage::Pointer input, std::string filename)
 {
-  typedef  itk::ImageFileWriter< FloatVectorImageType > MHDWriterType;
-  MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
+  typedef  itk::ImageFileWriter< TImage > MHDWriterType;
+  typename MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
   mhdWriter->SetFileName(filename);
   mhdWriter->SetInput(input);
   mhdWriter->Update();

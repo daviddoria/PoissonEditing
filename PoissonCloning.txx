@@ -16,6 +16,15 @@ PoissonCloning<TImage>::PoissonCloning()
   this->SourceImage = TImage::New();
   this->TargetImage = TImage::New();
   this->Mask = UnsignedCharScalarImageType::New();
+
+  this->NumberOfNeighbors = 4;
+}
+
+
+template <typename TImage>
+void PoissonCloning<TImage>::SetNumberOfNeighbors(const unsigned int number)
+{
+  this->NumberOfNeighbors = number;
 }
 
 template <typename TImage>
@@ -128,6 +137,16 @@ void PoissonCloning<TImage>::PasteMaskedRegionIntoTargetImage(typename TImage::P
     PixelComponentToIdMap[mapping] = i;
     }
 
+  std::vector<itk::Offset<2> > neighborOffsets;
+  if(this->NumberOfNeighbors == 4)
+    {
+    neighborOffsets = Helpers::Get4NeighborOffsets();
+    }
+  else if(this->NumberOfNeighbors == 8)
+    {
+    neighborOffsets = Helpers::Get8NeighborOffsets();
+    }
+
   for(unsigned int i = 0; i < variables.size(); i++)
     {
     itk::Index<2> originalPixel = variables[i].Pixel;
@@ -135,54 +154,20 @@ void PoissonCloning<TImage>::PasteMaskedRegionIntoTargetImage(typename TImage::P
 
     double bvalue = -laplacians[variables[i].Component]->GetPixel(variables[i].Pixel);
 
-    A(i, variables[i].Id) = 4.0;
+    A(i, variables[i].Id) = this->NumberOfNeighbors;
 
-    currentPixel = originalPixel;
-    currentPixel[1] -= 1;
-    if (this->Mask->GetPixel(currentPixel))
+    for(unsigned int offset = 0; offset < neighborOffsets.size(); offset++)
       {
-      std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      }
-    else
-      {
-      bvalue += this->TargetImage->GetPixel(currentPixel)[variables[i].Component];
-      }
-
-    currentPixel = originalPixel;
-    currentPixel[0] -= 1;
-    if (this->Mask->GetPixel(currentPixel))
-      {
-      std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      }
-    else
-      {
-      bvalue += this->TargetImage->GetPixel(currentPixel)[variables[i].Component];
-      }
-
-    currentPixel = originalPixel;
-    currentPixel[0] += 1;
-    if (this->Mask->GetPixel(currentPixel))
-      {
-      std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      }
-    else
-      {
-      bvalue += this->TargetImage->GetPixel(currentPixel)[variables[i].Component];
-      }
-
-    currentPixel = originalPixel;
-    currentPixel[1] += 1;
-    if (this->Mask->GetPixel(currentPixel))
-      {
-      std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      }
-    else
-      {
-      bvalue += this->TargetImage->GetPixel(currentPixel)[variables[i].Component];
+      currentPixel = originalPixel + neighborOffsets[offset];
+      if (this->Mask->GetPixel(currentPixel))
+        {
+        std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
+        A(i, PixelComponentToIdMap[mapping]) = -1.0;
+        }
+      else
+        {
+        bvalue += this->TargetImage->GetPixel(currentPixel)[variables[i].Component];
+        }
       }
 
     b[variables[i].Id] = bvalue;
@@ -201,7 +186,7 @@ void PoissonCloning<TImage>::PasteMaskedRegionIntoTargetImage(typename TImage::P
   linear_solver.solve_transpose(b,&x);
 
   // Convert solution vector back to image
-  Helpers::DeepCopy(this->TargetImage, output);
+  Helpers::DeepCopy<TImage>(this->TargetImage, output);
   for(unsigned int i = 0; i < variables.size(); i++)
     {
     typename TImage::PixelType pixel = output->GetPixel(variables[i].Pixel);

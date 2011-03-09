@@ -25,12 +25,19 @@ DerivativeToImage<TImage>::DerivativeToImage()
   this->DerivativeImages[1] = FloatScalarImageType::New();
 
   this->Image = TImage::New();
+  this->Mask = UnsignedCharScalarImageType::New();
 }
 
 template <typename TImage>
 void DerivativeToImage<TImage>::SetImage(typename TImage::Pointer image)
 {
   this->Image->Graft(image);
+}
+
+template <typename TImage>
+void DerivativeToImage<TImage>::SetMask(UnsignedCharScalarImageType::Pointer mask)
+{
+  this->Mask->Graft(mask);
 }
 
 template <typename TImage>
@@ -86,6 +93,35 @@ void DerivativeToImage<TImage>::ReconstructImage(typename TImage::Pointer output
   std::vector<Variable> variables;
 
   unsigned int variableId = 0;
+
+  itk::ImageRegionConstIterator<UnsignedCharScalarImageType> maskIterator(this->Mask, this->Mask->GetLargestPossibleRegion());
+
+  while(!maskIterator.IsAtEnd())
+    {
+    if(maskIterator.Get()) // only consider non-zero mask pixels as unknowns
+      {
+      if(Helpers::IsOnBorder(this->Mask->GetLargestPossibleRegion(), maskIterator.GetIndex()))
+        {
+        std::cerr << "Border pixels are not allowed to be unknown!" << std::endl;
+        exit(-1);
+        }
+
+      // Create an entry in the matrix
+
+      Variable v;
+      v.Id = variableId;
+      v.Pixel = maskIterator.GetIndex();
+      //v.Component = 0; // this is not used in the DerivativeToImage
+
+      variables.push_back(v);
+
+      variableId++;
+      }
+
+    ++maskIterator;
+    }
+
+#if 0
   for (unsigned int y = 1; y < height-1; y++)
     {
     for (unsigned int x = 1; x < width-1; x++)
@@ -104,6 +140,7 @@ void DerivativeToImage<TImage>::ReconstructImage(typename TImage::Pointer output
       variableId++;
       }// end x
     }// end y
+#endif
 
   unsigned int numberOfVariables = variableId;
 
@@ -155,7 +192,8 @@ void DerivativeToImage<TImage>::ReconstructImage(typename TImage::Pointer output
           continue;
           }
         itk::Index<2> currentPixel = originalPixel + derivativeOperator->GetOffset(offset);
-        if(!Helpers::IsOnBorder(this->Image->GetLargestPossibleRegion(), currentPixel)) // create an entry in the matrix
+
+        if(this->Mask->GetPixel(currentPixel)) // create an entry in the matrix
           {
           //A(row, PixelToIdMap[currentPixel]) = sobelOperator.GetElement(offset);
           A.insert(row, PixelToIdMap[currentPixel]) = derivativeOperator->GetElement(offset);

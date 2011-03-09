@@ -1,5 +1,10 @@
 #include "Variable.h"
 
+Variable::Variable()
+{
+  this->Component = 0;
+}
+
 unsigned int FindIdFromPixelAndComponent(std::vector<Variable> variables, itk::Index<2> pixel, unsigned int component)
 {
   for(unsigned int i = 0; i < variables.size(); i++)
@@ -33,6 +38,11 @@ bool operator<(const itk::Index<2>& s1, const itk::Index<2>& s2)
       }
     }
   return false;
+}
+
+bool IndexComparison::operator()(const itk::Index<2>& s1, const itk::Index<2>& s2) const
+{
+  return s1 < s2;
 }
 
 bool MyComparison::operator()(const std::pair<itk::Index<2>, unsigned int>& s1, const std::pair<itk::Index<2>, unsigned int>& s2) const

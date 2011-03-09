@@ -30,22 +30,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char* argv[])
 {
-  if(argc < 2)
+  if(argc < 3)
     {
-    std::cout << "Usage: inputImage outputImage" << std::endl;
+    std::cout << "Usage: inputImage maskImage outputImage" << std::endl;
     exit(-1);
     }
 
   std::string sourceImageFilename = argv[1];
-  std::string outputFilename = argv[2];
+  std::string maskFilename = argv[2];
+  std::string outputFilename = argv[3];
 
-  std::cout << "Reconstructing image from derivative (input " << sourceImageFilename << " output " << outputFilename << ")" << std::endl;
+  std::cout << "Input " << sourceImageFilename << std::endl
+            << "Mask " << maskFilename << std::endl
+            << " output " << outputFilename << std::endl;
 
   typedef itk::ImageFileReader<FloatScalarImageType> ImageReaderType;
   ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
   sourceImageReader->SetFileName(sourceImageFilename);
   sourceImageReader->Update();
-  Helpers::CastAndWriteScalarImage<FloatScalarImageType>(sourceImageReader->GetOutput(), "input.png");
+
+  typedef itk::ImageFileReader<UnsignedCharScalarImageType> MaskReaderType;
+  MaskReaderType::Pointer maskReader = MaskReaderType::New();
+  maskReader->SetFileName(maskFilename);
+  maskReader->Update();
 
   //typedef itk::GaussianDerivativeOperator<float, 2> OperatorType;
   typedef itk::DerivativeOperator<float, 2> OperatorType;
@@ -77,13 +84,14 @@ int main(int argc, char* argv[])
 
   DerivativeToImage<FloatScalarImageType> derivativeToImage;
   derivativeToImage.SetImage(sourceImageReader->GetOutput());
+  derivativeToImage.SetMask(maskReader->GetOutput());
   derivativeToImage.SetXDerivative(xDerivativeFilter->GetOutput());
   derivativeToImage.SetYDerivative(yDerivativeFilter->GetOutput());
   derivativeToImage.SetXDerivativeOperator(&operatorX);
   derivativeToImage.SetYDerivativeOperator(&operatorY);
   derivativeToImage.ReconstructImage(outputImage);
 
-  Helpers::WriteImage<FloatScalarImageType>(outputImage, "output.mhd");
+  //Helpers::WriteImage<FloatScalarImageType>(outputImage, "output.mhd");
 
 //  Helpers::ClampImage<FloatScalarImageType>(outputImage);
   Helpers::CastAndWriteScalarImage<FloatScalarImageType>(outputImage, "output.png");
