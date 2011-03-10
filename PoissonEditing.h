@@ -27,7 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // http://en.wikipedia.org/wiki/Discrete_Poisson_equation
 // http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
 #include "Types.h"
-#include "Variable.h"
 
 #include "itkImage.h"
 #include "itkCovariantVector.h"
@@ -43,13 +42,18 @@ public:
   void SetImage(typename TImage::Pointer image);
   void SetMask(UnsignedCharScalarImageType::Pointer mask);
 
-  void FillRegion(typename TImage::Pointer output);
+  void FillMaskedRegion();
+
+  typename TImage::Pointer GetOutput();
 
 protected:
 
   bool VerifyMask();
 
+  void FillComponent(FloatScalarImageType::Pointer image);
+
   typename TImage::Pointer Image;
+  typename TImage::Pointer Output;
   UnsignedCharScalarImageType::Pointer Mask;
 };
 

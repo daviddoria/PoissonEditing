@@ -9,7 +9,8 @@ namespace Helpers
 bool IsOnBorder(itk::ImageRegion<2> region, itk::Index<2> index)
 {
   if(index[0] == region.GetIndex()[0] || index[1] == region.GetIndex()[1] ||
-    index[0] == region.GetIndex()[0] + region.GetSize()[0]-1 || index[1] == region.GetIndex()[1] + region.GetSize()[1]-1)
+    static_cast<unsigned int>(index[0]) == region.GetIndex()[0] + region.GetSize()[0]-1 ||
+    static_cast<unsigned int>(index[1]) == region.GetIndex()[1] + region.GetSize()[1]-1)
     {
     return true;
     }

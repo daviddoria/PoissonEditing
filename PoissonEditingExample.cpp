@@ -27,15 +27,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char* argv[])
 {
+  // Verify arguments
   if(argc < 4)
     {
     std::cout << "Usage: inputImage mask outputImage" << std::endl;
     exit(-1);
     }
 
+  // Parse arguments
   std::string inputFilename = argv[1];
   std::string maskFilename = argv[2];
   std::string outputFilename = argv[3];
+
+  // Display arguments
+  std::cout << "Input file: " << inputFilename << std::endl
+            << "Mask file: " << maskFilename << std::endl
+            << "Output file: " << outputFilename << std::endl;
 
   typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
   ImageReaderType::Pointer imageReader = ImageReaderType::New();
@@ -47,12 +54,12 @@ int main(int argc, char* argv[])
   maskReader->SetFileName(maskFilename);
   maskReader->Update();
 
-  FloatVectorImageType::Pointer outputImage = FloatVectorImageType::New();
-
   PoissonEditing<FloatVectorImageType> poissonEditing;
   poissonEditing.SetImage(imageReader->GetOutput());
   poissonEditing.SetMask(maskReader->GetOutput());
-  poissonEditing.FillRegion(outputImage);
+  poissonEditing.FillMaskedRegion();
+
+  FloatVectorImageType::Pointer outputImage = poissonEditing.GetOutput();
 
   typedef itk::CastImageFilter< FloatVectorImageType, UnsignedCharVectorImageType > CastFilterType;
   CastFilterType::Pointer castFilter = CastFilterType::New();

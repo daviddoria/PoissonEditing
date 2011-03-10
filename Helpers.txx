@@ -52,6 +52,29 @@ void ExtractComponent(typename TImage::Pointer input, unsigned int component, Fl
 
 
 template<typename TImage>
+void SetComponent(typename TImage::Pointer input, unsigned int component, FloatScalarImageType::Pointer componentImage)
+{
+  if(component >= TImage::PixelType::Dimension)
+    {
+    std::cerr << "Component is " << component << " but must be less than " << TImage::PixelType::Dimension << std::endl;
+    exit(-1);
+    }
+
+  itk::ImageRegionIterator<TImage> inputIterator(input, input->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<FloatScalarImageType> componentIterator(componentImage, componentImage->GetLargestPossibleRegion());
+
+  while(!inputIterator.IsAtEnd())
+    {
+    typename TImage::PixelType pixel = inputIterator.Get();
+    pixel[component] = componentIterator.Get();
+    inputIterator.Set(pixel);
+    ++inputIterator;
+    ++componentIterator;
+    }
+}
+
+
+template<typename TImage>
 void CastAndWriteImage(typename TImage::Pointer input, std::string filename)
 {
   if(TImage::PixelType::Dimension != 3)
@@ -85,6 +108,24 @@ void CastAndWriteScalarImage(typename TImage::Pointer input, std::string filenam
   PNGWriterType::Pointer pngWriter = PNGWriterType::New();
   pngWriter->SetFileName(filename);
   pngWriter->SetInput(castFilter->GetOutput());
+  pngWriter->Update();
+}
+
+
+template<typename TImage>
+void ScaleAndWriteScalarImage(typename TImage::Pointer input, std::string filename)
+{
+  typedef itk::RescaleIntensityImageFilter< TImage, UnsignedCharScalarImageType > RescaleFilterType;
+  typename RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
+  rescaleFilter->SetInput(input);
+  rescaleFilter->SetOutputMinimum(0);
+  rescaleFilter->SetOutputMaximum(255);
+  rescaleFilter->Update();
+
+  typedef  itk::ImageFileWriter< UnsignedCharScalarImageType > PNGWriterType;
+  PNGWriterType::Pointer pngWriter = PNGWriterType::New();
+  pngWriter->SetFileName(filename);
+  pngWriter->SetInput(rescaleFilter->GetOutput());
   pngWriter->Update();
 }
 

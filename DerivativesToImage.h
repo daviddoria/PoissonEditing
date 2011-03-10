@@ -39,12 +39,10 @@ public:
   DerivativeToImage();
 
   // These are the two derivative images
-  void SetXDerivative(FloatScalarImageType::Pointer image);
-  void SetYDerivative(FloatScalarImageType::Pointer image);
+  void SetLaplacianImage(FloatScalarImageType::Pointer image);
 
   // These are the kernels used to create the derivative images
-  void SetXDerivativeOperator(itk::NeighborhoodOperator<float,2>* neighborhoodOperator);
-  void SetYDerivativeOperator(itk::NeighborhoodOperator<float,2>* neighborhoodOperator);
+  void SetLaplacianOperator(itk::NeighborhoodOperator<float,2>* neighborhoodOperator);
 
   // The image will be reconstructed where the mask is non-zero
   void SetMask(UnsignedCharScalarImageType::Pointer mask);
@@ -57,8 +55,8 @@ public:
 
 protected:
 
-  std::vector<FloatScalarImageType::Pointer> DerivativeImages;
-  std::vector<itk::NeighborhoodOperator<float,2>*> DerivativeOperators;
+  FloatScalarImageType::Pointer LaplacianImage;
+  itk::NeighborhoodOperator<float,2>* LaplacianOperator;
 
   typename TImage::Pointer Image;
   typename UnsignedCharScalarImageType::Pointer Mask;

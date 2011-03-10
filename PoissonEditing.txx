@@ -1,7 +1,8 @@
-#include "Variable.h"
 #include "Helpers.h"
+#include "IndexComparison.h"
 
 #include "itkImageRegionConstIterator.h"
+#include "itkLaplacianOperator.h"
 
 #include <vnl/vnl_vector.h>
 #include <vnl/vnl_sparse_matrix.h>
@@ -11,6 +12,7 @@ template <typename TImage>
 PoissonEditing<TImage>::PoissonEditing()
 {
   this->Image = TImage::New();
+  this->Output = TImage::New();
   this->Mask = UnsignedCharScalarImageType::New();
 }
 
@@ -27,65 +29,63 @@ void PoissonEditing<TImage>::SetMask(UnsignedCharScalarImageType::Pointer mask)
 }
 
 template <typename TImage>
-void PoissonEditing<TImage>::FillRegion(typename TImage::Pointer output)
+void PoissonEditing<TImage>::FillMaskedRegion()
 {
-  /*
-   * Variable ids are assigned as follows:
-   * Variable 0: 0th component of the 0th unknown pixel
-   * Variable 1: 1st component of the 0th unknown pixel
-   * ...
-   * Variable n-1: (n-1)th component of the 0th unknown pixel
-   * Variable n: 0th component of the 1st unknown pixel
-   * Variable n+1: 1st component of the 1st unknown pixel
-   * ...
-   */
   if(!VerifyMask())
     {
+    std::cerr << "Invalid mask!" << std::endl;
     return;
     }
 
-  unsigned int width = this->Image->GetLargestPossibleRegion().GetSize()[0];
-  unsigned int height = this->Image->GetLargestPossibleRegion().GetSize()[1];
+  Helpers::DeepCopy<TImage>(this->Image, this->Output);
 
-  // Build mapping from (x,y) to variables and create the b vector
+  for(unsigned int i = 0; i < TImage::PixelType::Dimension; i++)
+    {
+    FloatScalarImageType::Pointer componentImage = FloatScalarImageType::New();
+    Helpers::ExtractComponent<TImage>(this->Image, i, componentImage);
+    FillComponent(componentImage);
+    Helpers::SetComponent<TImage>(this->Output, i, componentImage);
+    }
+}
 
-  std::vector<Variable> variables;
-  std::cout << "Pixels have dimension: " << TImage::PixelType::Dimension << std::endl;
+template <typename TImage>
+void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
+{
 
-  unsigned int variableId = 0;
+  unsigned int width = image->GetLargestPossibleRegion().GetSize()[0];
+  unsigned int height = image->GetLargestPossibleRegion().GetSize()[1];
+
+  // This stores the forward mapping from variable id to pixel location
+  std::vector<itk::Index<2> > variables;
+
   for (unsigned int y = 1; y < height-1; y++)
     {
     for (unsigned int x = 1; x < width-1; x++)
       {
-      for (unsigned int component = 0; component < TImage::PixelType::Dimension; component++)
+      itk::Index<2> pixelIndex;
+      pixelIndex[0] = x;
+      pixelIndex[1] = y;
+
+      if(this->Mask->GetPixel(pixelIndex)) // The mask is non-zero representing that we want to fill this pixel
         {
-
-        itk::Index<2> pixelIndex;
-        pixelIndex[0] = x;
-        pixelIndex[1] = y;
-
-        if(this->Mask->GetPixel(pixelIndex)) // The mask is non-zero representing that we want to fill this pixel
-          {
-          Variable v;
-          v.Id = variableId;
-          v.Pixel = pixelIndex;
-          v.Component = component;
-
-          variables.push_back(v);
-
-          variableId++;
-          }
-        }// end for comonent
+        variables.push_back(pixelIndex);
+        }
       }// end x
     }// end y
 
-  unsigned int numberOfVariables = variableId;
+  unsigned int numberOfVariables = variables.size();
 
   if (numberOfVariables == 0)
     {
-    std::cout << "Solver::solve: No missing pixels found\n";
+    std::cerr << "No masked pixels found" << std::endl;
     return;
     }
+
+  typedef itk::LaplacianOperator<float, 2> LaplacianOperatorType;
+  LaplacianOperatorType laplacianOperator;
+  itk::Size<2> radius;
+  radius.Fill(1);
+  laplacianOperator.CreateToRadius(radius);
 
   // Create the sparse matrix
   vnl_sparse_matrix<double> A(numberOfVariables, numberOfVariables);
@@ -93,78 +93,47 @@ void PoissonEditing<TImage>::FillRegion(typename TImage::Pointer output)
   vnl_vector<double> b(numberOfVariables);
   std::cout << "b is " << b.size() << std::endl;
 
-  std::map <std::pair<itk::Index<2>, unsigned int>, unsigned int, MyComparison> PixelComponentToIdMap;
+  // Create the reverse mapping from pixel to variable id
+  std::map <itk::Index<2>, unsigned int, IndexComparison> PixelToIdMap;
   for(unsigned int i = 0; i < variables.size(); i++)
     {
-    std::pair<itk::Index<2>, unsigned int> mapping(variables[i].Pixel, variables[i].Component);
-    PixelComponentToIdMap[mapping] = i;
+    PixelToIdMap[variables[i]] = i;
     }
 
-  for(unsigned int i = 0; i < variables.size(); i++)
+  for(unsigned int variableId = 0; variableId < variables.size(); variableId++)
     {
-    itk::Index<2> originalPixel = variables[i].Pixel;
-    itk::Index<2> currentPixel = variables[i].Pixel;
+    itk::Index<2> originalPixel = variables[variableId];
 
-    double bvalue = 0.0;
+    double bvalue = 0.0; // The right hand side of the equation is zero unless the current pixel has any known neighbors
 
-    A(i, variables[i].Id) = 4.0;
+    // Loop over the kernel around the current pixel
+    for(unsigned int offset = 0; offset < laplacianOperator.GetSize()[0] * laplacianOperator.GetSize()[1]; offset++)
+      {
+      if(laplacianOperator.GetElement(offset) == 0)
+        {
+        continue; // this pixel isn't going to contribute anyway
+        }
 
-    currentPixel = originalPixel;
-    currentPixel[1] -= 1;
-    if (this->Mask->GetPixel(currentPixel))
-      {
-      std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      }
-    else
-      {
-      bvalue += this->Image->GetPixel(currentPixel)[variables[i].Component];
-      }
+      itk::Index<2> currentPixel = originalPixel + laplacianOperator.GetOffset(offset);
 
-    currentPixel = originalPixel;
-    currentPixel[0] -= 1;
-    if (this->Mask->GetPixel(currentPixel))
-      {
-      std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
+      if (this->Mask->GetPixel(currentPixel))
+        {
+        // If the pixel is masked, add it as part of the unknown matrix
+        A(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
+        }
+      else
+        {
+        // If the pixel is known, move its contribution to the known (right) side of the equation
+        bvalue -= image->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
+        }
       }
-    else
-      {
-      bvalue += this->Image->GetPixel(currentPixel)[variables[i].Component];
-      }
-
-    currentPixel = originalPixel;
-    currentPixel[0] += 1;
-    if (this->Mask->GetPixel(currentPixel))
-      {
-      std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      }
-    else
-      {
-      bvalue += this->Image->GetPixel(currentPixel)[variables[i].Component];
-      }
-
-    currentPixel = originalPixel;
-    currentPixel[1] += 1;
-    if (this->Mask->GetPixel(currentPixel))
-      {
-      std::pair<itk::Index<2>, unsigned int> mapping(currentPixel, variables[i].Component);
-      A(i, PixelComponentToIdMap[mapping]) = -1.0;
-      }
-    else
-      {
-      bvalue += this->Image->GetPixel(currentPixel)[variables[i].Component];
-      }
-
-    b[variables[i].Id] = bvalue;
+    b[variableId] = bvalue;
   }// end for variables
 
   // Solve the system
   std::cout << "Solver::solve: Solving: " << std::endl
           << "Image dimensions: " << width << "x" << height << std::endl
-          << " with " << numberOfVariables << " unknowns" << std::endl
-          << "Pixel dimension: " << TImage::PixelType::Dimension << std::endl;
+          << " with " << numberOfVariables << " unknowns" << std::endl;
 
   vnl_vector<double> x(b.size());
 
@@ -173,13 +142,16 @@ void PoissonEditing<TImage>::FillRegion(typename TImage::Pointer output)
   linear_solver.solve_transpose(b,&x);
 
   // Convert solution vector back to image
-  Helpers::DeepCopy<TImage>(this->Image, output);
   for(unsigned int i = 0; i < variables.size(); i++)
     {
-    typename TImage::PixelType pixel = output->GetPixel(variables[i].Pixel);
-    pixel[variables[i].Component] = x[variables[i].Id];
-    output->SetPixel(variables[i].Pixel, pixel);
+    image->SetPixel(variables[i], x[i]);
     }
+}
+
+template <typename TImage>
+typename TImage::Pointer PoissonEditing<TImage>::GetOutput()
+{
+  return this->Output;
 }
 
 template <typename TImage>

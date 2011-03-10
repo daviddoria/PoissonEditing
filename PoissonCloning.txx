@@ -5,7 +5,6 @@
 #include "itkLaplacianImageFilter.h"
 #include "itkNthElementImageAdaptor.h"
 
-
 #include <vnl/vnl_vector.h>
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/algo/vnl_sparse_lu.h>
