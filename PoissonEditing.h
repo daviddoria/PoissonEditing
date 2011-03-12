@@ -41,6 +41,8 @@ public:
 
   void SetImage(typename TImage::Pointer image);
   void SetMask(UnsignedCharScalarImageType::Pointer mask);
+  void SetGuidanceField(FloatScalarImageType::Pointer field);
+  void SetGuidanceFieldToZero();
 
   void FillMaskedRegion();
 
@@ -52,8 +54,10 @@ protected:
 
   void FillComponent(FloatScalarImageType::Pointer image);
 
-  typename TImage::Pointer Image;
+  typename TImage::Pointer SourceImage;
+  typename TImage::Pointer TargetImage;
   typename TImage::Pointer Output;
+  FloatScalarImageType::Pointer GuidanceField;
   UnsignedCharScalarImageType::Pointer Mask;
 };
 

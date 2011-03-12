@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // http://en.wikipedia.org/wiki/Discrete_Poisson_equation
 // http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
 #include "Types.h"
-#include "Variable.h"
+#include "PoissonEditing.h"
 
 #include "itkImage.h"
 #include "itkCovariantVector.h"
@@ -35,27 +35,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 template <typename TImage>
-class PoissonCloning
+class PoissonCloning : public PoissonEditing<TImage>
 {
 public:
   PoissonCloning();
-
-  void SetSourceImage(typename TImage::Pointer image);
   void SetTargetImage(typename TImage::Pointer image);
-  void SetMask(UnsignedCharScalarImageType::Pointer mask);
-  void SetNumberOfNeighbors(unsigned int);
-
-  void PasteMaskedRegionIntoTargetImage(typename TImage::Pointer output);
+  void PasteMaskedRegionIntoTargetImage();
 
 protected:
+  void CreateGuidanceField(FloatScalarImageType::Pointer sourceImage);
 
-  bool VerifyMask();
-
-  typename TImage::Pointer SourceImage;
   typename TImage::Pointer TargetImage;
-  UnsignedCharScalarImageType::Pointer Mask;
-
-  unsigned int NumberOfNeighbors; // This should be 4 or 8
 };
 
 #include "PoissonCloning.txx"

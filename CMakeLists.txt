@@ -23,13 +23,13 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_
 INCLUDE_DIRECTORIES(/home/doriad/src/vxl/v3p/netlib/)
 
 ADD_EXECUTABLE(PoissonEditing PoissonEditingExample.cpp Helpers.cpp IndexComparison.cpp)
-TARGET_LINK_LIBRARIES(PoissonEditing ${ITK_LIBRARIES} vnl)
+TARGET_LINK_LIBRARIES(PoissonEditing ${ITK_LIBRARIES} vnl umfpack)
 
-# ADD_EXECUTABLE(PoissonCloning PoissonCloningExample.cpp Helpers.cpp IndexComparison.cpp)
-# TARGET_LINK_LIBRARIES(PoissonCloning ${ITK_LIBRARIES} vnl)
-#
-# ADD_EXECUTABLE(DerivativesToImage DerivativesToImageDriver.cxx Helpers.cpp IndexComparison.cpp)
-# TARGET_LINK_LIBRARIES(DerivativesToImage ${ITK_LIBRARIES} vnl umfpack)
-#
-# ADD_EXECUTABLE(LaplacianToImage LaplacianToImageDriver.cxx Helpers.cpp IndexComparison.cpp)
-# TARGET_LINK_LIBRARIES(LaplacianToImage ${ITK_LIBRARIES} vnl umfpack)
+ADD_EXECUTABLE(PoissonCloning PoissonCloningExample.cpp Helpers.cpp IndexComparison.cpp)
+TARGET_LINK_LIBRARIES(PoissonCloning ${ITK_LIBRARIES} vnl umfpack)
+
+ADD_EXECUTABLE(DerivativesToImage DerivativesToImage.cxx Helpers.cpp IndexComparison.cpp)
+TARGET_LINK_LIBRARIES(DerivativesToImage ${ITK_LIBRARIES} vnl umfpack)
+
+ADD_EXECUTABLE(LaplacianToImage LaplacianToImage.cxx Helpers.cpp IndexComparison.cpp)
+TARGET_LINK_LIBRARIES(LaplacianToImage ${ITK_LIBRARIES} vnl umfpack)

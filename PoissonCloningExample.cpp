@@ -27,19 +27,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char* argv[])
 {
+  // Verify arguments
   if(argc < 4)
     {
     std::cout << "Usage: inputImage mask targetImage outputImage" << std::endl;
     exit(-1);
     }
 
+  // Parse arguments
   std::string sourceImageFilename = argv[1];
   std::string sourceMaskFilename = argv[2];
   std::string targetImageFilename = argv[3];
   std::string outputFilename = argv[4];
 
-  std::cout << "Cloning from " << sourceImageFilename << " to " << targetImageFilename
-            << " using mask " << sourceMaskFilename << " and output " << outputFilename << std::endl;
+  // Output arguments
+  std::cout << "Source image " << sourceImageFilename << std::endl
+            << "Target image " << targetImageFilename << std::endl
+            << "Mask image " << sourceMaskFilename << std::endl
+            << "Output " << outputFilename << std::endl;
+
+  // Read images
   typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
   ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
   sourceImageReader->SetFileName(sourceImageFilename);
@@ -54,16 +61,22 @@ int main(int argc, char* argv[])
   targetImageReader->SetFileName(targetImageFilename);
   targetImageReader->Update();
 
-  FloatVectorImageType::Pointer outputImage = FloatVectorImageType::New();
+  // Output image properties
+  std::cout << "Source image is " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
+            << "Target image is " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
+            << "Mask image is " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
 
+  // Setup and perform cloning
   PoissonCloning<FloatVectorImageType> poissonCloning;
-  poissonCloning.SetNumberOfNeighbors(8);
-  poissonCloning.SetSourceImage(sourceImageReader->GetOutput());
+  poissonCloning.SetImage(sourceImageReader->GetOutput());
   poissonCloning.SetTargetImage(targetImageReader->GetOutput());
   poissonCloning.SetMask(maskReader->GetOutput());
-  poissonCloning.PasteMaskedRegionIntoTargetImage(outputImage);
+  poissonCloning.SetGuidanceFieldToZero();
+  poissonCloning.PasteMaskedRegionIntoTargetImage();
 
+  FloatVectorImageType::Pointer outputImage = poissonCloning.GetOutput();
 
+  // Write output
   Helpers::WriteImage<FloatVectorImageType>(outputImage, "output.mhd");
   //Helpers::WriteScaledImage<FloatVectorImageType>(outputImage, "output.png");
   Helpers::ClampImage<FloatVectorImageType>(outputImage);
