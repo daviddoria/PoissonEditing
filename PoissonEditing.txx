@@ -4,14 +4,24 @@
 #include "itkImageRegionConstIterator.h"
 #include "itkLaplacianOperator.h"
 
-#include <vnl/vnl_vector.h>
-#include <vnl/vnl_sparse_matrix.h>
-#include <vnl/algo/vnl_sparse_lu.h>
+//#define USE_VNL
+
+#ifdef USE_VNL
+  #include <vnl/vnl_vector.h>
+  #include <vnl/vnl_sparse_matrix.h>
+  #include <vnl/algo/vnl_sparse_lu.h>
+#else
+  #include <Eigen/Sparse>
+  #include <Eigen/UmfPackSupport>
+  #include <Eigen/SparseExtra>
+#endif
 
 template <typename TImage>
 PoissonEditing<TImage>::PoissonEditing()
 {
-  this->Image = TImage::New();
+  this->SourceImage = TImage::New();
+  this->TargetImage = TImage::New();
+  this->GuidanceField = FloatScalarImageType::New();
   this->Output = TImage::New();
   this->Mask = UnsignedCharScalarImageType::New();
 }
@@ -19,13 +29,35 @@ PoissonEditing<TImage>::PoissonEditing()
 template <typename TImage>
 void PoissonEditing<TImage>::SetImage(typename TImage::Pointer image)
 {
-  this->Image->Graft(image);
+  //this->SourceImage->Graft(image);
+  //this->TargetImage->Graft(image);
+  Helpers::DeepCopy<TImage>(image, this->SourceImage);
+  Helpers::DeepCopy<TImage>(image, this->TargetImage);
+}
+
+template <typename TImage>
+void PoissonEditing<TImage>::SetGuidanceField(FloatScalarImageType::Pointer field)
+{
+  //this->GuidanceField->Graft(field);
+  Helpers::DeepCopy<FloatScalarImageType>(field, this->GuidanceField);
 }
 
 template <typename TImage>
 void PoissonEditing<TImage>::SetMask(UnsignedCharScalarImageType::Pointer mask)
 {
-  this->Mask->Graft(mask);
+  //this->Mask->Graft(mask);
+  Helpers::DeepCopy<UnsignedCharScalarImageType>(mask, this->Mask);
+}
+
+template <typename TImage>
+void PoissonEditing<TImage>::SetGuidanceFieldToZero()
+{
+  // In the hole filling problem, we want the guidance field fo be zero
+  FloatScalarImageType::Pointer guidanceField = FloatScalarImageType::New();
+  guidanceField->SetRegions(this->SourceImage->GetLargestPossibleRegion());
+  guidanceField->Allocate();
+  guidanceField->FillBuffer(0);
+  this->SetGuidanceField(guidanceField);
 }
 
 template <typename TImage>
@@ -37,12 +69,12 @@ void PoissonEditing<TImage>::FillMaskedRegion()
     return;
     }
 
-  Helpers::DeepCopy<TImage>(this->Image, this->Output);
+  Helpers::DeepCopy<TImage>(this->TargetImage, this->Output);
 
   for(unsigned int i = 0; i < TImage::PixelType::Dimension; i++)
     {
     FloatScalarImageType::Pointer componentImage = FloatScalarImageType::New();
-    Helpers::ExtractComponent<TImage>(this->Image, i, componentImage);
+    Helpers::ExtractComponent<TImage>(this->TargetImage, i, componentImage);
     FillComponent(componentImage);
     Helpers::SetComponent<TImage>(this->Output, i, componentImage);
     }
@@ -52,8 +84,8 @@ template <typename TImage>
 void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
 {
 
-  unsigned int width = image->GetLargestPossibleRegion().GetSize()[0];
-  unsigned int height = image->GetLargestPossibleRegion().GetSize()[1];
+  unsigned int width = this->Mask->GetLargestPossibleRegion().GetSize()[0];
+  unsigned int height = this->Mask->GetLargestPossibleRegion().GetSize()[1];
 
   // This stores the forward mapping from variable id to pixel location
   std::vector<itk::Index<2> > variables;
@@ -87,12 +119,19 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
   radius.Fill(1);
   laplacianOperator.CreateToRadius(radius);
 
+#ifdef USE_VNL
+  std::cout << "Using VNL." << std::endl;
   // Create the sparse matrix
   vnl_sparse_matrix<double> A(numberOfVariables, numberOfVariables);
   std::cout << "Matrix is " << A.rows() << " rows x " << A.cols() << " cols." << std::endl;
   vnl_vector<double> b(numberOfVariables);
   std::cout << "b is " << b.size() << std::endl;
-
+#else
+  std::cout << "Using Eigen." << std::endl;
+  // Create the sparse matrix
+  Eigen::SparseMatrix<double> A(numberOfVariables, numberOfVariables);
+  Eigen::VectorXd b(numberOfVariables);
+#endif
   // Create the reverse mapping from pixel to variable id
   std::map <itk::Index<2>, unsigned int, IndexComparison> PixelToIdMap;
   for(unsigned int i = 0; i < variables.size(); i++)
@@ -103,8 +142,10 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
   for(unsigned int variableId = 0; variableId < variables.size(); variableId++)
     {
     itk::Index<2> originalPixel = variables[variableId];
+    //std::cout << "originalPixel " << originalPixel << std::endl;
+    // The right hand side of the equation starts equal to the value of the guidance field
 
-    double bvalue = 0.0; // The right hand side of the equation is zero unless the current pixel has any known neighbors
+    double bvalue = this->GuidanceField->GetPixel(originalPixel);
 
     // Loop over the kernel around the current pixel
     for(unsigned int offset = 0; offset < laplacianOperator.GetSize()[0] * laplacianOperator.GetSize()[1]; offset++)
@@ -119,7 +160,11 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
       if (this->Mask->GetPixel(currentPixel))
         {
         // If the pixel is masked, add it as part of the unknown matrix
+#ifdef USE_VNL
         A(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
+#else
+        A.insert(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
+#endif
         }
       else
         {
@@ -127,9 +172,14 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
         bvalue -= image->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
         }
       }
+#ifdef USE_VNL
     b[variableId] = bvalue;
+#else
+    b[variableId] = bvalue;
+#endif
   }// end for variables
 
+#ifdef USE_VNL
   // Solve the system
   std::cout << "Solver::solve: Solving: " << std::endl
           << "Image dimensions: " << width << "x" << height << std::endl
@@ -146,6 +196,27 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
     {
     image->SetPixel(variables[i], x[i]);
     }
+#else
+  // Solve the system with Eigen
+  Eigen::VectorXd x(numberOfVariables);
+  Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
+  if(!lu_of_A.succeeded())
+  {
+    std::cerr << "decomposiiton failed!" << std::endl;
+    return;
+  }
+  if(!lu_of_A.solve(b,&x))
+  {
+    std::cerr << "solving failed!" << std::endl;
+    return;
+  }
+
+  // Convert solution vector back to image
+  for(unsigned int i = 0; i < variables.size(); i++)
+    {
+    image->SetPixel(variables[i], x(i));
+    }
+#endif
 }
 
 template <typename TImage>
@@ -161,9 +232,9 @@ bool PoissonEditing<TImage>::VerifyMask()
   // there is no mask on the boundary.
 
   // Verify that the image and the mask are the same size
-  if(this->Image->GetLargestPossibleRegion().GetSize() != this->Mask->GetLargestPossibleRegion().GetSize())
+  if(this->SourceImage->GetLargestPossibleRegion().GetSize() != this->Mask->GetLargestPossibleRegion().GetSize())
     {
-    std::cout << "Image size: " << this->Image->GetLargestPossibleRegion().GetSize() << std::endl;
+    std::cout << "Image size: " << this->SourceImage->GetLargestPossibleRegion().GetSize() << std::endl;
     std::cout << "Mask size: " << this->Mask->GetLargestPossibleRegion().GetSize() << std::endl;
     return false;
     }
