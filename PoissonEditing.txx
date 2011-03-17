@@ -63,11 +63,13 @@ void PoissonEditing<TImage>::SetGuidanceFieldToZero()
 template <typename TImage>
 void PoissonEditing<TImage>::FillMaskedRegion()
 {
+  /*
   if(!VerifyMask())
     {
     std::cerr << "Invalid mask!" << std::endl;
     return;
     }
+  */
 
   Helpers::DeepCopyVectorImage<TImage>(this->TargetImage, this->Output);
 
@@ -91,9 +93,11 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
   // This stores the forward mapping from variable id to pixel location
   std::vector<itk::Index<2> > variables;
 
-  for (unsigned int y = 1; y < height-1; y++)
+  //for (unsigned int y = 1; y < height-1; y++)
+  for (unsigned int y = 0; y < height; y++)
     {
-    for (unsigned int x = 1; x < width-1; x++)
+    //for (unsigned int x = 1; x < width-1; x++)
+    for (unsigned int x = 0; x < width; x++)
       {
       itk::Index<2> pixelIndex;
       pixelIndex[0] = x;
@@ -157,6 +161,11 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
         }
 
       itk::Index<2> currentPixel = originalPixel + laplacianOperator.GetOffset(offset);
+
+      if(!this->Mask->GetLargestPossibleRegion().IsInside(currentPixel))
+        {
+        continue; // this pixel is on the border, just ignore it.
+        }
 
       if (this->Mask->GetPixel(currentPixel))
         {
