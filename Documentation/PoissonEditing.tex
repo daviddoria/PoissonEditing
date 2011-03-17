@@ -35,7 +35,7 @@ colorlinks,linkcolor={blue},citecolor={blue},urlcolor={blue},
 % submission process. Please replace the number "1338" with
 % the actual handle number that you get assigned.
 %
-\newcommand{\IJhandlerIDnumber}{3253}
+\newcommand{\IJhandlerIDnumber}{3257}
 
 % Increment the release number whenever significant changes are made.
 % The author and/or editor can define 'significant' however they like.
@@ -86,6 +86,8 @@ colorlinks,linkcolor={blue},citecolor={blue},urlcolor={blue},
 \noindent
 This code provides an implementation of two techniques from ``Poisson Image Editing'' on ITK images. First, we fill a hole in an image given only the pixel values on the boundary. Second, we copy a patch of an image into another image and make the result as smooth as possible. We also explain how these techniques can be used to reconstruct an image after perform editing operations in the gradient domain.
 
+The code is available here: https://github.com/daviddoria/PoissonEditing
+
 \end{abstract}
 
 \IJhandlenote{\IJhandlerIDnumber}
@@ -94,7 +96,11 @@ This code provides an implementation of two techniques from ``Poisson Image Edit
 
 %%%%%%%%%%%%%%%%%
 \section{Introduction}
-This code provides an implementation of two techniques from ``Poisson Image Editing'' (\cite{PoissonImageEditing}) on ITK images. First, we fill a hole in an image given only the pixel values on the boundary. Second, we copy a patch of an image into another image and make the result as smooth as possible.
+This code provides an implementation of two techniques from ``Poisson Image Editing'' (\cite{PoissonImageEditing}) on ITK images. First, we fill a hole in an image given only the pixel values on the boundary. Second, we copy a patch of an image into another image and make the result as smooth as possible. 
+
+The code is available here: https://github.com/daviddoria/PoissonEditing
+
+Motivation for this implementation came from an implementation available here: http://leyvand.com/research/adv-graphics/ex1.htm , but the code was written from scratch. The use of ITK's neighborhood operators greatly simplifies and clarifies the linear system construction.
 
 %%%%%%%%%%%%%%%%%
 \section{Hole Filling}
@@ -182,6 +188,7 @@ We have packaged this implementation in a class called $PoissonEditing$. Using t
   PoissonEditing<FloatVectorImageType> poissonEditing;
   poissonEditing.SetImage(imageReader->GetOutput());
   poissonEditing.SetMask(maskReader->GetOutput());
+  poissonEditing.SetGuidanceFieldToZero();
   poissonEditing.FillMaskedRegion();
 
   FloatVectorImageType::Pointer outputImage = poissonEditing.GetOutput();
@@ -355,6 +362,9 @@ Again, we simply place the coefficient of each term in the column of the matrix 
 \label{fig:DerivativeReconstruction}
 \end{figure}
 
+\subsubsection{Implementation}
+We have provided this implementation in a file called $DerivativesToImage.cxx$.
+
 \subsection{Reconstructing an Image from Its Laplacian}
 \label{sec:ReconstructingFromLaplacian}
 The technique to reconstruct an image from its Laplacian is identical to the procedure described in Section \ref{sec:RegionCopying}. We specify the Laplacian in the unknown region as the guidance field. If the manipulation was done directly on the Laplacian, this process was straight forward. However, if the manipulation was done on the derivative images, there is an additional step of going from the derivatives to the Laplacian that requires special attention.
@@ -443,6 +453,9 @@ and the backward difference operator to take the second derivatives:
 \end{figure}
 
 It possible to choose different operators, but you must choose the derivative operators so that if they are applied successively they produce exactly the Laplacian operator that you choose. If you do not do this, the result of the reconstruction will be wildly incorrect.
+
+\subsubsection{Implementation}
+We have provided this implementation in a file called $LaplacianToImage.cxx$.
 
 %%%%%%%%%%%%
 \section{Notes}

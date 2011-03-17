@@ -57,10 +57,11 @@ int main(int argc, char* argv[])
   PoissonEditing<FloatVectorImageType> poissonEditing;
   poissonEditing.SetImage(imageReader->GetOutput());
   poissonEditing.SetMask(maskReader->GetOutput());
+  poissonEditing.SetGuidanceFieldToZero();
   poissonEditing.FillMaskedRegion();
 
   FloatVectorImageType::Pointer outputImage = poissonEditing.GetOutput();
-
+/*
   typedef itk::CastImageFilter< FloatVectorImageType, UnsignedCharVectorImageType > CastFilterType;
   CastFilterType::Pointer castFilter = CastFilterType::New();
   castFilter->SetInput(outputImage);
@@ -71,10 +72,10 @@ int main(int argc, char* argv[])
   pngWriter->SetFileName(outputFilename);
   pngWriter->SetInput(castFilter->GetOutput());
   pngWriter->Update();
-
+*/
   typedef  itk::ImageFileWriter< FloatVectorImageType > MHDWriterType;
   MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
-  mhdWriter->SetFileName("output.mhd");
+  mhdWriter->SetFileName(outputFilename);
   mhdWriter->SetInput(outputImage);
   mhdWriter->Update();
 

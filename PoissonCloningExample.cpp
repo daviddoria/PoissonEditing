@@ -79,8 +79,8 @@ int main(int argc, char* argv[])
   // Write output
   Helpers::WriteImage<FloatVectorImageType>(outputImage, "output.mhd");
   //Helpers::WriteScaledImage<FloatVectorImageType>(outputImage, "output.png");
-  Helpers::ClampImage<FloatVectorImageType>(outputImage);
-  Helpers::CastAndWriteImage<FloatVectorImageType>(outputImage, "output.png");
+  //Helpers::ClampVectorImage<FloatVectorImageType>(outputImage);
+  //Helpers::CastAndWriteImage<FloatVectorImageType>(outputImage, "output.png");
 
   return EXIT_SUCCESS;
 }

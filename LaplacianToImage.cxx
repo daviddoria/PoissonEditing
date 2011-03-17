@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "itkCastImageFilter.h"
 #include "itkNeighborhoodOperatorImageFilter.h"
 #include "itkSobelOperator.h"
-#include "itkGaussianDerivativeOperator.h"
+//#include "itkGaussianDerivativeOperator.h"
 
 /*
  * This program expects a single channel image and its Laplacian (also single channel)

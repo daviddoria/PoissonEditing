@@ -31,8 +31,8 @@ void PoissonEditing<TImage>::SetImage(typename TImage::Pointer image)
 {
   //this->SourceImage->Graft(image);
   //this->TargetImage->Graft(image);
-  Helpers::DeepCopy<TImage>(image, this->SourceImage);
-  Helpers::DeepCopy<TImage>(image, this->TargetImage);
+  Helpers::DeepCopyVectorImage<TImage>(image, this->SourceImage);
+  Helpers::DeepCopyVectorImage<TImage>(image, this->TargetImage);
 }
 
 template <typename TImage>
@@ -69,9 +69,10 @@ void PoissonEditing<TImage>::FillMaskedRegion()
     return;
     }
 
-  Helpers::DeepCopy<TImage>(this->TargetImage, this->Output);
+  Helpers::DeepCopyVectorImage<TImage>(this->TargetImage, this->Output);
 
-  for(unsigned int i = 0; i < TImage::PixelType::Dimension; i++)
+  //for(unsigned int i = 0; i < TImage::PixelType::Dimension; i++)
+  for(unsigned int i = 0; i < this->SourceImage->GetNumberOfComponentsPerPixel(); i++)
     {
     FloatScalarImageType::Pointer componentImage = FloatScalarImageType::New();
     Helpers::ExtractComponent<TImage>(this->TargetImage, i, componentImage);

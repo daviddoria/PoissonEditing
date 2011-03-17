@@ -49,7 +49,8 @@ void PoissonCloning<TImage>::PasteMaskedRegionIntoTargetImage()
 
   Helpers::DeepCopy<TImage>(this->TargetImage, this->Output);
 
-  for(unsigned int i = 0; i < TImage::PixelType::Dimension; i++)
+  //for(unsigned int i = 0; i < TImage::PixelType::Dimension; i++)
+  for(unsigned int i = 0; i < this->SourceImage->GetNumberOfComponentsPerPixel(); i++)
     {
     FloatScalarImageType::Pointer sourceComponentImage = FloatScalarImageType::New();
     FloatScalarImageType::Pointer targetComponentImage = FloatScalarImageType::New();

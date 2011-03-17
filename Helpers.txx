@@ -26,15 +26,41 @@ void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
 }
 
 template<typename TImage>
+void DeepCopyVectorImage(typename TImage::Pointer input, typename TImage::Pointer output)
+{
+  output->SetRegions(input->GetLargestPossibleRegion());
+  output->SetNumberOfComponentsPerPixel(input->GetNumberOfComponentsPerPixel());
+  output->Allocate();
+
+  itk::ImageRegionConstIterator<TImage> inputIterator(input, input->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<TImage> outputIterator(output, output->GetLargestPossibleRegion());
+
+  while(!inputIterator.IsAtEnd())
+    {
+    outputIterator.Set(inputIterator.Get());
+    ++inputIterator;
+    ++outputIterator;
+    }
+}
+
+template<typename TImage>
 void ExtractComponent(typename TImage::Pointer input, unsigned int component, FloatScalarImageType::Pointer output)
 //void ExtractComponent(typename TImage::Pointer input, unsigned int component, typename itk::Image<typename TImage::PixelType, 2>::Pointer output)
 {
+  /*
+  // non vector images
   if(component >= TImage::PixelType::Dimension)
     {
     std::cerr << "Component is " << component << " but must be less than " << TImage::PixelType::Dimension << std::endl;
     exit(-1);
     }
+  */
 
+  if(component >= input->GetNumberOfComponentsPerPixel())
+    {
+    std::cerr << "Component is " << component << " but must be less than " << input->GetNumberOfComponentsPerPixel() << std::endl;
+    exit(-1);
+    }
   output->SetRegions(input->GetLargestPossibleRegion());
   output->Allocate();
 
@@ -54,9 +80,17 @@ void ExtractComponent(typename TImage::Pointer input, unsigned int component, Fl
 template<typename TImage>
 void SetComponent(typename TImage::Pointer input, unsigned int component, FloatScalarImageType::Pointer componentImage)
 {
+  /*
   if(component >= TImage::PixelType::Dimension)
     {
     std::cerr << "Component is " << component << " but must be less than " << TImage::PixelType::Dimension << std::endl;
+    exit(-1);
+    }
+  */
+
+  if(component >= input->GetNumberOfComponentsPerPixel())
+    {
+    std::cerr << "Component is " << component << " but must be less than " << input->GetNumberOfComponentsPerPixel() << std::endl;
     exit(-1);
     }
 
@@ -150,6 +184,33 @@ void ClampImage(typename TImage::Pointer image)
     typename TImage::PixelType pixel = imageIterator.Get();
 
     for(unsigned int i = 0; i < TImage::PixelType::Dimension; i++)
+      {
+      if(pixel[i] < 0)
+        {
+        pixel[i] = 0;
+        }
+      if(pixel[i] > 255)
+        {
+        pixel[i] = 255;
+        }
+      }// end for components
+
+    imageIterator.Set(pixel);
+    ++imageIterator;
+    }// end iterator while
+}
+
+
+template<typename TImage>
+void ClampVectorImage(typename TImage::Pointer image)
+{
+  itk::ImageRegionIterator<TImage> imageIterator(image, image->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    typename TImage::PixelType pixel = imageIterator.Get();
+
+    for(unsigned int i = 0; i < image->GetNumberOfComponentsPerPixel(); i++)
       {
       if(pixel[i] < 0)
         {

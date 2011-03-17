@@ -12,6 +12,9 @@ template<typename TImage>
 void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output);
 
 template<typename TImage>
+void DeepCopyVectorImage(typename TImage::Pointer input, typename TImage::Pointer output);
+
+template<typename TImage>
 void ExtractComponent(typename TImage::Pointer input, unsigned int component, FloatScalarImageType::Pointer output);
 //void ExtractComponent(typename TImage::Pointer input, unsigned int component, typename itk::Image<typename TImage::PixelType, 2>::Pointer output);
 
@@ -32,6 +35,9 @@ void ScaleAndWriteScalarImage(typename TImage::Pointer input, std::string filena
 
 template<typename TImage>
 void ClampImage(typename TImage::Pointer image);
+
+template<typename TImage>
+void ClampVectorImage(typename TImage::Pointer image);
 
 std::vector<itk::Offset<2> > Get4NeighborOffsets();
 
