@@ -131,12 +131,15 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
   std::cout << "Matrix is " << A.rows() << " rows x " << A.cols() << " cols." << std::endl;
   vnl_vector<double> b(numberOfVariables);
   std::cout << "b is " << b.size() << std::endl;
-#else
+#endif
+  
+#ifdef USE_EIGEN
   std::cout << "Using Eigen." << std::endl;
   // Create the sparse matrix
   Eigen::SparseMatrix<double> A(numberOfVariables, numberOfVariables);
   Eigen::VectorXd b(numberOfVariables);
 #endif
+  
   // Create the reverse mapping from pixel to variable id
   std::map <itk::Index<2>, unsigned int, IndexComparison> PixelToIdMap;
   for(unsigned int i = 0; i < variables.size(); i++)
@@ -172,7 +175,8 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
         // If the pixel is masked, add it as part of the unknown matrix
 #ifdef USE_VNL
         A(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
-#else
+#endif
+#ifdef USE_EIGEN
         A.insert(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
 #endif
         }
@@ -184,7 +188,8 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
       }
 #ifdef USE_VNL
     b[variableId] = bvalue;
-#else
+#endif
+#ifdef USE_EIGEN
     b[variableId] = bvalue;
 #endif
   }// end for variables
@@ -206,7 +211,8 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
     {
     image->SetPixel(variables[i], x[i]);
     }
-#else
+#endif
+#ifdef USE_EIGEN
   // Solve the system with Eigen
   Eigen::VectorXd x(numberOfVariables);
   Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
