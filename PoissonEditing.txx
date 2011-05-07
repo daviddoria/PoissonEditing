@@ -64,7 +64,7 @@ void PoissonEditing<TImage>::SetGuidanceFieldToZero()
 template <typename TImage>
 void PoissonEditing<TImage>::FillMaskedRegion()
 {
-
+  // This function is the core of the Poisson Editing algorithm
   unsigned int width = this->Mask->GetLargestPossibleRegion().GetSize()[0];
   unsigned int height = this->Mask->GetLargestPossibleRegion().GetSize()[1];
 
@@ -211,7 +211,9 @@ void PoissonEditing<TImage>::FillMaskedRegion()
     this->SourceImage->SetPixel(variables[i], x(i));
     }
 #endif
-}
+  
+  Helpers::DeepCopy<TImage>(this->SourceImage, this->Output);
+} // end FillMaskedRegion
 
 template <typename TImage>
 typename TImage::Pointer PoissonEditing<TImage>::GetOutput()

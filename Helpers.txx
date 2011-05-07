@@ -108,27 +108,6 @@ void SetComponent(typename TImage::Pointer input, unsigned int component, FloatS
 }
 
 
-template<typename TImage>
-void CastAndWriteImage(typename TImage::Pointer input, std::string filename)
-{
-  if(TImage::PixelType::Dimension != 3)
-    {
-    std::cerr << "WriteImage: input doesn't have 3 components (it has " << TImage::PixelType::Dimension << ")" << std::endl;
-    return;
-    }
-
-  typedef itk::CastImageFilter< TImage, UnsignedCharVectorImageType > CastFilterType;
-  typename CastFilterType::Pointer castFilter = CastFilterType::New();
-  castFilter->SetInput(input);
-  castFilter->Update();
-
-  typedef  itk::ImageFileWriter< UnsignedCharVectorImageType > PNGWriterType;
-  PNGWriterType::Pointer pngWriter = PNGWriterType::New();
-  pngWriter->SetFileName(filename);
-  pngWriter->SetInput(castFilter->GetOutput());
-  pngWriter->Update();
-}
-
 
 template<typename TImage>
 void CastAndWriteScalarImage(typename TImage::Pointer input, std::string filename)

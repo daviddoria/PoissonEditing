@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   typedef itk::ImageToVectorImageFilter<FloatScalarImageType> ReassemblerType;
   ReassemblerType::Pointer reassembler = ReassemblerType::New();
   // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
-  std::vector<PoissonEditing<FloatScalarImageType> > poissonFilters(laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel());
+  std::vector<PoissonEditing<FloatScalarImageType> > poissonFilters;
   
   for(unsigned int component = 0; component < laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); component++)
     {
@@ -105,6 +105,8 @@ int main(int argc, char* argv[])
     laplacianDisassembler->SetInput(laplacianImageReader->GetOutput());
     laplacianDisassembler->Update();
     
+    PoissonEditing<FloatScalarImageType> poissonFilter;
+    poissonFilters.push_back(poissonFilter);
     poissonFilters[component].SetImage(sourceDisassembler->GetOutput());
     poissonFilters[component].SetGuidanceField(laplacianDisassembler->GetOutput());
     poissonFilters[component].SetMask(maskReader->GetOutput());

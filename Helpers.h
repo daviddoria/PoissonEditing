@@ -25,9 +25,6 @@ template<typename TImage>
 void WriteImage(typename TImage::Pointer input, std::string filename);
 
 template<typename TImage>
-void CastAndWriteImage(typename TImage::Pointer input, std::string filename);
-
-template<typename TImage>
 void CastAndWriteScalarImage(typename TImage::Pointer input, std::string filename);
 
 template<typename TImage>

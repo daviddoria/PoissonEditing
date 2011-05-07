@@ -59,37 +59,51 @@ int main(int argc, char* argv[])
   typedef itk::VectorIndexSelectionCastImageFilter<FloatVectorImageType, FloatScalarImageType> DisassemblerType;
   typedef itk::ImageToVectorImageFilter<FloatScalarImageType> ReassemblerType;
   ReassemblerType::Pointer reassembler = ReassemblerType::New();
-  // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
-  std::vector<PoissonEditing<FloatScalarImageType> > poissonFilters(imageReader->GetOutput()->GetNumberOfComponentsPerPixel());
   
+  // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
+  std::vector<PoissonEditing<FloatScalarImageType> > poissonFilters;//(imageReader->GetOutput()->GetNumberOfComponentsPerPixel());
+    
   for(unsigned int component = 0; component < imageReader->GetOutput()->GetNumberOfComponentsPerPixel(); component++)
     {
+    std::cout << "Component " << component << std::endl;
     // Disassemble the image into its components
-    
     DisassemblerType::Pointer sourceDisassembler = DisassemblerType::New();
     sourceDisassembler->SetIndex(component);
     sourceDisassembler->SetInput(imageReader->GetOutput());
     sourceDisassembler->Update();
       
+    PoissonEditing<FloatScalarImageType> poissonFilter;
+    poissonFilters.push_back(poissonFilter);
+  
     poissonFilters[component].SetImage(sourceDisassembler->GetOutput());
     poissonFilters[component].SetGuidanceFieldToZero();
     poissonFilters[component].SetMask(maskReader->GetOutput());
     poissonFilters[component].FillMaskedRegion();
 
-    // Reassemble the image
     reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
+    
+    // Write this channel just for testing:
+    std::cout << "Writing test image..." << std::endl;
+    typedef  itk::ImageFileWriter< FloatScalarImageType > WriterType;
+    WriterType::Pointer writer = WriterType::New();
+    std::stringstream ss;
+    ss << "test_" << component << ".mhd";
+    writer->SetFileName(ss.str());
+    writer->SetInput(poissonFilters[component].GetOutput());
+    writer->Update();
     }
   
   reassembler->Update();
-  
+  std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
+  std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
   // Get and write output
-  Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), outputFilename);
+  //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), outputFilename);
   
-  typedef  itk::ImageFileWriter< FloatVectorImageType > MHDWriterType;
-  MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
-  mhdWriter->SetFileName(outputFilename);
-  mhdWriter->SetInput(reassembler->GetOutput());
-  mhdWriter->Update();
+  typedef  itk::ImageFileWriter< FloatVectorImageType > WriterType;
+  WriterType::Pointer writer = WriterType::New();
+  writer->SetFileName(outputFilename);
+  writer->SetInput(reassembler->GetOutput());
+  writer->Update();
 
   return EXIT_SUCCESS;
 }
