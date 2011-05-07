@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkCastImageFilter.h"
+#include "itkVectorIndexSelectionCastImageFilter.h"
+#include "itkImageToVectorImageFilter.h"
 
 int main(int argc, char* argv[])
 {
@@ -53,30 +55,41 @@ int main(int argc, char* argv[])
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
   maskReader->SetFileName(maskFilename);
   maskReader->Update();
+  
+  typedef itk::VectorIndexSelectionCastImageFilter<FloatVectorImageType, FloatScalarImageType> DisassemblerType;
+  typedef itk::ImageToVectorImageFilter<FloatScalarImageType> ReassemblerType;
+  ReassemblerType::Pointer reassembler = ReassemblerType::New();
+  // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
+  std::vector<PoissonEditing<FloatScalarImageType> > poissonFilters(imageReader->GetOutput()->GetNumberOfComponentsPerPixel());
+  
+  for(unsigned int component = 0; component < imageReader->GetOutput()->GetNumberOfComponentsPerPixel(); component++)
+    {
+    // Disassemble the image into its components
+    
+    DisassemblerType::Pointer sourceDisassembler = DisassemblerType::New();
+    sourceDisassembler->SetIndex(component);
+    sourceDisassembler->SetInput(imageReader->GetOutput());
+    sourceDisassembler->Update();
+      
+    poissonFilters[component].SetImage(sourceDisassembler->GetOutput());
+    poissonFilters[component].SetGuidanceFieldToZero();
+    poissonFilters[component].SetMask(maskReader->GetOutput());
+    poissonFilters[component].FillMaskedRegion();
 
-  PoissonEditing<FloatVectorImageType> poissonEditing;
-  poissonEditing.SetImage(imageReader->GetOutput());
-  poissonEditing.SetMask(maskReader->GetOutput());
-  poissonEditing.SetGuidanceFieldToZero();
-  poissonEditing.FillMaskedRegion();
-
-  FloatVectorImageType::Pointer outputImage = poissonEditing.GetOutput();
-/*
-  typedef itk::CastImageFilter< FloatVectorImageType, UnsignedCharVectorImageType > CastFilterType;
-  CastFilterType::Pointer castFilter = CastFilterType::New();
-  castFilter->SetInput(outputImage);
-  castFilter->Update();
-
-  typedef  itk::ImageFileWriter< UnsignedCharVectorImageType > PNGWriterType;
-  PNGWriterType::Pointer pngWriter = PNGWriterType::New();
-  pngWriter->SetFileName(outputFilename);
-  pngWriter->SetInput(castFilter->GetOutput());
-  pngWriter->Update();
-*/
+    // Reassemble the image
+    reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
+    }
+  
+  reassembler->Update();
+  
+  // Get and write output
+  Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), outputFilename);
+  
   typedef  itk::ImageFileWriter< FloatVectorImageType > MHDWriterType;
   MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
   mhdWriter->SetFileName(outputFilename);
-  mhdWriter->SetInput(outputImage);
+  mhdWriter->SetInput(reassembler->GetOutput());
   mhdWriter->Update();
 
+  return EXIT_SUCCESS;
 }

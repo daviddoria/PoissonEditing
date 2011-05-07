@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkCastImageFilter.h"
+#include "itkVectorIndexSelectionCastImageFilter.h"
+#include "itkImageToVectorImageFilter.h"
 
 int main(int argc, char* argv[])
 {
@@ -66,21 +68,41 @@ int main(int argc, char* argv[])
             << "Target image is " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
             << "Mask image is " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
 
-  // Setup and perform cloning
-  PoissonCloning<FloatVectorImageType> poissonCloning;
-  poissonCloning.SetImage(sourceImageReader->GetOutput());
-  poissonCloning.SetTargetImage(targetImageReader->GetOutput());
-  poissonCloning.SetMask(maskReader->GetOutput());
-  poissonCloning.SetGuidanceFieldToZero();
-  poissonCloning.PasteMaskedRegionIntoTargetImage();
+	    
+  typedef itk::VectorIndexSelectionCastImageFilter<FloatVectorImageType, FloatScalarImageType> DisassemblerType;
+  typedef itk::ImageToVectorImageFilter<FloatScalarImageType> ReassemblerType;
+  ReassemblerType::Pointer reassembler = ReassemblerType::New();
+  // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
+  std::vector<PoissonCloning<FloatScalarImageType> > poissonFilters(sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel());
+  
+  for(unsigned int component = 0; component < sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); component++)
+    {
+    // Disassemble the image into its components
+    
+    DisassemblerType::Pointer sourceDisassembler = DisassemblerType::New();
+    sourceDisassembler->SetIndex(component);
+    sourceDisassembler->SetInput(sourceImageReader->GetOutput());
+    sourceDisassembler->Update();
+  
+    DisassemblerType::Pointer targetDisassembler = DisassemblerType::New();
+    targetDisassembler->SetIndex(component);
+    targetDisassembler->SetInput(targetImageReader->GetOutput());
+    targetDisassembler->Update();
+      
+    poissonFilters[component].SetImage(sourceDisassembler->GetOutput());
+    poissonFilters[component].SetTargetImage(targetDisassembler->GetOutput());
+    poissonFilters[component].SetGuidanceFieldToZero();
+    poissonFilters[component].SetMask(maskReader->GetOutput());
+    poissonFilters[component].PasteMaskedRegionIntoTargetImage();
 
-  FloatVectorImageType::Pointer outputImage = poissonCloning.GetOutput();
+    // Reassemble the image
+    reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
+    }
+  
+  reassembler->Update();
 
   // Write output
-  Helpers::WriteImage<FloatVectorImageType>(outputImage, "output.mhd");
-  //Helpers::WriteScaledImage<FloatVectorImageType>(outputImage, "output.png");
-  //Helpers::ClampVectorImage<FloatVectorImageType>(outputImage);
-  //Helpers::CastAndWriteImage<FloatVectorImageType>(outputImage, "output.png");
+  Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), "output.mhd");
 
   return EXIT_SUCCESS;
 }

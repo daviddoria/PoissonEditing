@@ -33,6 +33,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <vector>
 
+/* This class operates on a single channel image. If you would like to use this technique on a multi-channel image,
+ * you must disassemble the image, use the technique on each channel separately, and then recombine the outputs.
+ */
+
 template <typename TImage>
 class PoissonEditing
 {
@@ -51,8 +55,6 @@ public:
 protected:
 
   bool VerifyMask();
-
-  void FillComponent(FloatScalarImageType::Pointer image);
 
   typename TImage::Pointer SourceImage;
   typename TImage::Pointer TargetImage;

@@ -43,6 +43,7 @@ public:
   void PasteMaskedRegionIntoTargetImage();
 
 protected:
+
   void CreateGuidanceField(FloatScalarImageType::Pointer sourceImage);
 
   typename TImage::Pointer TargetImage;

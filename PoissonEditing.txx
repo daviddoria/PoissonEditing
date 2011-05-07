@@ -4,13 +4,13 @@
 #include "itkImageRegionConstIterator.h"
 #include "itkLaplacianOperator.h"
 
-//#define USE_VNL
-
 #ifdef USE_VNL
   #include <vnl/vnl_vector.h>
   #include <vnl/vnl_sparse_matrix.h>
   #include <vnl/algo/vnl_sparse_lu.h>
-#else
+#endif
+
+#ifdef USE_EIGEN
   #include <Eigen/Sparse>
   #include <Eigen/UmfPackSupport>
   #include <Eigen/SparseExtra>
@@ -60,31 +60,9 @@ void PoissonEditing<TImage>::SetGuidanceFieldToZero()
   this->SetGuidanceField(guidanceField);
 }
 
+
 template <typename TImage>
 void PoissonEditing<TImage>::FillMaskedRegion()
-{
-  /*
-  if(!VerifyMask())
-    {
-    std::cerr << "Invalid mask!" << std::endl;
-    return;
-    }
-  */
-
-  Helpers::DeepCopyVectorImage<TImage>(this->TargetImage, this->Output);
-
-  //for(unsigned int i = 0; i < TImage::PixelType::Dimension; i++)
-  for(unsigned int i = 0; i < this->SourceImage->GetNumberOfComponentsPerPixel(); i++)
-    {
-    FloatScalarImageType::Pointer componentImage = FloatScalarImageType::New();
-    Helpers::ExtractComponent<TImage>(this->TargetImage, i, componentImage);
-    FillComponent(componentImage);
-    Helpers::SetComponent<TImage>(this->Output, i, componentImage);
-    }
-}
-
-template <typename TImage>
-void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
 {
 
   unsigned int width = this->Mask->GetLargestPossibleRegion().GetSize()[0];
@@ -183,7 +161,7 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
       else
         {
         // If the pixel is known, move its contribution to the known (right) side of the equation
-        bvalue -= image->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
+        bvalue -= this->SourceImage->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
         }
       }
 #ifdef USE_VNL
@@ -230,7 +208,7 @@ void PoissonEditing<TImage>::FillComponent(FloatScalarImageType::Pointer image)
   // Convert solution vector back to image
   for(unsigned int i = 0; i < variables.size(); i++)
     {
-    image->SetPixel(variables[i], x(i));
+    this->SourceImage->SetPixel(variables[i], x(i));
     }
 #endif
 }
