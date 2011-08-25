@@ -88,10 +88,15 @@ int main(int argc, char* argv[])
     targetDisassembler->SetIndex(component);
     targetDisassembler->SetInput(targetImageReader->GetOutput());
     targetDisassembler->Update();
-      
+
+    std::stringstream ss;
+    ss << "target_" << component << ".mha";
+    Helpers::WriteImage<FloatScalarImageType>(targetDisassembler->GetOutput(), ss.str());
+    
     poissonFilters[component].SetImage(sourceDisassembler->GetOutput());
     poissonFilters[component].SetTargetImage(targetDisassembler->GetOutput());
-    poissonFilters[component].SetGuidanceFieldToZero();
+    //poissonFilters[component].SetGuidanceFieldToZero();
+    //poissonFilters[component].CreateGuidanceField(sourceDisassembler->GetOutput()); // this is done internally
     poissonFilters[component].SetMask(maskReader->GetOutput());
     poissonFilters[component].PasteMaskedRegionIntoTargetImage();
 

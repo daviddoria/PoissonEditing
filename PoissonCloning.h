@@ -50,7 +50,6 @@ protected:
 
   void CreateGuidanceField(FloatScalarImageType::Pointer sourceImage);
 
-  typename TImage::Pointer TargetImage;
 };
 
 #include "PoissonCloning.txx"

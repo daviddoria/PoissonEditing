@@ -30,8 +30,7 @@ PoissonEditing<TImage>::PoissonEditing()
 template <typename TImage>
 void PoissonEditing<TImage>::SetImage(typename TImage::Pointer image)
 {
-  //this->SourceImage->Graft(image);
-  //this->TargetImage->Graft(image);
+  // Copy the 'image' to both the source and target image. The target image can be overridden from PoissonCloning.
   Helpers::DeepCopyVectorImage<TImage>(image, this->SourceImage);
   Helpers::DeepCopyVectorImage<TImage>(image, this->TargetImage);
 }
@@ -66,6 +65,13 @@ template <typename TImage>
 void PoissonEditing<TImage>::FillMaskedRegion()
 {
   // This function is the core of the Poisson Editing algorithm
+
+  //Helpers::WriteImage<TImage>(this->TargetImage, "FillMaskedRegion_TargetImage.mha");
+
+  // Initialize the output by copying the target image into the output. Pixels that are not filled will remain the same in the output.
+  Helpers::DeepCopy<TImage>(this->TargetImage, this->Output);
+  //Helpers::WriteImage<TImage>(this->Output, "InitializedOutput.mha");
+  
   unsigned int width = this->Mask->GetLargestPossibleRegion().GetSize()[0];
   unsigned int height = this->Mask->GetLargestPossibleRegion().GetSize()[1];
 
@@ -107,9 +113,8 @@ void PoissonEditing<TImage>::FillMaskedRegion()
   std::cout << "Using VXL." << std::endl;
   // Create the sparse matrix
   vnl_sparse_matrix<double> A(numberOfVariables, numberOfVariables);
-  std::cout << "Matrix is " << A.rows() << " rows x " << A.cols() << " cols." << std::endl;
   vnl_vector<double> b(numberOfVariables);
-  std::cout << "b is " << b.size() << std::endl;
+
 #elif defined USE_EIGEN
   std::cout << "Using Eigen." << std::endl;
   // Create the sparse matrix
@@ -163,7 +168,7 @@ void PoissonEditing<TImage>::FillMaskedRegion()
       else
         {
         // If the pixel is known, move its contribution to the known (right) side of the equation
-        bvalue -= this->SourceImage->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
+        bvalue -= this->TargetImage->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
         }
       }
 #ifdef USE_VXL
@@ -189,7 +194,7 @@ void PoissonEditing<TImage>::FillMaskedRegion()
   // Convert solution vector back to image
   for(unsigned int i = 0; i < variables.size(); i++)
     {
-    this->SourceImage->SetPixel(variables[i], x[i]);
+    this->Output->SetPixel(variables[i], x[i]);
     }
 #elif defined USE_EIGEN
   // Solve the system with Eigen
@@ -209,11 +214,11 @@ void PoissonEditing<TImage>::FillMaskedRegion()
   // Convert solution vector back to image
   for(unsigned int i = 0; i < variables.size(); i++)
     {
-    this->SourceImage->SetPixel(variables[i], x(i));
+    this->Output->SetPixel(variables[i], x(i));
     }
 #endif
   
-  Helpers::DeepCopy<TImage>(this->SourceImage, this->Output);
+  
 } // end FillMaskedRegion
 
 template <typename TImage>

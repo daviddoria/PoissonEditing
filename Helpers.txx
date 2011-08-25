@@ -146,11 +146,11 @@ void ScaleAndWriteScalarImage(typename TImage::Pointer input, std::string filena
 template<typename TImage>
 void WriteImage(typename TImage::Pointer input, std::string filename)
 {
-  typedef  itk::ImageFileWriter< TImage > MHDWriterType;
-  typename MHDWriterType::Pointer mhdWriter = MHDWriterType::New();
-  mhdWriter->SetFileName(filename);
-  mhdWriter->SetInput(input);
-  mhdWriter->Update();
+  typedef  itk::ImageFileWriter< TImage > WriterType;
+  typename WriterType::Pointer writer = WriterType::New();
+  writer->SetFileName(filename);
+  writer->SetInput(input);
+  writer->Update();
 }
 
 template<typename TImage>
