@@ -43,10 +43,10 @@ int main(int argc, char* argv[])
   std::string outputFilename = argv[4];
 
   // Output arguments
-  std::cout << "Source image " << sourceImageFilename << std::endl
-            << "Target image " << targetImageFilename << std::endl
-            << "Mask image " << sourceMaskFilename << std::endl
-            << "Output " << outputFilename << std::endl;
+  std::cout << "Source image: " << sourceImageFilename << std::endl
+            << "Target image: " << targetImageFilename << std::endl
+            << "Mask image: " << sourceMaskFilename << std::endl
+            << "Output image: " << outputFilename << std::endl;
 
   // Read images
   typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
@@ -64,13 +64,13 @@ int main(int argc, char* argv[])
   targetImageReader->Update();
 
   // Output image properties
-  std::cout << "Source image is " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-            << "Target image is " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-            << "Mask image is " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+  std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
+            << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
+            << "Mask image: " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
 
-	    
   typedef itk::VectorIndexSelectionCastImageFilter<FloatVectorImageType, FloatScalarImageType> DisassemblerType;
-  typedef itk::ImageToVectorImageFilter<FloatScalarImageType> ReassemblerType;
+  //typedef itk::ImageToVectorImageFilter<FloatScalarImageType> ReassemblerType;
+  typedef itk::ImageToVectorImageFilter<UnsignedCharScalarImageType> ReassemblerType;
   ReassemblerType::Pointer reassembler = ReassemblerType::New();
   // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
   std::vector<PoissonCloning<FloatScalarImageType> > poissonFilters(sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel());
@@ -95,14 +95,22 @@ int main(int argc, char* argv[])
     poissonFilters[component].SetMask(maskReader->GetOutput());
     poissonFilters[component].PasteMaskedRegionIntoTargetImage();
 
+    typedef itk::RescaleIntensityImageFilter< FloatScalarImageType, UnsignedCharScalarImageType > RescaleFilterType;
+    RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
+    rescaleFilter->SetInput(poissonFilters[component].GetOutput());
+    rescaleFilter->SetOutputMinimum(0);
+    rescaleFilter->SetOutputMaximum(255);
+    rescaleFilter->Update();
+
     // Reassemble the image
-    reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
+    reassembler->SetNthInput(component, rescaleFilter->GetOutput());
     }
   
   reassembler->Update();
 
   // Write output
-  Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), "output.mhd");
+  //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), "output.mhd");
+  Helpers::WriteVectorImageAsPNG<UnsignedCharVectorImageType>(reassembler->GetOutput(), outputFilename);
 
   return EXIT_SUCCESS;
 }

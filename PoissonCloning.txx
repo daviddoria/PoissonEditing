@@ -1,22 +1,28 @@
 #include "Helpers.h"
 
+// ITK
 #include "itkImageRegionConstIterator.h"
 #include "itkLaplacianImageFilter.h"
 #include "itkNthElementImageAdaptor.h"
 
+/*
 #include <vnl/vnl_vector.h>
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/algo/vnl_sparse_lu.h>
+*/
 
 template <typename TImage>
-PoissonCloning<TImage>::PoissonCloning()// : PoissonEditing<TImage>()
+//PoissonCloning<TImage>::PoissonCloning() : PoissonEditing<TImage>() // Call the parent constructor
+PoissonCloning<TImage>::PoissonCloning()
 {
   // Shouldn't have to do this again here, but the TargetImage is created in PoissonEditing constructor and then is NULL when we get here?
+  
   this->SourceImage = TImage::New();
   this->TargetImage = TImage::New();
   this->Output = TImage::New();
   this->GuidanceField = FloatScalarImageType::New();
   this->Mask = UnsignedCharScalarImageType::New();
+  
 }
 
 template <typename TImage>
@@ -35,7 +41,6 @@ void PoissonCloning<TImage>::CreateGuidanceField(FloatScalarImageType::Pointer s
   laplacianFilter->SetInput(sourceImage);
   laplacianFilter->Update();
   this->SetGuidanceField(laplacianFilter->GetOutput());
-
 }
 
 template <typename TImage>
@@ -50,5 +55,4 @@ void PoissonCloning<TImage>::PasteMaskedRegionIntoTargetImage()
   Helpers::DeepCopy<TImage>(this->TargetImage, this->Output);
   this->CreateGuidanceField(this->SourceImage);
   this->FillMaskedRegion();
-
 }

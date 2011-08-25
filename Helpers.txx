@@ -1,12 +1,12 @@
+#include "itkCastImageFilter.h"
 #include "itkImageRegionConstIterator.h"
 #include "itkImageRegionIterator.h"
-#include "itkRescaleIntensityImageFilter.h"
 #include "itkImageFileWriter.h"
-#include "itkCastImageFilter.h"
+#include "itkRescaleIntensityImageFilter.h"
+#include "itkVectorCastImageFilter.h"
 
 namespace Helpers
 {
-
 
 template<typename TImage>
 void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
@@ -151,6 +151,27 @@ void WriteImage(typename TImage::Pointer input, std::string filename)
   mhdWriter->SetFileName(filename);
   mhdWriter->SetInput(input);
   mhdWriter->Update();
+}
+
+template<typename TImage>
+void WriteVectorImageAsPNG(typename TImage::Pointer input, std::string filename)
+{
+  /*
+  typedef itk::VectorCastImageFilter< FloatVectorImageType, UnsignedCharVectorImageType > VectorCastImageFilterType;
+  VectorCastImageFilterType::Pointer vectorCastImageFilter = VectorCastImageFilterType::New();
+  vectorCastImageFilter->SetInput(input);
+  vectorCastImageFilter->Update();
+  */
+  typedef itk::CastImageFilter< TImage, UnsignedCharVectorImageType > CastImageFilterType;
+  typename CastImageFilterType::Pointer castImageFilter = CastImageFilterType::New();
+  castImageFilter->SetInput(input);
+  castImageFilter->Update();
+  
+  typedef  itk::ImageFileWriter< UnsignedCharVectorImageType > WriterType;
+  typename WriterType::Pointer writer = WriterType::New();
+  writer->SetFileName(filename);
+  writer->SetInput(castImageFilter->GetOutput());
+  writer->Update();
 }
 
 template<typename TImage>

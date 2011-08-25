@@ -52,9 +52,9 @@ endif()
 
 # Check libraries
 if(NOT(EIGEN3_FOUND OR VXL_FOUND))
-  message(FATAL_ERROR "Either Eigen or VNL must be found!")
+  message(FATAL_ERROR "Either Eigen or VXL must be found!")
 else(NOT(EIGEN3_FOUND OR VXL_FOUND))
-  message("Eigen: " ${EIGEN3_FOUND} " VNL: " ${VNL_FOUND})
+  message("Eigen: " ${EIGEN3_FOUND} " VXL: " ${VXL_FOUND})
 endif(NOT(EIGEN3_FOUND OR VXL_FOUND))
 
 # User options
@@ -62,22 +62,22 @@ if(EIGEN3_FOUND)
   set(USE_EIGEN OFF CACHE BOOL "Use Eigen?")
 endif(EIGEN3_FOUND)
 
-if(VNL_FOUND)
-  set(USE_VNL OFF CACHE BOOL "Use VNL?")
-endif(VNL_FOUND)
+if(VXL_FOUND)
+  set(USE_VXL OFF CACHE BOOL "Use VXL?")
+endif(VXL_FOUND)
 
-if(USE_VNL AND USE_EIGEN)
-  message(FATAL_ERROR "You must choose either Eigen or VNL!")
-endif(USE_VNL AND USE_EIGEN)
+if(USE_VXL AND USE_EIGEN)
+  message(FATAL_ERROR "You have chosen both Eigen and VXL! You must choose exactly one.")
+endif(USE_VXL AND USE_EIGEN)
 
-if(NOT(USE_VNL OR USE_EIGEN))
-  message(FATAL_ERROR "You must choose either Eigen or VNL!")
-endif(NOT(USE_VNL OR USE_EIGEN))
+if(NOT(USE_VXL OR USE_EIGEN))
+  message(FATAL_ERROR "You have selected neither Eigen or VXL! You must choose one.")
+endif(NOT(USE_VXL OR USE_EIGEN))
 
-if(USE_VNL)
+if(USE_VXL)
   set(Libraries "vnl")
-  list(APPEND DEFINITIONS "USE_VNL")
-endif(USE_VNL)
+  list(APPEND DEFINITIONS "USE_VXL")
+endif(USE_VXL)
 
 if(USE_EIGEN)
   set(Libraries "umfpack")
@@ -85,21 +85,26 @@ if(USE_EIGEN)
 endif(USE_EIGEN)
 
 # Setup executables
-ADD_EXECUTABLE(PoissonEditing PoissonEditingExample.cpp Helpers.cpp IndexComparison.cpp)
-TARGET_LINK_LIBRARIES(PoissonEditing ${ITK_LIBRARIES} ${Libraries})
-set_target_properties(PoissonEditing PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
-INSTALL( TARGETS PoissonEditing
-  RUNTIME DESTINATION ${INSTALL_DIR} )
-message("EXECUTABLE_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH}")
-#ADD_TEST(NAME PoissonEditingTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonEditing ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png editing.png)
-ADD_TEST(PoissonEditingTest ${EXECUTABLE_OUTPUT_PATH}/PoissonEditing ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png PoissonEditingOutput.mhd)
 
-# ADD_EXECUTABLE(PoissonCloning PoissonCloningExample.cpp Helpers.cpp IndexComparison.cpp)
-# TARGET_LINK_LIBRARIES(PoissonCloning ${ITK_LIBRARIES} ${Libraries})
-# set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
-# INSTALL( TARGETS PoissonCloning
-#   RUNTIME DESTINATION ${INSTALL_DIR} )
-# ADD_TEST(NAME PoissonCloningTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonCloning ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Target.png cloning.png)
+SET(PoissonEditing ON CACHE BOOL "Build the PoissonEditing example")
+if(PoissonEditing)
+  ADD_EXECUTABLE(PoissonEditing PoissonEditingExample.cpp Helpers.cpp IndexComparison.cpp)
+  TARGET_LINK_LIBRARIES(PoissonEditing ${ITK_LIBRARIES} ${Libraries})
+  set_target_properties(PoissonEditing PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
+  INSTALL( TARGETS PoissonEditing RUNTIME DESTINATION ${INSTALL_DIR} )
+  message("EXECUTABLE_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH}")
+  #ADD_TEST(NAME PoissonEditingTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonEditing ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png editing.png)
+  ADD_TEST(PoissonEditingTest ${EXECUTABLE_OUTPUT_PATH}/PoissonEditing ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png PoissonEditingOutput.mhd)
+endif()
+
+SET(PoissonCloning ON CACHE BOOL "Build the PoissonCloning example")
+if(PoissonCloning)
+  ADD_EXECUTABLE(PoissonCloning PoissonCloningExample.cpp Helpers.cpp IndexComparison.cpp)
+  TARGET_LINK_LIBRARIES(PoissonCloning ${ITK_LIBRARIES} ${Libraries})
+  set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
+  INSTALL( TARGETS PoissonCloning RUNTIME DESTINATION ${INSTALL_DIR} )
+  ADD_TEST(NAME PoissonCloningTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonCloning ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Target.png cloning.png)
+endif()
 
 # 
 # ADD_EXECUTABLE(DerivativesToImage DerivativesToImage.cxx Helpers.cpp IndexComparison.cpp)
@@ -107,10 +112,10 @@ ADD_TEST(PoissonEditingTest ${EXECUTABLE_OUTPUT_PATH}/PoissonEditing ${CMAKE_SOU
 # set_target_properties(DerivativesToImage PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
 # INSTALL( TARGETS DerivativesToImage
 #   RUNTIME DESTINATION ${INSTALL_DIR} )
-
-ADD_EXECUTABLE(LaplacianToImage LaplacianToImage.cxx Helpers.cpp IndexComparison.cpp)
-TARGET_LINK_LIBRARIES(LaplacianToImage ${ITK_LIBRARIES} ${Libraries})
-set_target_properties(LaplacianToImage PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
-INSTALL( TARGETS LaplacianToImage
-  RUNTIME DESTINATION ${INSTALL_DIR} )
-ADD_TEST(LaplacianToImageTest ${EXECUTABLE_OUTPUT_PATH}/LaplacianToImage ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Laplacian.mhd LaplacianToImageOutput.mhd)
+# 
+# ADD_EXECUTABLE(LaplacianToImage LaplacianToImage.cxx Helpers.cpp IndexComparison.cpp)
+# TARGET_LINK_LIBRARIES(LaplacianToImage ${ITK_LIBRARIES} ${Libraries})
+# set_target_properties(LaplacianToImage PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
+# INSTALL( TARGETS LaplacianToImage
+#   RUNTIME DESTINATION ${INSTALL_DIR} )
+# ADD_TEST(LaplacianToImageTest ${EXECUTABLE_OUTPUT_PATH}/LaplacianToImage ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Laplacian.mhd LaplacianToImageOutput.mhd)

@@ -98,12 +98,14 @@ int main(int argc, char* argv[])
   std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
   // Get and write output
   //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), outputFilename);
-  
+  /*
   typedef  itk::ImageFileWriter< FloatVectorImageType > WriterType;
   WriterType::Pointer writer = WriterType::New();
   writer->SetFileName(outputFilename);
   writer->SetInput(reassembler->GetOutput());
   writer->Update();
-
+  */
+  Helpers::WriteVectorImageAsPNG<FloatVectorImageType>(reassembler->GetOutput(), outputFilename);
+  
   return EXIT_SUCCESS;
 }

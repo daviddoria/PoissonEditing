@@ -26,12 +26,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // More information can be found here:
 // http://en.wikipedia.org/wiki/Discrete_Poisson_equation
 // http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
+
+// Custom
 #include "Types.h"
 #include "PoissonEditing.h"
 
+// ITK
 #include "itkImage.h"
 #include "itkCovariantVector.h"
 
+// STL
 #include <vector>
 
 template <typename TImage>
