@@ -4,18 +4,9 @@
 #include "itkImageRegionConstIterator.h"
 #include "itkLaplacianOperator.h"
 
-#if defined USE_VXL
-  #include <vnl/vnl_vector.h>
-  #include <vnl/vnl_sparse_matrix.h>
-  #include <vnl/algo/vnl_sparse_lu.h>
-#elif defined USE_EIGEN
-  #include <Eigen/Sparse>
-  #include <Eigen/UmfPackSupport>
-  #include <Eigen/SparseExtra>
-#else
-  std::cerr << "Not using Eigen or VXL - problem!." << std::endl;
-  exit(-1);
-#endif
+#include <Eigen/Sparse>
+#include <Eigen/UmfPackSupport>
+#include <Eigen/SparseExtra>
 
 template <typename TImage>
 PoissonEditing<TImage>::PoissonEditing()
@@ -109,21 +100,11 @@ void PoissonEditing<TImage>::FillMaskedRegion()
   radius.Fill(1);
   laplacianOperator.CreateToRadius(radius);
 
-#if defined USE_VXL
-  std::cout << "Using VXL." << std::endl;
-  // Create the sparse matrix
-  vnl_sparse_matrix<double> A(numberOfVariables, numberOfVariables);
-  vnl_vector<double> b(numberOfVariables);
 
-#elif defined USE_EIGEN
   std::cout << "Using Eigen." << std::endl;
   // Create the sparse matrix
   Eigen::SparseMatrix<double> A(numberOfVariables, numberOfVariables);
   Eigen::VectorXd b(numberOfVariables);
-#else
-  std::cerr << "Not using Eigen or VXL - problem!." << std::endl;
-  exit(-1);
-#endif
   
   // Create the reverse mapping from pixel to variable id
   std::map <itk::Index<2>, unsigned int, IndexComparison> PixelToIdMap;
@@ -158,12 +139,7 @@ void PoissonEditing<TImage>::FillMaskedRegion()
       if (this->Mask->GetPixel(currentPixel))
         {
         // If the pixel is masked, add it as part of the unknown matrix
-#ifdef USE_VXL
-        A(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
-#endif
-#ifdef USE_EIGEN
         A.insert(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
-#endif
         }
       else
         {
@@ -171,32 +147,9 @@ void PoissonEditing<TImage>::FillMaskedRegion()
         bvalue -= this->TargetImage->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
         }
       }
-#ifdef USE_VXL
     b[variableId] = bvalue;
-#endif
-#ifdef USE_EIGEN
-    b[variableId] = bvalue;
-#endif
   }// end for variables
 
-#if defined USE_VXL
-  // Solve the system
-  std::cout << "Solver::solve: Solving: " << std::endl
-          << "Image dimensions: " << width << "x" << height << std::endl
-          << " with " << numberOfVariables << " unknowns" << std::endl;
-
-  vnl_vector<double> x(b.size());
-
-  vnl_sparse_lu linear_solver(A, vnl_sparse_lu::estimate_condition);
-
-  linear_solver.solve_transpose(b,&x);
-
-  // Convert solution vector back to image
-  for(unsigned int i = 0; i < variables.size(); i++)
-    {
-    this->Output->SetPixel(variables[i], x[i]);
-    }
-#elif defined USE_EIGEN
   // Solve the system with Eigen
   Eigen::VectorXd x(numberOfVariables);
   Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
@@ -216,9 +169,6 @@ void PoissonEditing<TImage>::FillMaskedRegion()
     {
     this->Output->SetPixel(variables[i], x(i));
     }
-#endif
-  
-  
 } // end FillMaskedRegion
 
 template <typename TImage>
