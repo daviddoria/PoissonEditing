@@ -14,16 +14,22 @@
    <string>Poisson Editing</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QGraphicsView" name="graphicsView">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>90</y>
-      <width>256</width>
-      <height>192</height>
-     </rect>
-    </property>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="1">
+     <widget class="QGraphicsView" name="graphicsView"/>
+    </item>
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QPushButton" name="btnFill">
+        <property name="text">
+         <string>Fill</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -39,6 +45,7 @@
      <string>File</string>
     </property>
     <addaction name="actionOpenImage"/>
+    <addaction name="actionSaveResult"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -46,6 +53,11 @@
   <action name="actionOpenImage">
    <property name="text">
     <string>Open Image</string>
+   </property>
+  </action>
+  <action name="actionSaveResult">
+   <property name="text">
+    <string>Save Result</string>
    </property>
   </action>
  </widget>
