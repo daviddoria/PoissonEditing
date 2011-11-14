@@ -24,6 +24,9 @@
 // ITK
 #include "itkVectorImage.h"
 
+// Custom
+#include "Mask.h"
+
 // Qt
 #include <QMainWindow>
 
@@ -44,6 +47,8 @@ public slots:
 protected:
   typedef itk::VectorImage<float,2> ImageType;
   ImageType::Pointer Result;
+  ImageType::Pointer Image;
+  Mask::Pointer MaskImage;
   
 };
 

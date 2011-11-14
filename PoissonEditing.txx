@@ -20,7 +20,7 @@ PoissonEditing<TImage>::PoissonEditing()
   this->TargetImage = TImage::New();
   this->GuidanceField = FloatScalarImageType::New();
   this->Output = TImage::New();
-  this->Mask = UnsignedCharScalarImageType::New();
+  this->MaskImage = Mask::New();
   
   this->MaskValueToFill = 0;
 }
@@ -28,7 +28,7 @@ PoissonEditing<TImage>::PoissonEditing()
 template <typename TImage>
 bool PoissonEditing<TImage>::IsPixelToFill(itk::Index<2> index)
 {
-  if(this->Mask->GetPixel(index) == this->MaskValueToFill)
+  if(this->MaskImage->GetPixel(index) == this->MaskValueToFill)
     {
     return true;
     }
@@ -52,10 +52,10 @@ void PoissonEditing<TImage>::SetGuidanceField(FloatScalarImageType::Pointer fiel
 }
 
 template <typename TImage>
-void PoissonEditing<TImage>::SetMask(UnsignedCharScalarImageType::Pointer mask)
+void PoissonEditing<TImage>::SetMask(Mask::Pointer mask)
 {
   //this->Mask->Graft(mask);
-  Helpers::DeepCopy<UnsignedCharScalarImageType>(mask, this->Mask);
+  Helpers::DeepCopy<Mask>(mask, this->MaskImage);
 }
 
 template <typename TImage>
@@ -81,8 +81,8 @@ void PoissonEditing<TImage>::FillMaskedRegion()
   Helpers::DeepCopy<TImage>(this->TargetImage, this->Output);
   //Helpers::WriteImage<TImage>(this->Output, "InitializedOutput.mha");
   
-  unsigned int width = this->Mask->GetLargestPossibleRegion().GetSize()[0];
-  unsigned int height = this->Mask->GetLargestPossibleRegion().GetSize()[1];
+  unsigned int width = this->MaskImage->GetLargestPossibleRegion().GetSize()[0];
+  unsigned int height = this->MaskImage->GetLargestPossibleRegion().GetSize()[1];
 
   // This stores the forward mapping from variable id to pixel location
   std::vector<itk::Index<2> > variables;
@@ -147,7 +147,7 @@ void PoissonEditing<TImage>::FillMaskedRegion()
 
       itk::Index<2> currentPixel = originalPixel + laplacianOperator.GetOffset(offset);
 
-      if(!this->Mask->GetLargestPossibleRegion().IsInside(currentPixel))
+      if(!this->MaskImage->GetLargestPossibleRegion().IsInside(currentPixel))
         {
         continue; // this pixel is on the border, just ignore it.
         }
@@ -194,7 +194,7 @@ typename TImage::Pointer PoissonEditing<TImage>::GetOutput()
 }
 
 template <typename TImage>
-void PoissonEditing<TImage>::SetMaskValueToFill(UnsignedCharScalarImageType::PixelType value)
+void PoissonEditing<TImage>::SetMaskValueToFill(Mask::PixelType value)
 {
   this->MaskValueToFill = value;
 }
@@ -214,7 +214,7 @@ bool PoissonEditing<TImage>::VerifyMask()
     }
 
   // Verify that no border pixels are masked
-  itk::ImageRegionConstIterator<UnsignedCharScalarImageType> maskIterator(this->Mask, this->Mask->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<Mask> maskIterator(this->Mask, this->Mask->GetLargestPossibleRegion());
 
   while(!maskIterator.IsAtEnd())
     {
@@ -236,7 +236,7 @@ bool PoissonEditing<TImage>::VerifyMask()
 }
 
 template <typename TImage>
-void FillAllChannels(typename TImage::Pointer image, UnsignedCharScalarImageType::Pointer mask, typename TImage::Pointer output)
+void FillAllChannels(typename TImage::Pointer image, Mask::Pointer mask, typename TImage::Pointer output)
 {
   typedef itk::Image<typename TImage::InternalPixelType> ScalarImageType;
   typedef itk::VectorIndexSelectionCastImageFilter<TImage, ScalarImageType> DisassemblerType;

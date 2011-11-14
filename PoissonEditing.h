@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // http://en.wikipedia.org/wiki/Discrete_Poisson_equation
 // http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
 #include "Types.h"
+#include "Mask.h"
 
 #include "itkImage.h"
 #include "itkCovariantVector.h"
@@ -42,9 +43,9 @@ class PoissonEditing
 {
 public:
   PoissonEditing();
-
+  typedef itk::Image<float, 2> FloatScalarImageType;
   void SetImage(typename TImage::Pointer image);
-  void SetMask(UnsignedCharScalarImageType::Pointer mask);
+  void SetMask(Mask::Pointer mask);
   void SetGuidanceField(FloatScalarImageType::Pointer field);
   void SetGuidanceFieldToZero();
 
@@ -52,7 +53,7 @@ public:
 
   typename TImage::Pointer GetOutput();
 
-  void SetMaskValueToFill(UnsignedCharScalarImageType::PixelType);
+  void SetMaskValueToFill(Mask::PixelType);
   
 protected:
 
@@ -71,16 +72,16 @@ protected:
   FloatScalarImageType::Pointer GuidanceField;
   
   // The image specifying which pixels to fill.
-  UnsignedCharScalarImageType::Pointer Mask;
+  Mask::Pointer MaskImage;
   
   // The value of pixels in the mask image that indicate a pixel that should be filled.
-  UnsignedCharScalarImageType::PixelType MaskValueToFill;
+  Mask::PixelType MaskValueToFill;
   
   bool IsPixelToFill(itk::Index<2>);
 };
 
 template <typename TImage>
-void FillAllChannels(typename TImage::Pointer image, UnsignedCharScalarImageType::Pointer mask, typename TImage::Pointer output);
+void FillAllChannels(typename TImage::Pointer image, Mask::Pointer mask, typename TImage::Pointer output);
 
 #include "PoissonEditing.txx"
 

@@ -59,7 +59,8 @@ protected:
   QGraphicsScene* ImageGraphicsScene;
   QGraphicsScene* MaskGraphicsScene;
 
-  FloatVectorImageType::Pointer Image;
+  typedef itk::VectorImage<float, 2> ImageType;
+  ImageType::Pointer Image;
   Mask::Pointer ImageMask;
 };
 

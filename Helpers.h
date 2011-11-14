@@ -15,13 +15,6 @@ template<typename TImage>
 void DeepCopyVectorImage(typename TImage::Pointer input, typename TImage::Pointer output);
 
 template<typename TImage>
-void ExtractComponent(typename TImage::Pointer input, unsigned int component, FloatScalarImageType::Pointer output);
-//void ExtractComponent(typename TImage::Pointer input, unsigned int component, typename itk::Image<typename TImage::PixelType, 2>::Pointer output);
-
-template<typename TImage>
-void SetComponent(typename TImage::Pointer input, unsigned int component, FloatScalarImageType::Pointer componentImage);
-
-template<typename TImage>
 void WriteImage(typename TImage::Pointer input, std::string filename);
 
 template<typename TImage>

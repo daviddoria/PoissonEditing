@@ -71,7 +71,7 @@ FileSelector::FileSelector()
 void FileSelector::LoadAndDisplayImage()
 {
   this->ImageFileName = this->FileSelectionWidgetImage->currentIndex().data(QFileSystemModel::FilePathRole).toString().toStdString();
-
+  typedef itk::VectorImage<float, 2> FloatVectorImageType;
   typedef itk::ImageFileReader<FloatVectorImageType> ReaderType;
   ReaderType::Pointer reader = ReaderType::New();
   reader->SetFileName(this->ImageFileName);

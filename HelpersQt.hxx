@@ -68,15 +68,19 @@ QImage GetQImageColor(const typename TImage::Pointer image, const itk::ImageRegi
 template <typename TImage>
 QImage GetQImageMagnitude(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
 {
+  typedef itk::Image<typename TImage::InternalPixelType> ScalarImageType;
+  
   QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_RGB888);
 
-  typedef itk::VectorMagnitudeImageFilter<TImage, FloatScalarImageType>  VectorMagnitudeFilterType;
+  typedef itk::VectorMagnitudeImageFilter<TImage, ScalarImageType>  VectorMagnitudeFilterType;
   typename VectorMagnitudeFilterType::Pointer magnitudeFilter = VectorMagnitudeFilterType::New();
   magnitudeFilter->SetInput(image);
   magnitudeFilter->Update();
 
-  typedef itk::RescaleIntensityImageFilter<FloatScalarImageType, UnsignedCharScalarImageType> RescaleFilterType;
-  RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
+  typedef itk::VectorImage<unsigned char, 2> UnsignedCharVectorImageType;
+  typedef itk::Image<unsigned char, 2> UnsignedCharScalarImageType;
+  typedef itk::RescaleIntensityImageFilter<ScalarImageType, UnsignedCharScalarImageType> RescaleFilterType;
+  typename RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
   rescaleFilter->SetOutputMinimum(0);
   rescaleFilter->SetOutputMaximum(255);
   rescaleFilter->SetInput( magnitudeFilter->GetOutput() );

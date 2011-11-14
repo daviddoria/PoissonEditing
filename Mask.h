@@ -100,8 +100,6 @@ public:
 
   void DeepCopyFrom(const Mask::Pointer inputMask);
 
-  void FindBoundary(UnsignedCharScalarImageType::Pointer boundary);
-
   template<typename TImage>
   void ApplyToImage(const typename TImage::Pointer image, const QColor& color);
 

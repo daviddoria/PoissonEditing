@@ -21,6 +21,7 @@
 // Custom
 #include "FileSelector.h"
 #include "HelpersOutput.h"
+#include "Mask.h"
 #include "PoissonEditing.h"
 
 // ITK
@@ -31,18 +32,19 @@
 #include <QIcon>
 #include <QFileDialog>
 
-
 // Default constructor
 PoissonEditingGUI::PoissonEditingGUI()
 {
   this->setupUi(this);
   
+  this->Image = ImageType::New();
+  this->MaskImage = Mask::New();
   this->Result = ImageType::New();
 };
 
 void PoissonEditingGUI::on_btnFill_clicked()
 {
-  
+  FillAllChannels<ImageType>(this->Image, this->MaskImage, this->Result);
 }
 
 void PoissonEditingGUI::on_actionSaveResult_activated()
@@ -56,7 +58,7 @@ void PoissonEditingGUI::on_actionSaveResult_activated()
     return;
     }
 
-  HelpersOutput::WriteImage<FloatVectorImageType>(this->Result, fileName.toStdString());
+  HelpersOutput::WriteImage<ImageType>(this->Result, fileName.toStdString());
 
   this->statusBar()->showMessage("Saved result.");
 }
@@ -70,18 +72,19 @@ void PoissonEditingGUI::on_actionOpenImage_activated()
   int result = fileSelector->result();
   if(result) // The user clicked 'ok'
     {
-    typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
+    typedef itk::ImageFileReader<ImageType> ImageReaderType;
     ImageReaderType::Pointer imageReader = ImageReaderType::New();
     imageReader->SetFileName(fileSelector->GetImageFileName());
     imageReader->Update();
 
-    typedef itk::ImageFileReader<UnsignedCharScalarImageType> MaskReaderType;
+    Helpers::DeepCopy<ImageType>(imageReader->GetOutput(), this->Image);
+ 
+    typedef itk::ImageFileReader<Mask> MaskReaderType;
     MaskReaderType::Pointer maskReader = MaskReaderType::New();
     maskReader->SetFileName(fileSelector->GetMaskFileName());
     maskReader->Update();
     
-    FillAllChannels<FloatVectorImageType>(imageReader->GetOutput(), maskReader->GetOutput(), this->Result);
-    
+    Helpers::DeepCopy<Mask>(maskReader->GetOutput(), this->MaskImage);    
     }
   else
     {
