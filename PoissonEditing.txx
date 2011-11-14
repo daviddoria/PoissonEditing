@@ -16,6 +16,19 @@ PoissonEditing<TImage>::PoissonEditing()
   this->GuidanceField = FloatScalarImageType::New();
   this->Output = TImage::New();
   this->Mask = UnsignedCharScalarImageType::New();
+  
+  this->MaskValueToFill = 0;
+}
+
+template <typename TImage>
+bool PoissonEditing<TImage>::IsPixelToFill(itk::Index<2> index)
+{
+  if(this->Mask->GetPixel(index) == this->MaskValueToFill)
+    {
+    return true;
+    }
+
+  return false;
 }
 
 template <typename TImage>
@@ -79,7 +92,7 @@ void PoissonEditing<TImage>::FillMaskedRegion()
       pixelIndex[0] = x;
       pixelIndex[1] = y;
 
-      if(this->Mask->GetPixel(pixelIndex)) // The mask is non-zero representing that we want to fill this pixel
+      if(IsPixelToFill(pixelIndex))
         {
         variables.push_back(pixelIndex);
         }
@@ -100,8 +113,6 @@ void PoissonEditing<TImage>::FillMaskedRegion()
   radius.Fill(1);
   laplacianOperator.CreateToRadius(radius);
 
-
-  std::cout << "Using Eigen." << std::endl;
   // Create the sparse matrix
   Eigen::SparseMatrix<double> A(numberOfVariables, numberOfVariables);
   Eigen::VectorXd b(numberOfVariables);
@@ -136,7 +147,7 @@ void PoissonEditing<TImage>::FillMaskedRegion()
         continue; // this pixel is on the border, just ignore it.
         }
 
-      if (this->Mask->GetPixel(currentPixel))
+      if(IsPixelToFill(currentPixel))
         {
         // If the pixel is masked, add it as part of the unknown matrix
         A.insert(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
@@ -175,6 +186,12 @@ template <typename TImage>
 typename TImage::Pointer PoissonEditing<TImage>::GetOutput()
 {
   return this->Output;
+}
+
+template <typename TImage>
+void PoissonEditing<TImage>::SetMaskValueToFill(UnsignedCharScalarImageType::PixelType value)
+{
+  this->MaskValueToFill = value;
 }
 
 template <typename TImage>

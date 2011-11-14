@@ -52,15 +52,31 @@ public:
 
   typename TImage::Pointer GetOutput();
 
+  void SetMaskValueToFill(UnsignedCharScalarImageType::PixelType);
+  
 protected:
 
+  // Checks that the mask is the same size as the image and that there are no pixels to be filled on the boundary of the image.
   bool VerifyMask();
 
+  // The image to operate on.
   typename TImage::Pointer SourceImage;
+  
+  // The image to paste pixels into. This is identical to SourceImage in the Editing (vs Cloning) case.
   typename TImage::Pointer TargetImage;
+  
+  // The result of the algorithm.
   typename TImage::Pointer Output;
+  
   FloatScalarImageType::Pointer GuidanceField;
+  
+  // The image specifying which pixels to fill.
   UnsignedCharScalarImageType::Pointer Mask;
+  
+  // The value of pixels in the mask image that indicate a pixel that should be filled.
+  UnsignedCharScalarImageType::PixelType MaskValueToFill;
+  
+  bool IsPixelToFill(itk::Index<2>);
 };
 
 #include "PoissonEditing.txx"
