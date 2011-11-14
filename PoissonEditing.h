@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 /* This class operates on a single channel image. If you would like to use this technique on a multi-channel image,
- * you must disassemble the image, use the technique on each channel separately, and then recombine the outputs.
+ * use the free function FillAllChannels.
  */
 
 template <typename TImage>
@@ -78,6 +78,9 @@ protected:
   
   bool IsPixelToFill(itk::Index<2>);
 };
+
+template <typename TImage>
+void FillAllChannels(typename TImage::Pointer image, UnsignedCharScalarImageType::Pointer mask, typename TImage::Pointer output);
 
 #include "PoissonEditing.txx"
 
