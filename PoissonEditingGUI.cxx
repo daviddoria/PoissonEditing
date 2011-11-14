@@ -20,25 +20,24 @@
 
 // Custom
 #include "FileSelector.h"
+#include "HelpersOutput.h"
+#include "PoissonEditing.h"
 
 // ITK
-#include "itkCastImageFilter.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
-#include "itkMaskImageFilter.h"
-#include "itkRegionOfInterestImageFilter.h"
-#include "itkVector.h"
 
 // Qt
-#include <QFileDialog>
 #include <QIcon>
-#include <QTextEdit>
+#include <QFileDialog>
 
 
 // Default constructor
 PoissonEditingGUI::PoissonEditingGUI()
 {
   this->setupUi(this);
+  
+  this->Result = ImageType::New();
 };
 
 void PoissonEditingGUI::on_btnFill_clicked()
@@ -48,19 +47,18 @@ void PoissonEditingGUI::on_btnFill_clicked()
 
 void PoissonEditingGUI::on_actionSaveResult_activated()
 {
-//   // Get a filename to save
-//   QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
-// 
-//   DebugMessage<std::string>("Got filename: ", fileName.toStdString());
-//   if(fileName.toStdString().empty())
-//     {
-//     std::cout << "Filename was empty." << std::endl;
-//     return;
-//     }
-// 
-//   HelpersOutput::WriteImage<FloatVectorImageType>(this->Inpainting.GetCurrentOutputImage(), fileName.toStdString());
-// 
-//   this->statusBar()->showMessage("Saved result.");
+  // Get a filename to save
+  QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
+
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  HelpersOutput::WriteImage<FloatVectorImageType>(this->Result, fileName.toStdString());
+
+  this->statusBar()->showMessage("Saved result.");
 }
 
 
@@ -72,9 +70,18 @@ void PoissonEditingGUI::on_actionOpenImage_activated()
   int result = fileSelector->result();
   if(result) // The user clicked 'ok'
     {
-    std::cout << "User clicked ok." << std::endl;
-    //fileSelector->GetImageFileName());
-    //fileSelector->GetMaskFileName(), fileSelector->IsMaskInverted());
+    typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
+    ImageReaderType::Pointer imageReader = ImageReaderType::New();
+    imageReader->SetFileName(fileSelector->GetImageFileName());
+    imageReader->Update();
+
+    typedef itk::ImageFileReader<UnsignedCharScalarImageType> MaskReaderType;
+    MaskReaderType::Pointer maskReader = MaskReaderType::New();
+    maskReader->SetFileName(fileSelector->GetMaskFileName());
+    maskReader->Update();
+    
+    FillAllChannels<FloatVectorImageType>(imageReader->GetOutput(), maskReader->GetOutput(), this->Result);
+    
     }
   else
     {
@@ -82,43 +89,3 @@ void PoissonEditingGUI::on_actionOpenImage_activated()
     // The user clicked 'cancel' or closed the dialog, do nothing.
     }
 }
-
-// void Form::OpenImage(const std::string& fileName)
-// {
-//   //std::cout << "OpenImage()" << std::endl;
-//   /*
-//   // The non static version of the above is something like this:
-//   QFileDialog myDialog;
-//   QDir fileFilter("Image Files (*.jpg *.jpeg *.bmp *.png *.mha);;PNG Files (*.png)");
-//   myDialog.setFilter(fileFilter);
-//   QString fileName = myDialog.exec();
-//   */
-// 
-//   typedef itk::ImageFileReader<FloatVectorImageType> ReaderType;
-//   ReaderType::Pointer reader = ReaderType::New();
-//   reader->SetFileName(fileName);
-//   reader->Update();
-// 
-//   //this->Image = reader->GetOutput();
-//   
-//   Helpers::DeepCopy<FloatVectorImageType>(reader->GetOutput(), this->UserImage);
-//   
-//   //std::cout << "UserImage region: " << this->UserImage->GetLargestPossibleRegion() << std::endl;
-// 
-//   Helpers::ITKVectorImagetoVTKImage(this->UserImage, this->ImageLayer.ImageData);
-// 
-//   this->Renderer->ResetCamera();
-//   this->qvtkWidget->GetRenderWindow()->Render();
-// 
-//   this->statusBar()->showMessage("Opened image.");
-//   actionOpenMask->setEnabled(true);
-// 
-//   this->AllForwardLookOutlinesLayer.ImageData->SetDimensions(this->UserImage->GetLargestPossibleRegion().GetSize()[0],
-//                                                              this->UserImage->GetLargestPossibleRegion().GetSize()[1], 1);
-//   this->AllForwardLookOutlinesLayer.ImageData->AllocateScalars();
-//   this->AllSourcePatchOutlinesLayer.ImageData->SetDimensions(this->UserImage->GetLargestPossibleRegion().GetSize()[0],
-//                                                              this->UserImage->GetLargestPossibleRegion().GetSize()[1], 1);
-//   this->AllSourcePatchOutlinesLayer.ImageData->AllocateScalars();
-// 
-// }
-

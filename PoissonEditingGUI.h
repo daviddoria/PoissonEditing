@@ -22,7 +22,7 @@
 #include "ui_PoissonEditingGUI.h"
 
 // ITK
-#include "itkImage.h"
+#include "itkVectorImage.h"
 
 // Qt
 #include <QMainWindow>
@@ -42,6 +42,8 @@ public slots:
   void on_btnFill_clicked();
   
 protected:
+  typedef itk::VectorImage<float,2> ImageType;
+  ImageType::Pointer Result;
   
 };
 

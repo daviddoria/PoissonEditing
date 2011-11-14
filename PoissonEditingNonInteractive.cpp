@@ -23,9 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
-#include "itkCastImageFilter.h"
-#include "itkVectorIndexSelectionCastImageFilter.h"
-#include "itkImageToVectorImageFilter.h"
 
 int main(int argc, char* argv[])
 {
