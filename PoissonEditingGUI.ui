@@ -27,6 +27,36 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="chkShowInput">
+        <property name="text">
+         <string>Input</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkShowMask">
+        <property name="text">
+         <string>Mask</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkShowOutput">
+        <property name="text">
+         <string>Output</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
    </layout>

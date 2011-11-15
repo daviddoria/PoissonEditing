@@ -79,7 +79,7 @@ void FileSelector::LoadAndDisplayImage()
 
   this->Image = reader->GetOutput();
   
-  QImage image = HelpersQt::GetQImageColor<FloatVectorImageType>(this->Image, this->Image->GetLargestPossibleRegion());
+  QImage image = HelpersQt::GetQImageRGB<FloatVectorImageType>(this->Image, this->Image->GetLargestPossibleRegion());
   image = HelpersQt::FitToGraphicsView(image, this->graphicsViewImage);
   
   this->ImageGraphicsScene->clear();

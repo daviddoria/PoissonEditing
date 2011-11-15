@@ -29,6 +29,7 @@
 
 // Qt
 #include <QMainWindow>
+class QGraphicsPixmapItem;
 
 class PoissonEditingGUI : public QMainWindow, public Ui::PoissonEditingGUI
 {
@@ -44,12 +45,21 @@ public slots:
   
   void on_btnFill_clicked();
   
+  void on_chkShowInput_clicked();
+  void on_chkShowOutput_clicked();
+  void on_chkShowMask_clicked();
+  
 protected:
   typedef itk::VectorImage<float,2> ImageType;
   ImageType::Pointer Result;
   ImageType::Pointer Image;
   Mask::Pointer MaskImage;
+
+  QGraphicsPixmapItem* ImagePixmapItem;
+  QGraphicsPixmapItem* MaskImagePixmapItem;
+  QGraphicsPixmapItem* ResultPixmapItem;
   
+  QGraphicsScene* Scene;
 };
 
 #endif // PoissonEditingGUI_H

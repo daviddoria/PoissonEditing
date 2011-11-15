@@ -24,26 +24,6 @@
 
 namespace HelpersQt
 {
-  
-bool GetColumnIdByHeader(const QTableWidget* table, const std::string& header, int& columnId)
-{
-  //std::cout << "There are " << static_cast<unsigned int>(topPatchesTableWidget->columnCount()) << " columns" << std::endl;
-  //std::cout << "Looking for column with header = " << header << std::endl;
-  
-  for(unsigned int i = 0; i < static_cast<unsigned int>(table->columnCount()); ++i)
-    {
-    if(table->horizontalHeaderItem(i)->text().toStdString().compare(header) == 0)
-      {
-      columnId = i;
-      return true;
-      }
-    }
-    
-  std::cerr << "Requested invalid column!" << std::endl;
-
-  return false;
-}
-
 
 void QColorToUCharColor(const QColor& color, unsigned char outputColor[3])
 {
@@ -51,7 +31,6 @@ void QColorToUCharColor(const QColor& color, unsigned char outputColor[3])
   outputColor[1] = color.green();
   outputColor[2] = color.blue();
 }
-
 
 QImage FitToGraphicsView(const QImage qimage, const QGraphicsView* gfx)
 {
@@ -66,6 +45,53 @@ QImage FitToGraphicsView(const QImage qimage, const QGraphicsView* gfx)
     {
     return qimage.scaledToWidth(gfx->width() - fudge);
     }
+}
+
+
+QImage GetQMaskImage(const Mask::Pointer mask)
+{
+  return GetQMaskImage(mask, mask->GetLargestPossibleRegion()); 
+}
+
+QImage GetQMaskImage(const Mask::Pointer mask, const itk::ImageRegion<2>& region)
+{
+  QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_ARGB32);
+
+  typedef itk::RegionOfInterestImageFilter< Mask, Mask > RegionOfInterestImageFilterType;
+  typename RegionOfInterestImageFilterType::Pointer regionOfInterestImageFilter = RegionOfInterestImageFilterType::New();
+  regionOfInterestImageFilter->SetRegionOfInterest(region);
+  regionOfInterestImageFilter->SetInput(mask);
+  regionOfInterestImageFilter->Update();
+  
+  itk::ImageRegionIterator<Mask> imageIterator(regionOfInterestImageFilter->GetOutput(), regionOfInterestImageFilter->GetOutput()->GetLargestPossibleRegion());
+  
+  while(!imageIterator.IsAtEnd())
+    {
+    typename Mask::PixelType pixel = imageIterator.Get();
+
+    itk::Index<2> index = imageIterator.GetIndex();
+    // In a binary mask, R, G, and B are set to the same value.
+    
+    int r = static_cast<int>(pixel);
+    int g = static_cast<int>(pixel);
+    int b = static_cast<int>(pixel);
+  
+    unsigned int alpha = 0;
+    //if(mask->IsValid(index))
+    if(mask->IsHole(index))
+      {
+      alpha = 255; // opaque
+      }
+
+    QColor pixelColor(r,g,b,alpha);
+
+    qimage.setPixel(index[0], index[1], pixelColor.rgba());
+
+    ++imageIterator;
+    }
+  
+  //return qimage; // The actual image region
+  return qimage.mirrored(false, true); // The flipped image region
 }
 
 } // end namespace

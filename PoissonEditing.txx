@@ -16,32 +16,19 @@
 template <typename TImage>
 PoissonEditing<TImage>::PoissonEditing()
 {
-  this->SourceImage = TImage::New();
+  this->SourceImage = NULL;
   this->TargetImage = TImage::New();
   this->GuidanceField = FloatScalarImageType::New();
   this->Output = TImage::New();
-  this->MaskImage = Mask::New();
-  
-  this->MaskValueToFill = 0;
-}
-
-template <typename TImage>
-bool PoissonEditing<TImage>::IsPixelToFill(itk::Index<2> index)
-{
-  if(this->MaskImage->GetPixel(index) == this->MaskValueToFill)
-    {
-    return true;
-    }
-
-  return false;
+  this->MaskImage = NULL;
 }
 
 template <typename TImage>
 void PoissonEditing<TImage>::SetImage(typename TImage::Pointer image)
 {
   // Copy the 'image' to both the source and target image. The target image can be overridden from PoissonCloning.
-  Helpers::DeepCopyVectorImage<TImage>(image, this->SourceImage);
-  Helpers::DeepCopyVectorImage<TImage>(image, this->TargetImage);
+  this->SourceImage = image;
+  Helpers::DeepCopy<TImage>(image, this->TargetImage);
 }
 
 template <typename TImage>
@@ -54,8 +41,7 @@ void PoissonEditing<TImage>::SetGuidanceField(FloatScalarImageType::Pointer fiel
 template <typename TImage>
 void PoissonEditing<TImage>::SetMask(Mask::Pointer mask)
 {
-  //this->Mask->Graft(mask);
-  Helpers::DeepCopy<Mask>(mask, this->MaskImage);
+  this->MaskImage = mask;
 }
 
 template <typename TImage>
@@ -97,7 +83,7 @@ void PoissonEditing<TImage>::FillMaskedRegion()
       pixelIndex[0] = x;
       pixelIndex[1] = y;
 
-      if(IsPixelToFill(pixelIndex))
+      if(this->MaskImage->IsHole(pixelIndex))
         {
         variables.push_back(pixelIndex);
         }
@@ -152,7 +138,7 @@ void PoissonEditing<TImage>::FillMaskedRegion()
         continue; // this pixel is on the border, just ignore it.
         }
 
-      if(IsPixelToFill(currentPixel))
+      if(this->MaskImage->IsHole(currentPixel))
         {
         // If the pixel is masked, add it as part of the unknown matrix
         A.insert(variableId, PixelToIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
@@ -194,12 +180,6 @@ typename TImage::Pointer PoissonEditing<TImage>::GetOutput()
 }
 
 template <typename TImage>
-void PoissonEditing<TImage>::SetMaskValueToFill(Mask::PixelType value)
-{
-  this->MaskValueToFill = value;
-}
-
-template <typename TImage>
 bool PoissonEditing<TImage>::VerifyMask()
 {
   // This function checks that the mask is the same size as the image and that
@@ -235,11 +215,12 @@ bool PoissonEditing<TImage>::VerifyMask()
 
 }
 
-template <typename TImage>
-void FillAllChannels(typename TImage::Pointer image, Mask::Pointer mask, typename TImage::Pointer output)
+template <typename T>
+void FillAllChannels(const typename itk::VectorImage<T, 2>::Pointer image, const Mask::Pointer mask, typename itk::VectorImage<T, 2>::Pointer output)
 {
-  typedef itk::Image<typename TImage::InternalPixelType> ScalarImageType;
-  typedef itk::VectorIndexSelectionCastImageFilter<TImage, ScalarImageType> DisassemblerType;
+  typedef itk::Image<T, 2> ScalarImageType;
+  typedef itk::VectorImage<T, 2> VectorImageType;
+  typedef itk::VectorIndexSelectionCastImageFilter<VectorImageType, ScalarImageType> DisassemblerType;
   typedef itk::ImageToVectorImageFilter<ScalarImageType> ReassemblerType;
   typename ReassemblerType::Pointer reassembler = ReassemblerType::New();
   
@@ -264,14 +245,11 @@ void FillAllChannels(typename TImage::Pointer image, Mask::Pointer mask, typenam
     poissonFilters[component].FillMaskedRegion();
 
     reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
-    
-    // Write this channel just for testing:
-
     }
   
   reassembler->Update();
   std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
   std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
   
-  Helpers::DeepCopy<TImage>(reassembler->GetOutput(), output);
+  Helpers::DeepCopyVectorImage<VectorImageType>(reassembler->GetOutput(), output);
 }

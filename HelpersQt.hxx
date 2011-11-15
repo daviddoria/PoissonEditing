@@ -26,15 +26,15 @@
 
 namespace HelpersQt
 {
- 
+
 template <typename TImage>
-QImage GetQImageColor(const typename TImage::Pointer image)
+QImage GetQImageRGB(const typename TImage::Pointer image)
 {
-  return GetQImageColor<TImage>(image, image->GetLargestPossibleRegion());
+  return GetQImageRGB<TImage>(image, image->GetLargestPossibleRegion());
 }
 
 template <typename TImage>
-QImage GetQImageColor(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
+QImage GetQImageRGB(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
 {
   QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_RGB888);
 
@@ -69,6 +69,54 @@ QImage GetQImageColor(const typename TImage::Pointer image, const itk::ImageRegi
   
   //return qimage; // The actual image region
   return qimage.mirrored(false, true); // The flipped image region
+}
+
+
+template <typename TImage>
+QImage GetQImageRGBA(const typename TImage::Pointer image)
+{
+  return GetQImageRGBA<TImage>(image, image->GetLargestPossibleRegion());
+}
+
+template <typename TImage>
+QImage GetQImageRGBA(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
+{
+  QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_ARGB32);
+
+  typedef itk::RegionOfInterestImageFilter< TImage, TImage > RegionOfInterestImageFilterType;
+  typename RegionOfInterestImageFilterType::Pointer regionOfInterestImageFilter = RegionOfInterestImageFilterType::New();
+  regionOfInterestImageFilter->SetRegionOfInterest(region);
+  regionOfInterestImageFilter->SetInput(image);
+  regionOfInterestImageFilter->Update();
+  
+  itk::ImageRegionIterator<TImage> imageIterator(regionOfInterestImageFilter->GetOutput(), regionOfInterestImageFilter->GetOutput()->GetLargestPossibleRegion());
+  
+  while(!imageIterator.IsAtEnd())
+    {
+    typename TImage::PixelType pixel = imageIterator.Get();
+
+    itk::Index<2> index = imageIterator.GetIndex();
+    int r = static_cast<int>(pixel[0]);
+    int g = static_cast<int>(pixel[1]);
+    int b = static_cast<int>(pixel[2]);
+    QColor pixelColor(r,g,b,255); // opaque
+    if(r > 255 || r < 0 || g > 255 || g < 0 || b > 255 || b < 0)
+      {
+      std::cout << "Can't set r,g,b to " << r << " " << g << " " << b << std::endl;
+      }
+    qimage.setPixel(index[0], index[1], pixelColor.rgba());
+
+    ++imageIterator;
+    }
+  
+  //return qimage; // The actual image region
+  return qimage.mirrored(false, true); // The flipped image region
+}
+
+template <typename TImage>
+QImage GetQImageMagnitude(const typename TImage::Pointer image)
+{
+  return GetQImageMagnitude<TImage>(image, image->GetLargestPossibleRegion());
 }
 
 template <typename TImage>
@@ -116,6 +164,11 @@ QImage GetQImageMagnitude(const typename TImage::Pointer image, const itk::Image
   return qimage.mirrored(false, true); // The flipped image region
 }
 
+template <typename TImage>
+QImage GetQImageScalar(const typename TImage::Pointer image)
+{
+  return GetQImageScalar<TImage>(image, image->GetLargestPossibleRegion());
+}
 
 template <typename TImage>
 QImage GetQImageScalar(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
@@ -144,6 +197,17 @@ QImage GetQImageScalar(const typename TImage::Pointer image, const itk::ImageReg
 
   //return qimage; // The actual image region
   return qimage.mirrored(false, true); // The flipped image region
+}
+
+template <typename TImage>
+QImage GetQImageMasked(const typename TImage::Pointer image, const Mask::Pointer mask)
+{
+  if(image->GetLargestPossibleRegion() != mask->GetLargestPossibleRegion())
+    {
+    std::cerr << "Image and mask size do not match!" << std::endl;
+    exit(-1);
+    }
+  return GetQImageMasked<TImage>(image, mask, image->GetLargestPossibleRegion());
 }
 
 template <typename TImage>

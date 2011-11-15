@@ -35,9 +35,6 @@ namespace HelpersQt
 // Convert a QColor to an unsigned char[3]
 void QColorToUCharColor(const QColor& color, unsigned char outputColor[3]);
 
-// Get a columns location in the table based on its header string
-bool GetColumnIdByHeader(const QTableWidget* table, const std::string& header, int& columnId);
-
 // Scale an image so that it fits in a QGraphicsView
 QImage FitToGraphicsView(const QImage qimage, const QGraphicsView* gfx);
 
@@ -45,19 +42,38 @@ QImage FitToGraphicsView(const QImage qimage, const QGraphicsView* gfx);
 ///////// Function templates (defined in HelpersQt.hxx) /////////
 ////////////////////////////////////
 template <typename TImage>
-QImage GetQImageColor(const typename TImage::Pointer image);
+QImage GetQImageRGB(const typename TImage::Pointer image);
 
 template <typename TImage>
-QImage GetQImageColor(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
+QImage GetQImageRGB(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
+
+template <typename TImage>
+QImage GetQImageRGBA(const typename TImage::Pointer image);
+
+template <typename TImage>
+QImage GetQImageRGBA(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
+
+template <typename TImage>
+QImage GetQImageMagnitude(const typename TImage::Pointer image);
 
 template <typename TImage>
 QImage GetQImageMagnitude(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
 
 template <typename TImage>
+QImage GetQImageScalar(const typename TImage::Pointer image);
+
+template <typename TImage>
 QImage GetQImageScalar(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
 
 template <typename TImage>
+QImage GetQImageMasked(const typename TImage::Pointer image, const Mask::Pointer mask);
+
+template <typename TImage>
 QImage GetQImageMasked(const typename TImage::Pointer image, const Mask::Pointer mask, const itk::ImageRegion<2>& region);
+
+QImage GetQMaskImage(const Mask::Pointer mask);
+
+QImage GetQMaskImage(const Mask::Pointer mask, const itk::ImageRegion<2>& region);
 
 } // end namespace
 

@@ -52,8 +52,6 @@ public:
   void FillMaskedRegion();
 
   typename TImage::Pointer GetOutput();
-
-  void SetMaskValueToFill(Mask::PixelType);
   
 protected:
 
@@ -73,15 +71,10 @@ protected:
   
   // The image specifying which pixels to fill.
   Mask::Pointer MaskImage;
-  
-  // The value of pixels in the mask image that indicate a pixel that should be filled.
-  Mask::PixelType MaskValueToFill;
-  
-  bool IsPixelToFill(itk::Index<2>);
 };
 
-template <typename TImage>
-void FillAllChannels(typename TImage::Pointer image, Mask::Pointer mask, typename TImage::Pointer output);
+template <typename T>
+void FillAllChannels(const typename itk::VectorImage<T, 2>::Pointer image, const Mask::Pointer mask, typename itk::VectorImage<T, 2>::Pointer output);
 
 #include "PoissonEditing.txx"
 
