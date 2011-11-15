@@ -21,6 +21,7 @@
 // Custom
 #include "FileSelector.h"
 #include "HelpersOutput.h"
+#include "HelpersQt.h"
 #include "Mask.h"
 #include "PoissonEditing.h"
 
@@ -77,14 +78,25 @@ void PoissonEditingGUI::on_actionOpenImage_activated()
     imageReader->SetFileName(fileSelector->GetImageFileName());
     imageReader->Update();
 
-    Helpers::DeepCopy<ImageType>(imageReader->GetOutput(), this->Image);
+    Helpers::DeepCopyVectorImage<ImageType>(imageReader->GetOutput(), this->Image);
  
     typedef itk::ImageFileReader<Mask> MaskReaderType;
     MaskReaderType::Pointer maskReader = MaskReaderType::New();
     maskReader->SetFileName(fileSelector->GetMaskFileName());
     maskReader->Update();
     
-    Helpers::DeepCopy<Mask>(maskReader->GetOutput(), this->MaskImage);    
+    Helpers::DeepCopy<Mask>(maskReader->GetOutput(), this->MaskImage);
+  
+    
+    QImage qimage = HelpersQt::GetQImageColor<ImageType>(this->Image);
+    
+    QPixmap qpixmap = QPixmap::fromImage(qimage);
+      
+    QGraphicsScene* scene = new QGraphicsScene;
+    scene->addPixmap(qpixmap);
+  
+    this->graphicsView->setScene(scene);
+    
     }
   else
     {

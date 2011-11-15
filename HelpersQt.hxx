@@ -26,7 +26,13 @@
 
 namespace HelpersQt
 {
-  
+ 
+template <typename TImage>
+QImage GetQImageColor(const typename TImage::Pointer image)
+{
+  return GetQImageColor<TImage>(image, image->GetLargestPossibleRegion());
+}
+
 template <typename TImage>
 QImage GetQImageColor(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
 {

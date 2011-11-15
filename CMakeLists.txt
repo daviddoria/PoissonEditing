@@ -14,11 +14,8 @@ FIND_PACKAGE(Qt4 REQUIRED)
 INCLUDE(${QT_USE_FILE})
 
 #### ITK ####
-FIND_PACKAGE(ITK)
-if(ITK_FOUND)
-  message("Found ITK")
-  INCLUDE(${ITK_USE_FILE})
-endif(ITK_FOUND)
+FIND_PACKAGE(ITK REQUIRED)
+INCLUDE(${ITK_USE_FILE})
 
 # Eigen and UMFPACK
 
@@ -40,7 +37,9 @@ FIND_PACKAGE(Umfpack REQUIRED)
 include_directories(${UMFPACK_INCLUDES})
 include_directories(${EIGEN3_INCLUDE_DIR}/unsupported/)
 
-add_library(FileSelectorLib FileSelector.cpp FileSelectionWidget.cpp)
+QT4_WRAP_UI(FileSelectorUISrcs FileSelector.ui FileSelectionWidget.ui)
+QT4_WRAP_CPP(FileSelectorMOCSrcs FileSelector.h FileSelectionWidget.h)
+add_library(FileSelectorLib FileSelector.cpp FileSelectionWidget.cpp ${FileSelectorUISrcs} ${FileSelectorMOCSrcs})
 
 SET(PoissonEditingNonInteractive ON CACHE BOOL "Build the Poisson editing non interactive version.")
 if(PoissonEditingNonInteractive)
@@ -55,8 +54,8 @@ endif()
 
 SET(PoissonEditingInteractive CACHE BOOL "Build the Poisson editing interactive version")
 if(PoissonEditingInteractive)
-  QT4_WRAP_UI(PoissonEditingUISrcs PoissonEditingGUI.ui FileSelector.ui FileSelectionWidget.ui)
-  QT4_WRAP_CPP(PoissonEditingMOCSrcs PoissonEditingGUI.h FileSelector.h FileSelectionWidget.h)
+  QT4_WRAP_UI(PoissonEditingUISrcs PoissonEditingGUI.ui)
+  QT4_WRAP_CPP(PoissonEditingMOCSrcs PoissonEditingGUI.h)
 
   ADD_EXECUTABLE(PoissonEditingInteractive PoissonEditingInteractive.cpp PoissonEditingGUI.cxx Helpers.cpp HelpersQt.cpp Mask.cpp IndexComparison.cpp ${PoissonEditingUISrcs} ${PoissonEditingMOCSrcs})
   TARGET_LINK_LIBRARIES(PoissonEditingInteractive ${ITK_LIBRARIES} umfpack ${QT_LIBRARIES} FileSelectorLib)

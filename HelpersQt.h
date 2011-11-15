@@ -45,6 +45,9 @@ QImage FitToGraphicsView(const QImage qimage, const QGraphicsView* gfx);
 ///////// Function templates (defined in HelpersQt.hxx) /////////
 ////////////////////////////////////
 template <typename TImage>
+QImage GetQImageColor(const typename TImage::Pointer image);
+
+template <typename TImage>
 QImage GetQImageColor(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
 
 template <typename TImage>
