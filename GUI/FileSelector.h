@@ -21,12 +21,15 @@
 
 #include "ui_FileSelector.h"
 
+// Custom
 #include "FileSelectionWidget.h"
 #include "Mask.h"
-#include "Types.h"
 
 // Qt
 #include <QDialog>
+
+// ITK
+#include "itkVectorImage.h"
 
 class FileSelector : public QDialog, private Ui::FileSelector
 {

@@ -18,7 +18,7 @@ void PoissonCloning<TImage>::SetTargetImage(typename TImage::Pointer image)
 }
 
 template <typename TImage>
-void PoissonCloning<TImage>::CreateGuidanceField(FloatScalarImageType::Pointer sourceImage)
+void PoissonCloning<TImage>::CreateGuidanceField(const typename FloatScalarImageType::Pointer sourceImage)
 {
   typedef itk::LaplacianImageFilter<FloatScalarImageType, FloatScalarImageType>  LaplacianFilterType;
 
@@ -42,4 +42,50 @@ void PoissonCloning<TImage>::PasteMaskedRegionIntoTargetImage()
   
   this->CreateGuidanceField(this->SourceImage);
   this->FillMaskedRegion();
+}
+
+
+template <typename TVectorImage>
+void CloneAllChannels(const typename TVectorImage::Pointer image, const typename TVectorImage::Pointer targetImage,
+                      const Mask::Pointer mask, typename TVectorImage::Pointer output)
+{
+  typedef itk::Image<typename TVectorImage::InternalPixelType, 2> ScalarImageType;
+  
+  typedef itk::VectorIndexSelectionCastImageFilter<TVectorImage, ScalarImageType> DisassemblerType;
+  typedef itk::ImageToVectorImageFilter<ScalarImageType> ReassemblerType;
+  typename ReassemblerType::Pointer reassembler = ReassemblerType::New();
+
+  // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
+  std::vector<PoissonCloning<ScalarImageType> > poissonFilters;
+
+  for(unsigned int component = 0; component < image->GetNumberOfComponentsPerPixel(); component++)
+    {
+    std::cout << "Component " << component << std::endl;
+    // Disassemble the images into their components
+    typename DisassemblerType::Pointer sourceDisassembler = DisassemblerType::New();
+    sourceDisassembler->SetIndex(component);
+    sourceDisassembler->SetInput(image);
+    sourceDisassembler->Update();
+
+    typename DisassemblerType::Pointer targetDisassembler = DisassemblerType::New();
+    targetDisassembler->SetIndex(component);
+    targetDisassembler->SetInput(targetImage);
+    targetDisassembler->Update();
+    
+    PoissonCloning<ScalarImageType> poissonFilter;
+    poissonFilters.push_back(poissonFilter);
+
+    poissonFilters[component].SetImage(sourceDisassembler->GetOutput());
+    poissonFilters[component].SetTargetImage(targetDisassembler->GetOutput());
+    poissonFilters[component].SetMask(mask);
+    poissonFilters[component].PasteMaskedRegionIntoTargetImage();
+
+    reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
+    }
+
+  reassembler->Update();
+  std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
+  std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+
+  Helpers::DeepCopyVectorImage<TVectorImage>(reassembler->GetOutput(), output);
 }

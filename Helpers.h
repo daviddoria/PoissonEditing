@@ -1,8 +1,6 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
-#include "Types.h"
-
 #include "itkImage.h"
 
 namespace Helpers
@@ -37,6 +35,6 @@ bool IsOnBorder(itk::ImageRegion<2>, itk::Index<2>);
 
 }
 
-#include "Helpers.txx"
+#include "Helpers.hxx"
 
 #endif

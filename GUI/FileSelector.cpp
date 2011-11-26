@@ -24,7 +24,6 @@
 #include "Helpers.h"
 #include "HelpersQt.h"
 #include "Mask.h"
-#include "Types.h"
 
 // Qt
 #include <QFileSystemModel>

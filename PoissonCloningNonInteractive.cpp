@@ -16,10 +16,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "PoissonCloning.h"
-#include "Types.h"
 
+// STL
 #include <iostream>
 
+// ITK
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
@@ -48,74 +49,35 @@ int main(int argc, char* argv[])
             << "Mask image: " << sourceMaskFilename << std::endl
             << "Output image: " << outputFilename << std::endl;
 
+  typedef itk::VectorImage<float, 2> FloatVectorImageType;
+
   // Read images
   typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
   ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
   sourceImageReader->SetFileName(sourceImageFilename);
   sourceImageReader->Update();
 
-  typedef itk::ImageFileReader<UnsignedCharScalarImageType> MaskReaderType;
-  MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName(sourceMaskFilename);
-  maskReader->Update();
-
   ImageReaderType::Pointer targetImageReader = ImageReaderType::New();
   targetImageReader->SetFileName(targetImageFilename);
   targetImageReader->Update();
+
+  // Read mask
+  typedef itk::ImageFileReader<Mask> MaskReaderType;
+  MaskReaderType::Pointer maskReader = MaskReaderType::New();
+  maskReader->SetFileName(sourceMaskFilename);
+  maskReader->Update();
 
   // Output image properties
   std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
             << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
             << "Mask image: " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
 
-  typedef itk::VectorIndexSelectionCastImageFilter<FloatVectorImageType, FloatScalarImageType> DisassemblerType;
-  //typedef itk::ImageToVectorImageFilter<FloatScalarImageType> ReassemblerType;
-  typedef itk::ImageToVectorImageFilter<UnsignedCharScalarImageType> ReassemblerType;
-  ReassemblerType::Pointer reassembler = ReassemblerType::New();
-  // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
-  std::vector<PoissonCloning<FloatScalarImageType> > poissonFilters(sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel());
+  FloatVectorImageType::Pointer output = FloatVectorImageType::New();
+  CloneAllChannels<FloatVectorImageType>(sourceImageReader->GetOutput(), targetImageReader->GetOutput(), maskReader->GetOutput(), output);
   
-  for(unsigned int component = 0; component < sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); component++)
-    {
-    // Disassemble the image into its components
-    
-    DisassemblerType::Pointer sourceDisassembler = DisassemblerType::New();
-    sourceDisassembler->SetIndex(component);
-    sourceDisassembler->SetInput(sourceImageReader->GetOutput());
-    sourceDisassembler->Update();
-  
-    DisassemblerType::Pointer targetDisassembler = DisassemblerType::New();
-    targetDisassembler->SetIndex(component);
-    targetDisassembler->SetInput(targetImageReader->GetOutput());
-    targetDisassembler->Update();
-
-    std::stringstream ss;
-    ss << "target_" << component << ".mha";
-    Helpers::WriteImage<FloatScalarImageType>(targetDisassembler->GetOutput(), ss.str());
-    
-    poissonFilters[component].SetImage(sourceDisassembler->GetOutput());
-    poissonFilters[component].SetTargetImage(targetDisassembler->GetOutput());
-    //poissonFilters[component].SetGuidanceFieldToZero();
-    //poissonFilters[component].CreateGuidanceField(sourceDisassembler->GetOutput()); // this is done internally
-    poissonFilters[component].SetMask(maskReader->GetOutput());
-    poissonFilters[component].PasteMaskedRegionIntoTargetImage();
-
-    typedef itk::RescaleIntensityImageFilter< FloatScalarImageType, UnsignedCharScalarImageType > RescaleFilterType;
-    RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
-    rescaleFilter->SetInput(poissonFilters[component].GetOutput());
-    rescaleFilter->SetOutputMinimum(0);
-    rescaleFilter->SetOutputMaximum(255);
-    rescaleFilter->Update();
-
-    // Reassemble the image
-    reassembler->SetNthInput(component, rescaleFilter->GetOutput());
-    }
-  
-  reassembler->Update();
-
   // Write output
   //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), "output.mhd");
-  Helpers::WriteVectorImageAsPNG<UnsignedCharVectorImageType>(reassembler->GetOutput(), outputFilename);
+  Helpers::WriteVectorImageAsPNG<FloatVectorImageType>(output, outputFilename);
 
   return EXIT_SUCCESS;
 }

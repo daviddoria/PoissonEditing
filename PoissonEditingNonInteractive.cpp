@@ -16,10 +16,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "PoissonEditing.h"
-#include "Types.h"
 
+// STL
 #include <iostream>
 
+// ITK
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
@@ -43,12 +44,14 @@ int main(int argc, char* argv[])
             << "Mask file: " << maskFilename << std::endl
             << "Output file: " << outputFilename << std::endl;
 
+  typedef itk::VectorImage<float, 2> FloatVectorImageType;
+
   typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
   ImageReaderType::Pointer imageReader = ImageReaderType::New();
   imageReader->SetFileName(inputFilename);
   imageReader->Update();
 
-  typedef itk::ImageFileReader<UnsignedCharScalarImageType> MaskReaderType;
+  typedef itk::ImageFileReader<Mask> MaskReaderType;
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
   maskReader->SetFileName(maskFilename);
   maskReader->Update();

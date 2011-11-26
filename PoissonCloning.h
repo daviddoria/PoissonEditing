@@ -28,7 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
 
 // Custom
-#include "Types.h"
 #include "PoissonEditing.h"
 
 // ITK
@@ -42,15 +41,22 @@ template <typename TImage>
 class PoissonCloning : public PoissonEditing<TImage>
 {
 public:
+  //using PoissonEditing<TImage>::FloatScalarImageType;
+  typedef typename PoissonEditing<TImage>::FloatScalarImageType FloatScalarImageType;
+ 
   PoissonCloning();
   void SetTargetImage(typename TImage::Pointer image);
   void PasteMaskedRegionIntoTargetImage();
 
 protected:
 
-  void CreateGuidanceField(FloatScalarImageType::Pointer sourceImage);
+  void CreateGuidanceField(const typename FloatScalarImageType::Pointer sourceImage);
 
 };
+
+template <typename TVectorImage>
+void CloneAllChannels(const typename TVectorImage::Pointer sourceImage, const typename TVectorImage::Pointer targetImage,
+                      const Mask::Pointer mask, typename TVectorImage::Pointer output);
 
 #include "PoissonCloning.txx"
 

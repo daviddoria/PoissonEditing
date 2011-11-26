@@ -26,12 +26,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // More information can be found here:
 // http://en.wikipedia.org/wiki/Discrete_Poisson_equation
 // http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
-#include "Types.h"
+
+// Custom
 #include "Mask.h"
 
-#include "itkImage.h"
+// ITK
 #include "itkCovariantVector.h"
+#include "itkImage.h"
+#include "itkVectorImage.h"
 
+// STL
 #include <vector>
 
 /* This class operates on a single channel image. If you would like to use this technique on a multi-channel image,
@@ -43,7 +47,9 @@ class PoissonEditing
 {
 public:
   PoissonEditing();
+  
   typedef itk::Image<float, 2> FloatScalarImageType;
+  
   void SetImage(typename TImage::Pointer image);
   void SetMask(Mask::Pointer mask);
   void SetGuidanceField(FloatScalarImageType::Pointer field);
@@ -73,8 +79,8 @@ protected:
   Mask::Pointer MaskImage;
 };
 
-template <typename T>
-void FillAllChannels(const typename itk::VectorImage<T, 2>::Pointer image, const Mask::Pointer mask, typename itk::VectorImage<T, 2>::Pointer output);
+template <typename TVectorImage>
+void FillAllChannels(const typename TVectorImage::Pointer image, const Mask::Pointer mask, typename TVectorImage::Pointer output);
 
 #include "PoissonEditing.txx"
 

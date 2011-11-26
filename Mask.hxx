@@ -1,5 +1,5 @@
-template<typename TImage>
-void Mask::ApplyToVectorImage(const typename TImage::Pointer image, const QColor& color)
+template<typename TImage, typename TColor>
+void Mask::ApplyToVectorImage(const typename TImage::Pointer image, const TColor& color)
 {
   if(image->GetLargestPossibleRegion() != this->GetLargestPossibleRegion())
     {
@@ -33,8 +33,8 @@ void Mask::ApplyToVectorImage(const typename TImage::Pointer image, const QColor
     }
 }
 
-template<typename TImage>
-void Mask::ApplyToImage(const typename TImage::Pointer image, const QColor& color)
+template<typename TImage, typename TColor>
+void Mask::ApplyToImage(const typename TImage::Pointer image, const TColor& color)
 {
   if(image->GetLargestPossibleRegion() != this->GetLargestPossibleRegion())
     {

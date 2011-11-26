@@ -186,22 +186,22 @@ bool PoissonEditing<TImage>::VerifyMask()
   // there is no mask on the boundary.
 
   // Verify that the image and the mask are the same size
-  if(this->SourceImage->GetLargestPossibleRegion().GetSize() != this->Mask->GetLargestPossibleRegion().GetSize())
+  if(this->SourceImage->GetLargestPossibleRegion().GetSize() != this->MaskImage->GetLargestPossibleRegion().GetSize())
     {
     std::cout << "Image size: " << this->SourceImage->GetLargestPossibleRegion().GetSize() << std::endl;
-    std::cout << "Mask size: " << this->Mask->GetLargestPossibleRegion().GetSize() << std::endl;
+    std::cout << "Mask size: " << this->MaskImage->GetLargestPossibleRegion().GetSize() << std::endl;
     return false;
     }
 
   // Verify that no border pixels are masked
-  itk::ImageRegionConstIterator<Mask> maskIterator(this->Mask, this->Mask->GetLargestPossibleRegion());
+  itk::ImageRegionConstIterator<Mask> maskIterator(this->MaskImage, this->MaskImage->GetLargestPossibleRegion());
 
   while(!maskIterator.IsAtEnd())
     {
     if(maskIterator.GetIndex()[0] == 0 ||
-      static_cast<unsigned int>(maskIterator.GetIndex()[0]) == this->Mask->GetLargestPossibleRegion().GetSize()[0]-1 ||
+      static_cast<unsigned int>(maskIterator.GetIndex()[0]) == this->MaskImage->GetLargestPossibleRegion().GetSize()[0]-1 ||
         maskIterator.GetIndex()[1] == 0 ||
-        static_cast<unsigned int>(maskIterator.GetIndex()[1]) == this->Mask->GetLargestPossibleRegion().GetSize()[1]-1)
+        static_cast<unsigned int>(maskIterator.GetIndex()[1]) == this->MaskImage->GetLargestPossibleRegion().GetSize()[1]-1)
       if(maskIterator.Get())
         {
         std::cout << "Mask is invalid! Pixel " << maskIterator.GetIndex() << " is masked!" << std::endl;
@@ -215,12 +215,12 @@ bool PoissonEditing<TImage>::VerifyMask()
 
 }
 
-template <typename T>
-void FillAllChannels(const typename itk::VectorImage<T, 2>::Pointer image, const Mask::Pointer mask, typename itk::VectorImage<T, 2>::Pointer output)
+template <typename TVectorImage>
+void FillAllChannels(const typename TVectorImage::Pointer image, const Mask::Pointer mask, typename TVectorImage::Pointer output)
 {
-  typedef itk::Image<T, 2> ScalarImageType;
-  typedef itk::VectorImage<T, 2> VectorImageType;
-  typedef itk::VectorIndexSelectionCastImageFilter<VectorImageType, ScalarImageType> DisassemblerType;
+  typedef itk::Image<typename TVectorImage::InternalPixelType, 2> ScalarImageType;
+  
+  typedef itk::VectorIndexSelectionCastImageFilter<TVectorImage, ScalarImageType> DisassemblerType;
   typedef itk::ImageToVectorImageFilter<ScalarImageType> ReassemblerType;
   typename ReassemblerType::Pointer reassembler = ReassemblerType::New();
   
@@ -251,5 +251,5 @@ void FillAllChannels(const typename itk::VectorImage<T, 2>::Pointer image, const
   std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
   std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
   
-  Helpers::DeepCopyVectorImage<VectorImageType>(reassembler->GetOutput(), output);
+  Helpers::DeepCopyVectorImage<TVectorImage>(reassembler->GetOutput(), output);
 }

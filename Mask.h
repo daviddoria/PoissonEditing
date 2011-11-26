@@ -28,12 +28,6 @@
 #include "itkImage.h"
 #include "itkImageRegionIterator.h"
 
-// Qt
-#include <QColor>
-
-// Custom
-#include "Types.h"
-
 class Mask : public itk::Image< unsigned char, 2>
 {
 public:
@@ -100,11 +94,11 @@ public:
 
   void DeepCopyFrom(const Mask::Pointer inputMask);
 
-  template<typename TImage>
-  void ApplyToImage(const typename TImage::Pointer image, const QColor& color);
+  template<typename TImage, typename TColor>
+  void ApplyToImage(const typename TImage::Pointer image, const TColor& color);
 
-  template<typename TImage>
-  void ApplyToVectorImage(const typename TImage::Pointer image, const QColor& color);
+  template<typename TImage, typename TColor>
+  void ApplyToVectorImage(const typename TImage::Pointer image, const TColor& color);
 
   std::vector<itk::Index<2> > GetValidPixelsInRegion(const itk::ImageRegion<2>& region);
   std::vector<itk::Index<2> > GetHolePixelsInRegion(const itk::ImageRegion<2>& region);

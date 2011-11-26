@@ -53,7 +53,7 @@ PoissonEditingGUI::PoissonEditingGUI()
 
 void PoissonEditingGUI::on_btnFill_clicked()
 {
-  FillAllChannels<ImageType::InternalPixelType>(this->Image, this->MaskImage, this->Result);
+  FillAllChannels<ImageType>(this->Image, this->MaskImage, this->Result);
 
   QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->Result);
 
