@@ -34,8 +34,8 @@
 #include <QFileDialog>
 #include <QGraphicsPixmapItem>
 
-// Default constructor
-PoissonEditingGUI::PoissonEditingGUI()
+// Called by all constructors
+void PoissonEditingGUI::DefaultConstructor()
 {
   this->setupUi(this);
 
@@ -45,11 +45,23 @@ PoissonEditingGUI::PoissonEditingGUI()
 
   this->Scene = new QGraphicsScene;
   this->graphicsView->setScene(this->Scene);
-  
+
   this->ImagePixmapItem = NULL;
   this->MaskImagePixmapItem = NULL;
   this->ResultPixmapItem = NULL;
+}
+
+// Default constructor
+PoissonEditingGUI::PoissonEditingGUI()
+{
+  DefaultConstructor();
 };
+
+PoissonEditingGUI::PoissonEditingGUI(const std::string& imageFileName, const std::string& maskFileName)
+{
+  DefaultConstructor();
+  OpenImageAndMask(imageFileName, maskFileName);
+}
 
 void PoissonEditingGUI::on_btnFill_clicked()
 {
@@ -78,6 +90,38 @@ void PoissonEditingGUI::on_actionSaveResult_activated()
   this->statusBar()->showMessage("Saved result.");
 }
 
+void PoissonEditingGUI::OpenImageAndMask(const std::string& imageFileName, const std::string& maskFileName)
+{
+  // Load and display image
+  typedef itk::ImageFileReader<ImageType> ImageReaderType;
+  ImageReaderType::Pointer imageReader = ImageReaderType::New();
+  imageReader->SetFileName(imageFileName);
+  imageReader->Update();
+
+  Helpers::DeepCopyVectorImage<ImageType>(imageReader->GetOutput(), this->Image);
+
+  QImage qimageImage = HelpersQt::GetQImageRGBA<ImageType>(this->Image);
+
+  QPixmap qpixmapImage = QPixmap::fromImage(qimageImage);
+
+  this->ImagePixmapItem = this->Scene->addPixmap(qpixmapImage);
+  this->ImagePixmapItem->setVisible(this->chkShowInput->isChecked());
+
+  // Load and display mask
+  typedef itk::ImageFileReader<Mask> MaskReaderType;
+  MaskReaderType::Pointer maskReader = MaskReaderType::New();
+  maskReader->SetFileName(maskFileName);
+  maskReader->Update();
+
+  Helpers::DeepCopy<Mask>(maskReader->GetOutput(), this->MaskImage);
+
+  QImage qimageMask = HelpersQt::GetQMaskImage(this->MaskImage);
+
+  QPixmap qpixmapMask = QPixmap::fromImage(qimageMask);
+
+  this->MaskImagePixmapItem = this->Scene->addPixmap(qpixmapMask);
+  this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
+}
 
 void PoissonEditingGUI::on_actionOpenImage_activated()
 {
@@ -87,35 +131,7 @@ void PoissonEditingGUI::on_actionOpenImage_activated()
   int result = fileSelector->result();
   if(result) // The user clicked 'ok'
     {
-    // Load and display image
-    typedef itk::ImageFileReader<ImageType> ImageReaderType;
-    ImageReaderType::Pointer imageReader = ImageReaderType::New();
-    imageReader->SetFileName(fileSelector->GetImageFileName());
-    imageReader->Update();
-
-    Helpers::DeepCopyVectorImage<ImageType>(imageReader->GetOutput(), this->Image);
-
-    QImage qimageImage = HelpersQt::GetQImageRGBA<ImageType>(this->Image);
-
-    QPixmap qpixmapImage = QPixmap::fromImage(qimageImage);
-
-    this->ImagePixmapItem = this->Scene->addPixmap(qpixmapImage);
-    this->ImagePixmapItem->setVisible(this->chkShowInput->isChecked());
-    
-    // Load and display mask
-    typedef itk::ImageFileReader<Mask> MaskReaderType;
-    MaskReaderType::Pointer maskReader = MaskReaderType::New();
-    maskReader->SetFileName(fileSelector->GetMaskFileName());
-    maskReader->Update();
-
-    Helpers::DeepCopy<Mask>(maskReader->GetOutput(), this->MaskImage);
-
-    QImage qimageMask = HelpersQt::GetQMaskImage(this->MaskImage);
-
-    QPixmap qpixmapMask = QPixmap::fromImage(qimageMask);
-
-    this->MaskImagePixmapItem = this->Scene->addPixmap(qpixmapMask);
-    this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
+    OpenImageAndMask(fileSelector->GetImageFileName(), fileSelector->GetMaskFileName());
     }
   else
     {

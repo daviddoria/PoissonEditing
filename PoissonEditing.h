@@ -50,9 +50,9 @@ public:
   
   typedef itk::Image<float, 2> FloatScalarImageType;
   
-  void SetImage(typename TImage::Pointer image);
-  void SetMask(Mask::Pointer mask);
-  void SetGuidanceField(FloatScalarImageType::Pointer field);
+  void SetImage(const typename TImage::Pointer image);
+  void SetMask(const Mask::Pointer mask);
+  void SetGuidanceField(const FloatScalarImageType::Pointer field);
   void SetGuidanceFieldToZero();
 
   void FillMaskedRegion();
@@ -62,7 +62,7 @@ public:
 protected:
 
   // Checks that the mask is the same size as the image and that there are no pixels to be filled on the boundary of the image.
-  bool VerifyMask();
+  bool VerifyMask() const;
 
   // The image to operate on.
   typename TImage::Pointer SourceImage;

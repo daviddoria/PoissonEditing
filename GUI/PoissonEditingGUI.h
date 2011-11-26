@@ -35,8 +35,9 @@ class PoissonEditingGUI : public QMainWindow, public Ui::PoissonEditingGUI
 {
   Q_OBJECT
 public:
-
+  void DefaultConstructor();
   PoissonEditingGUI();
+  PoissonEditingGUI(const std::string& imageFileName, const std::string& maskFileName);
   
 public slots:
 
@@ -50,6 +51,9 @@ public slots:
   void on_chkShowMask_clicked();
   
 protected:
+
+  void OpenImageAndMask(const std::string& imageFileName, const std::string& maskFileName);
+  
   typedef itk::VectorImage<float,2> ImageType;
   ImageType::Pointer Result;
   ImageType::Pointer Image;

@@ -23,17 +23,17 @@ int main( int argc, char** argv )
 {
   QApplication app( argc, argv );
 
-  PoissonEditingGUI* poissonEditingGUI = new PoissonEditingGUI;
-//   if(argc == 3)
-//     {
-//     //std::cout << "Using filename arguments." << std::endl;
-//     myForm = new Form(argv[1], argv[2]);
-//     }
-//   else
-//     {
-//     //std::cout << "Not using filename arguments." << std::endl;
-//     myForm = new Form;
-//     }
+  PoissonEditingGUI* poissonEditingGUI;
+  if(argc == 3)
+    {
+    std::cout << "Using filename arguments." << std::endl;
+    poissonEditingGUI = new PoissonEditingGUI(argv[1], argv[2]);
+    }
+  else
+    {
+    //std::cout << "Not using filename arguments." << std::endl;
+    poissonEditingGUI = new PoissonEditingGUI;
+    }
   //myForm.show();
   poissonEditingGUI->showMaximized();
 
