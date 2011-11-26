@@ -19,11 +19,11 @@
 #include "PoissonCloningGUI.h"
 
 // Custom
-#include "FileSelector.h"
+#include "ImageFileSelector.h"
 #include "HelpersOutput.h"
 #include "HelpersQt.h"
 #include "Mask.h"
-#include "PoissonEditing.h"
+#include "PoissonCloning.h"
 
 // ITK
 #include "itkImageFileReader.h"
@@ -39,27 +39,37 @@ PoissonCloningGUI::PoissonCloningGUI()
 {
   this->setupUi(this);
 
-  this->Image = ImageType::New();
+  this->SourceImage = ImageType::New();
+  this->TargetImage = ImageType::New();
   this->MaskImage = Mask::New();
-  this->Result = ImageType::New();
+  this->ResultImage = ImageType::New();
 
-  this->Scene = new QGraphicsScene;
-  this->graphicsView->setScene(this->Scene);
+  this->SourceScene = new QGraphicsScene;
+  this->graphicsViewSourceImage->setScene(this->SourceScene);
+
+  this->TargetScene = new QGraphicsScene;
+  this->graphicsViewTargetImage->setScene(this->TargetScene);
+
+  this->ResultScene = new QGraphicsScene;
+  this->graphicsViewResultImage->setScene(this->ResultScene);
   
-  this->ImagePixmapItem = NULL;
+  this->SourceImagePixmapItem = NULL;
+  this->TargetImagePixmapItem = NULL;
   this->MaskImagePixmapItem = NULL;
   this->ResultPixmapItem = NULL;
+
+  this->SelectionImagePixmapItem = NULL;
 };
 
 void PoissonCloningGUI::on_btnFill_clicked()
 {
-  FillAllChannels<ImageType::InternalPixelType>(this->Image, this->MaskImage, this->Result);
+  CloneAllChannels<ImageType>(this->SourceImage, this->TargetImage, this->MaskImage, this->ResultImage);
 
-  QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->Result);
+  QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->ResultImage);
 
   QPixmap qpixmap = QPixmap::fromImage(qimage);
-  this->ResultPixmapItem = this->Scene->addPixmap(qpixmap);
-  this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
+  this->ResultPixmapItem = this->ResultScene->addPixmap(qpixmap);
+  //this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
 }
 
 void PoissonCloningGUI::on_actionSaveResult_activated()
@@ -73,39 +83,56 @@ void PoissonCloningGUI::on_actionSaveResult_activated()
     return;
     }
 
-  HelpersOutput::WriteImage<ImageType>(this->Result, fileName.toStdString());
-  HelpersOutput::WriteRGBImage<ImageType>(this->Result, fileName.toStdString() + ".png");
+  HelpersOutput::WriteImage<ImageType>(this->ResultImage, fileName.toStdString());
+  HelpersOutput::WriteRGBImage<ImageType>(this->ResultImage, fileName.toStdString() + ".png");
   this->statusBar()->showMessage("Saved result.");
 }
 
 
 void PoissonCloningGUI::on_actionOpenImage_activated()
 {
-  FileSelector* fileSelector(new FileSelector);
+  std::vector<std::string> namedImages;
+  namedImages.push_back("SourceImage");
+  namedImages.push_back("TargetImage");
+  namedImages.push_back("MaskImage");
+  
+  ImageFileSelector* fileSelector(new ImageFileSelector(namedImages));
   fileSelector->exec();
 
   int result = fileSelector->result();
   if(result) // The user clicked 'ok'
     {
-    // Load and display image
+    // Load and display source image
     typedef itk::ImageFileReader<ImageType> ImageReaderType;
-    ImageReaderType::Pointer imageReader = ImageReaderType::New();
-    imageReader->SetFileName(fileSelector->GetImageFileName());
-    imageReader->Update();
+    ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
+    sourceImageReader->SetFileName(fileSelector->GetNamedImageFileName("SourceImage"));
+    sourceImageReader->Update();
 
-    Helpers::DeepCopyVectorImage<ImageType>(imageReader->GetOutput(), this->Image);
+    Helpers::DeepCopyVectorImage<ImageType>(sourceImageReader->GetOutput(), this->SourceImage);
 
-    QImage qimageImage = HelpersQt::GetQImageRGBA<ImageType>(this->Image);
+    QImage qimageSourceImage = HelpersQt::GetQImageRGBA<ImageType>(this->SourceImage);
 
-    QPixmap qpixmapImage = QPixmap::fromImage(qimageImage);
+    QPixmap qpixmapSourceImage = QPixmap::fromImage(qimageSourceImage);
 
-    this->ImagePixmapItem = this->Scene->addPixmap(qpixmapImage);
-    this->ImagePixmapItem->setVisible(this->chkShowInput->isChecked());
-    
+    this->SourceImagePixmapItem = this->SourceScene->addPixmap(qpixmapSourceImage);
+
+    // Load and display target image
+    ImageReaderType::Pointer targetImageReader = ImageReaderType::New();
+    targetImageReader->SetFileName(fileSelector->GetNamedImageFileName("TargetImage"));
+    targetImageReader->Update();
+
+    Helpers::DeepCopyVectorImage<ImageType>(targetImageReader->GetOutput(), this->TargetImage);
+
+    QImage qimageTargetImage = HelpersQt::GetQImageRGBA<ImageType>(this->TargetImage);
+
+    QPixmap qpixmapTargetImage = QPixmap::fromImage(qimageTargetImage);
+
+    this->SourceImagePixmapItem = this->TargetScene->addPixmap(qpixmapTargetImage);
+
     // Load and display mask
     typedef itk::ImageFileReader<Mask> MaskReaderType;
     MaskReaderType::Pointer maskReader = MaskReaderType::New();
-    maskReader->SetFileName(fileSelector->GetMaskFileName());
+    maskReader->SetFileName(fileSelector->GetNamedImageFileName("MaskImage"));
     maskReader->Update();
 
     Helpers::DeepCopy<Mask>(maskReader->GetOutput(), this->MaskImage);
@@ -114,32 +141,26 @@ void PoissonCloningGUI::on_actionOpenImage_activated()
 
     QPixmap qpixmapMask = QPixmap::fromImage(qimageMask);
 
-    this->MaskImagePixmapItem = this->Scene->addPixmap(qpixmapMask);
+    this->MaskImagePixmapItem = this->SourceScene->addPixmap(qpixmapMask);
     this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
+
+    // Setup selection region
+    QColor semiTransparentRed(255,0,0, 127);
+
+    this->SelectionImage = QImage(sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize()[0],
+                                  sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize()[1], QImage::Format_ARGB32);
+    this->SelectionImage.fill(semiTransparentRed.rgba());
+
+    this->SelectionImagePixmapItem = this->TargetScene->addPixmap(QPixmap::fromImage(this->SelectionImage));
+    //this->SelectionImagePixmapItem->setFlag(QGraphicsItem::ItemIsMovable, true);
+    this->SelectionImagePixmapItem->setFlag(QGraphicsItem::ItemIsMovable);
+    
     }
   else
     {
     // std::cout << "User clicked cancel." << std::endl;
     // The user clicked 'cancel' or closed the dialog, do nothing.
     }
-}
-
-void PoissonCloningGUI::on_chkShowInput_clicked()
-{
-  if(!this->ImagePixmapItem)
-    {
-    return;
-    }
-  this->ImagePixmapItem->setVisible(this->chkShowInput->isChecked());
-}
-
-void PoissonCloningGUI::on_chkShowOutput_clicked()
-{
-  if(!this->ResultPixmapItem)
-    {
-    return;
-    }
-  this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
 }
 
 void PoissonCloningGUI::on_chkShowMask_clicked()

@@ -27,13 +27,12 @@
 FileSelectionWidget::FileSelectionWidget(QWidget *parent)
     : QWidget(parent)
 {
-  std::cout << "Current path: " << QDir::currentPath().toStdString() << std::endl;
-  std::cout << "Root path: " << QDir::rootPath().toStdString() << std::endl;
+  //std::cout << "Current path: " << QDir::currentPath().toStdString() << std::endl;
+  //std::cout << "Root path: " << QDir::rootPath().toStdString() << std::endl;
   setupUi(this); // Otherwise 'listView' seems to be undefined
     
   this->model = new QFileSystemModel;
   this->model->setRootPath(QDir::rootPath());
-  
   
   this->listView->setModel(model);
   this->listView->setRootIndex(model->index(QDir::currentPath()));
@@ -45,6 +44,11 @@ FileSelectionWidget::FileSelectionWidget(QWidget *parent)
   this->listView->setCurrentIndex(this->listView->rootIndex());
 
   this->Valid = false;
+}
+
+std::string FileSelectionWidget::GetFileName() const
+{
+ return this->FileName;
 }
 
 void FileSelectionWidget::setModel(QAbstractItemModel* model)

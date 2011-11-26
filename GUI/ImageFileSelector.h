@@ -16,55 +16,49 @@
  *
  *=========================================================================*/
 
-#ifndef FileSelector_H
-#define FileSelector_H
+#ifndef ImageFileSelector_H
+#define ImageFileSelector_H
 
 #include "ui_FileSelector.h"
 
 // Custom
 #include "FileSelectionWidget.h"
 #include "Mask.h"
+#include "Panel.h"
 
 // Qt
 #include <QDialog>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QGraphicsScene>
+#include <QGraphicsView>
 
 // ITK
 #include "itkVectorImage.h"
 
-class FileSelector : public QDialog, private Ui::FileSelector
+typedef itk::VectorImage<float, 2> ImageType;
+
+class ImageFileSelector : public QDialog
+//class PoissonEditingFileSelector : public QWidget
 {
   Q_OBJECT
 public:
 
-  // Constructor/Destructor
-  FileSelector();
-  ~FileSelector() {};
-
-  std::string GetImageFileName();
-  std::string GetMaskFileName();
-  bool IsMaskInverted();
+  ImageFileSelector(const std::vector<std::string>& namedImages);
+  std::string GetNamedImageFileName(const std::string& namedImage);
   
 public slots:
-  void on_buttonBox_accepted();
-  void on_buttonBox_rejected();
+  
   void Verify();
-  void LoadAndDisplayImage();
-  void LoadAndDisplayMask();
+  void slot_buttonBox_accepted();
+  void slot_buttonBox_rejected();
   
 protected:
-  std::string ImageFileName;
-  std::string MaskFileName;
-  bool MaskInverted;
-
-  FileSelectionWidget* FileSelectionWidgetImage;
-  FileSelectionWidget* FileSelectionWidgetMask;
-
-  QGraphicsScene* ImageGraphicsScene;
-  QGraphicsScene* MaskGraphicsScene;
-
-  typedef itk::VectorImage<float, 2> ImageType;
-  ImageType::Pointer Image;
-  Mask::Pointer ImageMask;
+  std::vector<std::string> FileNames;
+  std::vector<std::string> NamedImages;
+  
+  std::vector<Panel*> Panels; // Can't store non-pointers because Qt doesn't allow it.
+  QDialogButtonBox* ButtonBox;
 };
 
-#endif // FileSelector_H
+#endif // ImageFileSelector_H

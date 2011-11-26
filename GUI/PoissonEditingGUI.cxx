@@ -19,7 +19,7 @@
 #include "PoissonEditingGUI.h"
 
 // Custom
-#include "FileSelector.h"
+#include "ImageFileSelector.h"
 #include "HelpersOutput.h"
 #include "HelpersQt.h"
 #include "Mask.h"
@@ -125,13 +125,18 @@ void PoissonEditingGUI::OpenImageAndMask(const std::string& imageFileName, const
 
 void PoissonEditingGUI::on_actionOpenImage_activated()
 {
-  FileSelector* fileSelector(new FileSelector);
+  std::cout << "on_actionOpenImage_activated" << std::endl;
+  std::vector<std::string> namedImages;
+  namedImages.push_back("Image");
+  namedImages.push_back("Mask");
+  
+  ImageFileSelector* fileSelector(new ImageFileSelector(namedImages));
   fileSelector->exec();
 
   int result = fileSelector->result();
   if(result) // The user clicked 'ok'
     {
-    OpenImageAndMask(fileSelector->GetImageFileName(), fileSelector->GetMaskFileName());
+    OpenImageAndMask(fileSelector->GetNamedImageFileName("Image"), fileSelector->GetNamedImageFileName("Mask"));
     }
   else
     {

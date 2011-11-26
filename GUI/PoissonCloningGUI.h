@@ -44,22 +44,26 @@ public slots:
   void on_actionSaveResult_activated();
   
   void on_btnFill_clicked();
-  
-  void on_chkShowInput_clicked();
-  void on_chkShowOutput_clicked();
   void on_chkShowMask_clicked();
   
 protected:
   typedef itk::VectorImage<float,2> ImageType;
-  ImageType::Pointer Result;
-  ImageType::Pointer Image;
+  ImageType::Pointer ResultImage;
+  ImageType::Pointer SourceImage;
+  ImageType::Pointer TargetImage;
   Mask::Pointer MaskImage;
 
-  QGraphicsPixmapItem* ImagePixmapItem;
+  QGraphicsPixmapItem* SourceImagePixmapItem;
+  QGraphicsPixmapItem* TargetImagePixmapItem;
   QGraphicsPixmapItem* MaskImagePixmapItem;
   QGraphicsPixmapItem* ResultPixmapItem;
   
-  QGraphicsScene* Scene;
+  QGraphicsScene* SourceScene;
+  QGraphicsScene* TargetScene;
+  QGraphicsScene* ResultScene;
+
+  QImage SelectionImage;
+  QGraphicsPixmapItem* SelectionImagePixmapItem;
 };
 
 #endif // PoissonEditingGUI_H

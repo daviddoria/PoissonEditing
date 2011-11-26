@@ -16,44 +16,44 @@
  *
  *=========================================================================*/
 
-#ifndef FileSelectionWidget_H
-#define FileSelectionWidget_H
+#ifndef Panel_H
+#define Panel_H
 
-#include "ui_FileSelectionWidget.h"
+#include "ui_FileSelector.h"
 
-#include <QMainWindow>
+// Custom
+#include "FileSelectionWidget.h"
 
-class QFileSystemModel;
+// Qt
+#include <QDialog>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QGraphicsScene>
+#include <QGraphicsView>
 
-class FileSelectionWidget : public QWidget, private Ui::FileSelectionWidget
+// ITK
+#include "itkVectorImage.h"
+
+typedef itk::VectorImage<float, 2> ImageType;
+
+class Panel : public QObject
 {
-  Q_OBJECT
-
+ Q_OBJECT
 public:
-  FileSelectionWidget(QWidget *parent = 0);
+  Panel();
+  
+  FileSelectionWidget* SelectionWidget;
 
-  bool IsValid();
+  QGraphicsScene* GraphicsScene;
 
-  void setModel(QAbstractItemModel* model);
-  void setCurrentIndex(const QModelIndex& index);
+  ImageType::Pointer Image;
 
-  QModelIndex currentIndex() const;
-
-  std::string GetFileName() const;
+  QGraphicsView* GraphicsView;
+  QVBoxLayout* Layout;
+  QLabel* Label;
   
 public slots:
-  void on_listView_doubleClicked(const QModelIndex & index);
-  void on_listView_clicked(const QModelIndex & index);
-  void on_btnUp_clicked();
-
-signals:
-  void selectionChanged();
-  
-protected:
-  QFileSystemModel *model;
-
-  bool Valid;
-  std::string FileName;
+  void LoadAndDisplay();
 };
 
-#endif
+#endif // Panel_H

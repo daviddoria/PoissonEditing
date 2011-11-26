@@ -15,14 +15,60 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+    <item row="1" column="0">
      <widget class="QGraphicsView" name="graphicsViewSourceImage"/>
     </item>
-    <item row="0" column="1" rowspan="2">
-     <widget class="QGraphicsView" name="graphicsView_3"/>
+    <item row="1" column="1" rowspan="4">
+     <widget class="QGraphicsView" name="graphicsViewResultImage"/>
     </item>
-    <item row="1" column="0">
+    <item row="4" column="0">
      <widget class="QGraphicsView" name="graphicsViewTargetImage"/>
+    </item>
+    <item row="2" column="0">
+     <widget class="QCheckBox" name="chkShowMask">
+      <property name="text">
+       <string>Show mask</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Source image</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Target image</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="label_3">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Result</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -32,7 +78,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>33</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
