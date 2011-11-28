@@ -49,9 +49,7 @@ PoissonCloningGUI::PoissonCloningGUI(const std::string& sourceImageFileName, con
   this->TargetImageFileName = targetImageFileName;
   this->MaskImageFileName = maskFileName;
 
-  // We can't size the images to the graphicsViews here, as the form most likely has not finished being resized. Instead, we use a single shot timer with 0 delay
-  // so this is done as soon as the event loop is entered. (Ideally this would be 0ms, but it doesn't seem to be fully resized until 100ms?)
-  QTimer::singleShot(100, this, SLOT(AppReady()));
+  OpenImages(this->SourceImageFileName, this->TargetImageFileName, this->MaskImageFileName);
 }
 
 void PoissonCloningGUI::DefaultConstructor()
@@ -80,11 +78,18 @@ void PoissonCloningGUI::DefaultConstructor()
   this->SelectionImagePixmapItem = NULL;
 }
 
-void PoissonCloningGUI::AppReady()
+void PoissonCloningGUI::showEvent ( QShowEvent * event )
 {
-  OpenImages(this->SourceImageFileName, this->TargetImageFileName, this->MaskImageFileName);
+  this->graphicsViewSourceImage->fitInView(this->SourceImagePixmapItem, Qt::KeepAspectRatio);
+  this->graphicsViewTargetImage->fitInView(this->TargetImagePixmapItem, Qt::KeepAspectRatio);
 }
 
+void PoissonCloningGUI::resizeEvent ( QResizeEvent * event )
+{
+  this->graphicsViewSourceImage->fitInView(this->SourceImagePixmapItem, Qt::KeepAspectRatio);
+  this->graphicsViewTargetImage->fitInView(this->TargetImagePixmapItem, Qt::KeepAspectRatio);
+}
+  
 void PoissonCloningGUI::OpenImages(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName)
 {
   // Load and display source image
@@ -97,8 +102,7 @@ void PoissonCloningGUI::OpenImages(const std::string& sourceImageFileName, const
 
   QImage qimageSourceImage = HelpersQt::GetQImageRGBA<ImageType>(this->SourceImage);
   this->SourceImagePixmapItem = this->SourceScene->addPixmap(QPixmap::fromImage(qimageSourceImage));
-  this->graphicsViewSourceImage->fitInView(this->SourceImagePixmapItem, Qt::KeepAspectRatio);
-  
+    
   // Load and display target image
   ImageReaderType::Pointer targetImageReader = ImageReaderType::New();
   targetImageReader->SetFileName(targetImageFileName);
@@ -108,7 +112,6 @@ void PoissonCloningGUI::OpenImages(const std::string& sourceImageFileName, const
 
   QImage qimageTargetImage = HelpersQt::GetQImageRGBA<ImageType>(this->TargetImage);
   this->TargetImagePixmapItem = this->TargetScene->addPixmap(QPixmap::fromImage(qimageTargetImage));
-  this->graphicsViewTargetImage->fitInView(this->TargetImagePixmapItem, Qt::KeepAspectRatio);
   this->TargetScene->setSceneRect(qimageTargetImage.rect());
 
   // Load and display mask

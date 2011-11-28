@@ -60,7 +60,19 @@ PoissonEditingGUI::PoissonEditingGUI()
 PoissonEditingGUI::PoissonEditingGUI(const std::string& imageFileName, const std::string& maskFileName)
 {
   DefaultConstructor();
-  OpenImageAndMask(imageFileName, maskFileName);
+  this->SourceImageFileName = imageFileName;
+  this->MaskImageFileName = maskFileName;
+  OpenImageAndMask(this->SourceImageFileName, this->MaskImageFileName);
+}
+
+void PoissonEditingGUI::showEvent ( QShowEvent * event )
+{
+  this->graphicsView->fitInView(this->ImagePixmapItem, Qt::KeepAspectRatio);
+}
+
+void PoissonEditingGUI::resizeEvent ( QResizeEvent * event )
+{
+  this->graphicsView->fitInView(this->ImagePixmapItem, Qt::KeepAspectRatio);
 }
 
 void PoissonEditingGUI::on_btnFill_clicked()
@@ -68,9 +80,7 @@ void PoissonEditingGUI::on_btnFill_clicked()
   FillAllChannels<ImageType>(this->Image, this->MaskImage, this->Result);
 
   QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->Result);
-
-  QPixmap qpixmap = QPixmap::fromImage(qimage);
-  this->ResultPixmapItem = this->Scene->addPixmap(qpixmap);
+  this->ResultPixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimage));
   this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
 }
 
@@ -101,10 +111,8 @@ void PoissonEditingGUI::OpenImageAndMask(const std::string& imageFileName, const
   Helpers::DeepCopyVectorImage<ImageType>(imageReader->GetOutput(), this->Image);
 
   QImage qimageImage = HelpersQt::GetQImageRGBA<ImageType>(this->Image);
-
-  QPixmap qpixmapImage = QPixmap::fromImage(qimageImage);
-
-  this->ImagePixmapItem = this->Scene->addPixmap(qpixmapImage);
+  this->ImagePixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimageImage));
+  this->graphicsView->fitInView(this->ImagePixmapItem);
   this->ImagePixmapItem->setVisible(this->chkShowInput->isChecked());
 
   // Load and display mask
@@ -116,10 +124,7 @@ void PoissonEditingGUI::OpenImageAndMask(const std::string& imageFileName, const
   Helpers::DeepCopy<Mask>(maskReader->GetOutput(), this->MaskImage);
 
   QImage qimageMask = HelpersQt::GetQMaskImage(this->MaskImage);
-
-  QPixmap qpixmapMask = QPixmap::fromImage(qimageMask);
-
-  this->MaskImagePixmapItem = this->Scene->addPixmap(qpixmapMask);
+  this->MaskImagePixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimageMask));
   this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
 }
 

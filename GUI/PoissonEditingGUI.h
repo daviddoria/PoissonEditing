@@ -49,9 +49,12 @@ public slots:
   void on_chkShowInput_clicked();
   void on_chkShowOutput_clicked();
   void on_chkShowMask_clicked();
-  
+
 protected:
 
+  void showEvent ( QShowEvent * event );
+  void resizeEvent ( QResizeEvent * event );
+  
   void OpenImageAndMask(const std::string& imageFileName, const std::string& maskFileName);
   
   typedef itk::VectorImage<float,2> ImageType;
@@ -64,6 +67,9 @@ protected:
   QGraphicsPixmapItem* ResultPixmapItem;
   
   QGraphicsScene* Scene;
+
+  std::string SourceImageFileName;
+  std::string MaskImageFileName;
 };
 
 #endif // PoissonEditingGUI_H

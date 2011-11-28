@@ -42,7 +42,6 @@ public:
   
 public slots:
 
-  void AppReady();
   void on_actionOpenImage_activated();
   void on_actionSaveResult_activated();
   
@@ -52,6 +51,9 @@ public slots:
 protected:
 
   void OpenImages(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName);
+
+  void showEvent ( QShowEvent * event );
+  void resizeEvent ( QResizeEvent * event );
   
   typedef itk::VectorImage<float,2> ImageType;
   ImageType::Pointer ResultImage;
