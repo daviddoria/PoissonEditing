@@ -35,6 +35,7 @@ void QColorToUCharColor(const QColor& color, unsigned char outputColor[3])
 QImage FitToGraphicsView(const QImage qimage, const QGraphicsView* gfx)
 {
   // The fudge factors so that the scroll bars do not appear
+  //std::cout << "Fitting to width: " << gfx->width() << " height: " << gfx->height() << std::endl;
   
   unsigned int fudge = 6;
   if(gfx->height() < gfx->width())

@@ -24,18 +24,22 @@ int main( int argc, char** argv )
 {
   QApplication app( argc, argv );
 
+  std::cout << "PoissonCloningGUI" << std::endl;
   PoissonCloningGUI* poissonCloningGUI = new PoissonCloningGUI;
-//   if(argc == 3)
-//     {
-//     //std::cout << "Using filename arguments." << std::endl;
-//     myForm = new Form(argv[1], argv[2]);
-//     }
-//   else
-//     {
-//     //std::cout << "Not using filename arguments." << std::endl;
-//     myForm = new Form;
-//     }
-  //myForm.show();
+  if(argc == 4)
+    {
+    std::cout << "Using filename arguments." << std::endl;
+    std::string sourceImageFileName = argv[1];
+    std::string targetImageFileName = argv[2];
+    std::string maskImageFileName = argv[3];
+    poissonCloningGUI = new PoissonCloningGUI(sourceImageFileName, targetImageFileName, maskImageFileName);
+    }
+  else
+    {
+    std::cout << "Not using filename arguments." << std::endl;
+    poissonCloningGUI = new PoissonCloningGUI;
+    }
+  //poissonCloningGUI.show();
   poissonCloningGUI->showMaximized();
 
   return app.exec();

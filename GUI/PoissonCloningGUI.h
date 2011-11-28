@@ -37,16 +37,22 @@ class PoissonCloningGUI : public QMainWindow, public Ui::PoissonCloningGUI
 public:
 
   PoissonCloningGUI();
+  PoissonCloningGUI(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName);
+  void DefaultConstructor();
   
 public slots:
 
+  void AppReady();
   void on_actionOpenImage_activated();
   void on_actionSaveResult_activated();
   
-  void on_btnFill_clicked();
+  void on_btnClone_clicked();
   void on_chkShowMask_clicked();
   
 protected:
+
+  void OpenImages(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName);
+  
   typedef itk::VectorImage<float,2> ImageType;
   ImageType::Pointer ResultImage;
   ImageType::Pointer SourceImage;
@@ -64,6 +70,10 @@ protected:
 
   QImage SelectionImage;
   QGraphicsPixmapItem* SelectionImagePixmapItem;
+
+  std::string SourceImageFileName;
+  std::string TargetImageFileName;
+  std::string MaskImageFileName;
 };
 
 #endif // PoissonEditingGUI_H
