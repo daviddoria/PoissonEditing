@@ -24,6 +24,8 @@
 #include "HelpersQt.h"
 #include "Mask.h"
 #include "PoissonEditing.h"
+#include "PoissonEditingComputationThread.h"
+#include "PoissonEditingComputationObject.h"
 
 // ITK
 #include "itkImageFileReader.h"
@@ -38,6 +40,15 @@
 void PoissonEditingGUI::DefaultConstructor()
 {
   this->setupUi(this);
+
+  this->progressBar->setMinimum(0);
+  this->progressBar->setMaximum(0);
+  this->progressBar->hide();
+
+  this->ComputationThread = new PoissonEditingComputationThreadClass;
+  connect(this->ComputationThread, SIGNAL(StartProgressBarSignal()), this, SLOT(slot_StartProgressBar()));
+  connect(this->ComputationThread, SIGNAL(StopProgressBarSignal()), this, SLOT(slot_StopProgressBar()));
+  connect(this->ComputationThread, SIGNAL(IterationCompleteSignal()), this, SLOT(slot_IterationComplete()));
 
   this->Image = ImageType::New();
   this->MaskImage = Mask::New();
@@ -77,11 +88,13 @@ void PoissonEditingGUI::resizeEvent ( QResizeEvent * event )
 
 void PoissonEditingGUI::on_btnFill_clicked()
 {
-  FillAllChannels<ImageType>(this->Image, this->MaskImage, this->Result);
-
-  QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->Result);
-  this->ResultPixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimage));
-  this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
+  ComputationThread->Operation = ComputationThreadClass::ALLSTEPS;
+  PoissonEditingComputationObject* computationObject = new PoissonEditingComputationObject;
+  computationObject->MaskImage = this->MaskImage;
+  computationObject->Image = this->Image;
+  computationObject->Result = this->Result;
+  ComputationThread->SetObject(computationObject);
+  ComputationThread->start();
 }
 
 void PoissonEditingGUI::on_actionSaveResult_activated()
@@ -176,4 +189,20 @@ void PoissonEditingGUI::on_chkShowMask_clicked()
     }
   this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
 }
-  
+
+void PoissonEditingGUI::slot_StartProgressBar()
+{
+  this->progressBar->show();
+}
+
+void PoissonEditingGUI::slot_StopProgressBar()
+{
+  this->progressBar->hide();
+}
+
+void PoissonEditingGUI::slot_IterationComplete()
+{
+  QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->Result);
+  this->ResultPixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimage));
+  this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
+}

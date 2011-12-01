@@ -14,7 +14,7 @@
    <string>Poisson Cloning</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout" rowstretch="1,5,1,1,5,0" columnstretch="1,1">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="1,5,1,1,5,0,0" columnstretch="1,1">
     <item row="1" column="0">
      <widget class="QGraphicsView" name="graphicsViewSourceImage">
       <property name="verticalScrollBarPolicy">
@@ -88,6 +88,13 @@
      <widget class="QPushButton" name="btnClone">
       <property name="text">
        <string>Clone</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QProgressBar" name="progressBar">
+      <property name="value">
+       <number>24</number>
       </property>
      </widget>
     </item>

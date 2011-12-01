@@ -19,9 +19,11 @@ SET(PoissonEditingInteractive CACHE BOOL "Build the Poisson editing interactive 
 if(PoissonEditingInteractive)
   message("Building PoissonEditingInteractive")
   QT4_WRAP_UI(PoissonEditingUISrcs PoissonEditingGUI.ui)
-  QT4_WRAP_CPP(PoissonEditingMOCSrcs PoissonEditingGUI.h)
+  QT4_WRAP_CPP(PoissonEditingMOCSrcs PoissonEditingGUI.h PoissonEditingComputationThread.h ComputationThread.h)
 
-  ADD_EXECUTABLE(PoissonEditingInteractive PoissonEditingInteractive.cpp  PoissonEditingGUI.cxx HelpersQt.cpp ${PoissonEditingUISrcs} ${PoissonEditingMOCSrcs})
+  ADD_EXECUTABLE(PoissonEditingInteractive PoissonEditingInteractive.cpp PoissonEditingGUI.cxx
+                 ComputationThread.cpp PoissonEditingComputationThread.cpp PoissonEditingComputationObject.cpp
+                 HelpersQt.cpp ${PoissonEditingUISrcs} ${PoissonEditingMOCSrcs})
   TARGET_LINK_LIBRARIES(PoissonEditingInteractive ${ITK_LIBRARIES} umfpack ${QT_LIBRARIES} FileSelectorLibrary HelpersLibrary )
   #set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
   INSTALL( TARGETS PoissonEditingInteractive RUNTIME DESTINATION ${INSTALL_DIR} )
@@ -32,8 +34,10 @@ SET(PoissonCloningInteractive CACHE BOOL "Build the Poisson cloning interactive 
 if(PoissonCloningInteractive)
   message("Building PoissonCloningInteractive")
   QT4_WRAP_UI(PoissonCloningUISrcs PoissonCloningGUI.ui)
-  QT4_WRAP_CPP(PoissonCloningMOCSrcs PoissonCloningGUI.h)
-  ADD_EXECUTABLE(PoissonCloningInteractive PoissonCloningInteractive.cpp PoissonCloningGUI.cxx HelpersQt.cpp ${PoissonCloningUISrcs} ${PoissonCloningMOCSrcs})
+  QT4_WRAP_CPP(PoissonCloningMOCSrcs PoissonCloningGUI.h PoissonCloningComputationThread.h ComputationThread.h)
+  ADD_EXECUTABLE(PoissonCloningInteractive PoissonCloningInteractive.cpp PoissonCloningGUI.cxx
+                 ComputationThread.cpp PoissonCloningComputationThread.cpp PoissonCloningComputationObject.cpp
+                 HelpersQt.cpp ${PoissonCloningUISrcs} ${PoissonCloningMOCSrcs})
   TARGET_LINK_LIBRARIES(PoissonCloningInteractive ${ITK_LIBRARIES} umfpack ${QT_LIBRARIES} FileSelectorLibrary HelpersLibrary)
   #set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
   INSTALL( TARGETS PoissonCloningInteractive RUNTIME DESTINATION ${INSTALL_DIR} )

@@ -26,6 +26,7 @@
 
 // Custom
 #include "Mask.h"
+#include "PoissonCloningComputationThread.h"
 
 // Qt
 #include <QMainWindow>
@@ -38,8 +39,9 @@ public:
 
   PoissonCloningGUI();
   PoissonCloningGUI(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName);
-  void DefaultConstructor();
   
+  typedef itk::VectorImage<float,2> ImageType;
+    
 public slots:
 
   void on_actionOpenImage_activated();
@@ -47,15 +49,23 @@ public slots:
   
   void on_btnClone_clicked();
   void on_chkShowMask_clicked();
+
+  void slot_StartProgressBar();
+  void slot_StopProgressBar();
+  void slot_IterationComplete();
+
   
 protected:
 
+  itk::Index<2> SelectedRegionCorner;
+  
+  void DefaultConstructor();
+  
   void OpenImages(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName);
 
   void showEvent ( QShowEvent * event );
   void resizeEvent ( QResizeEvent * event );
   
-  typedef itk::VectorImage<float,2> ImageType;
   ImageType::Pointer ResultImage;
   ImageType::Pointer SourceImage;
   ImageType::Pointer TargetImage;
@@ -76,6 +86,8 @@ protected:
   std::string SourceImageFileName;
   std::string TargetImageFileName;
   std::string MaskImageFileName;
+
+  PoissonCloningComputationThreadClass* ComputationThread;
 };
 
 #endif // PoissonEditingGUI_H

@@ -24,6 +24,7 @@
 #include "HelpersQt.h"
 #include "Mask.h"
 #include "PoissonCloning.h"
+#include "PoissonCloningComputationObject.h"
 
 // ITK
 #include "itkImageFileReader.h"
@@ -56,6 +57,15 @@ void PoissonCloningGUI::DefaultConstructor()
 {
   this->setupUi(this);
 
+  this->progressBar->setMinimum(0);
+  this->progressBar->setMaximum(0);
+  this->progressBar->hide();
+
+  this->ComputationThread = new PoissonCloningComputationThreadClass;
+  connect(this->ComputationThread, SIGNAL(StartProgressBarSignal()), this, SLOT(slot_StartProgressBar()));
+  connect(this->ComputationThread, SIGNAL(StopProgressBarSignal()), this, SLOT(slot_StopProgressBar()));
+  connect(this->ComputationThread, SIGNAL(IterationCompleteSignal()), this, SLOT(slot_IterationComplete()));
+  
   this->SourceImage = ImageType::New();
   this->TargetImage = ImageType::New();
   this->MaskImage = Mask::New();
@@ -142,10 +152,10 @@ void PoissonCloningGUI::OpenImages(const std::string& sourceImageFileName, const
 void PoissonCloningGUI::on_btnClone_clicked()
 {
   // Extract the portion of the target image the user has selected.
-  itk::Index<2> corner;
-  corner[0] = this->SelectionImagePixmapItem->pos().x();
+  
+  this->SelectedRegionCorner[0] = this->SelectionImagePixmapItem->pos().x();
   //corner[1] = this->SelectionImagePixmapItem->pos().y();
-  corner[1] = this->TargetImage->GetLargestPossibleRegion().GetSize()[1] -
+  this->SelectedRegionCorner[1] = this->TargetImage->GetLargestPossibleRegion().GetSize()[1] -
               (this->SelectionImagePixmapItem->pos().y() + this->SelectionImagePixmapItem->boundingRect().height());
 //   std::cout << "Height: " << this->SelectionImagePixmapItem->boundingRect().height() << std::endl;
 //   std::cout << "y: " << this->SelectionImagePixmapItem->pos().y() << std::endl;
@@ -153,7 +163,7 @@ void PoissonCloningGUI::on_btnClone_clicked()
   
   itk::Size<2> size = this->SourceImage->GetLargestPossibleRegion().GetSize();
 
-  ImageType::RegionType desiredRegion(corner, size);
+  ImageType::RegionType desiredRegion(this->SelectedRegionCorner, size);
 
   typedef itk::RegionOfInterestImageFilter< ImageType, ImageType > RegionOfInterestImageFilterType;
   RegionOfInterestImageFilterType::Pointer regionOfInterestImageFilter = RegionOfInterestImageFilterType::New();
@@ -162,25 +172,17 @@ void PoissonCloningGUI::on_btnClone_clicked()
   regionOfInterestImageFilter->Update();
 
   // Perform the cloning
-  CloneAllChannels<ImageType>(this->SourceImage, regionOfInterestImageFilter->GetOutput(), this->MaskImage, this->ResultImage);
+  //CloneAllChannels<ImageType>(this->SourceImage, regionOfInterestImageFilter->GetOutput(), this->MaskImage, this->ResultImage);
 
-  // Paste the result back into the appropriate region of the target image
-  typedef itk::PasteImageFilter <ImageType, ImageType > PasteImageFilterType;
-  PasteImageFilterType::Pointer pasteImageFilter = PasteImageFilterType::New ();
-  pasteImageFilter->SetSourceImage(this->ResultImage);
-  pasteImageFilter->SetDestinationImage(this->TargetImage);
-  pasteImageFilter->SetSourceRegion(this->ResultImage->GetLargestPossibleRegion());
-  pasteImageFilter->SetDestinationIndex(corner);
-  pasteImageFilter->Update();
-  
-  // Display the result
-  QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(pasteImageFilter->GetOutput());
-  qimage = HelpersQt::FitToGraphicsView(qimage, this->graphicsViewResultImage);
+  ComputationThread->Operation = ComputationThreadClass::ALLSTEPS;
+  PoissonCloningComputationObject* computationObject = new PoissonCloningComputationObject;
+  computationObject->MaskImage = this->MaskImage;
+  computationObject->SourceImage = this->SourceImage;
+  computationObject->TargetImage = regionOfInterestImageFilter->GetOutput();
+  computationObject->ResultImage = this->ResultImage;
+  ComputationThread->SetObject(computationObject);
+  ComputationThread->start();
 
-  QPixmap qpixmap = QPixmap::fromImage(qimage);
-  
-  this->ResultPixmapItem = this->ResultScene->addPixmap(qpixmap);
-  //this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
 }
 
 void PoissonCloningGUI::on_actionSaveResult_activated()
@@ -232,4 +234,38 @@ void PoissonCloningGUI::on_chkShowMask_clicked()
     }
   this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
 }
-  
+
+
+void PoissonCloningGUI::slot_StartProgressBar()
+{
+  this->progressBar->show();
+}
+
+void PoissonCloningGUI::slot_StopProgressBar()
+{
+  this->progressBar->hide();
+}
+
+void PoissonCloningGUI::slot_IterationComplete()
+{
+//   QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->ResultImage);
+//   this->ResultPixmapItem = this->ResultScene->addPixmap(QPixmap::fromImage(qimage));
+
+
+  // Paste the result back into the appropriate region of the target image
+  typedef itk::PasteImageFilter <ImageType, ImageType > PasteImageFilterType;
+  PasteImageFilterType::Pointer pasteImageFilter = PasteImageFilterType::New ();
+  pasteImageFilter->SetSourceImage(this->ResultImage);
+  pasteImageFilter->SetDestinationImage(this->TargetImage);
+  pasteImageFilter->SetSourceRegion(this->ResultImage->GetLargestPossibleRegion());
+  pasteImageFilter->SetDestinationIndex(this->SelectedRegionCorner);
+  pasteImageFilter->Update();
+
+  // Display the result
+  QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(pasteImageFilter->GetOutput());
+  //qimage = HelpersQt::FitToGraphicsView(qimage, this->graphicsViewResultImage);
+
+  this->ResultPixmapItem = this->ResultScene->addPixmap(QPixmap::fromImage(qimage));
+  this->graphicsViewResultImage->fitInView(this->ResultPixmapItem, Qt::KeepAspectRatio);
+  //this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
+}

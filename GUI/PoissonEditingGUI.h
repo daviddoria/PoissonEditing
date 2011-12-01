@@ -26,6 +26,9 @@
 
 // Custom
 #include "Mask.h"
+//#include "Types.h"
+#include "PoissonEditingComputationThread.h"
+//class PoissonEditingComputationThread;
 
 // Qt
 #include <QMainWindow>
@@ -38,6 +41,8 @@ public:
   void DefaultConstructor();
   PoissonEditingGUI();
   PoissonEditingGUI(const std::string& imageFileName, const std::string& maskFileName);
+
+  typedef itk::VectorImage<float,2> ImageType;
   
 public slots:
 
@@ -50,14 +55,17 @@ public slots:
   void on_chkShowOutput_clicked();
   void on_chkShowMask_clicked();
 
+  void slot_StartProgressBar();
+  void slot_StopProgressBar();
+  void slot_IterationComplete();
+
 protected:
 
   void showEvent ( QShowEvent * event );
   void resizeEvent ( QResizeEvent * event );
   
   void OpenImageAndMask(const std::string& imageFileName, const std::string& maskFileName);
-  
-  typedef itk::VectorImage<float,2> ImageType;
+
   ImageType::Pointer Result;
   ImageType::Pointer Image;
   Mask::Pointer MaskImage;
@@ -70,6 +78,8 @@ protected:
 
   std::string SourceImageFileName;
   std::string MaskImageFileName;
+
+  PoissonEditingComputationThreadClass* ComputationThread;
 };
 
 #endif // PoissonEditingGUI_H
