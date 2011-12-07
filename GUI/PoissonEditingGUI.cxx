@@ -39,6 +39,7 @@
 // Called by all constructors
 void PoissonEditingGUI::DefaultConstructor()
 {
+  std::cout << "DefaultConstructor()" << std::endl;
   this->setupUi(this);
 
   this->progressBar->setMinimum(0);
@@ -65,11 +66,13 @@ void PoissonEditingGUI::DefaultConstructor()
 // Default constructor
 PoissonEditingGUI::PoissonEditingGUI()
 {
+  std::cout << "PoissonEditingGUI()" << std::endl;
   DefaultConstructor();
 };
 
 PoissonEditingGUI::PoissonEditingGUI(const std::string& imageFileName, const std::string& maskFileName)
 {
+  std::cout << "PoissonEditingGUI(string, string)" << std::endl;
   DefaultConstructor();
   this->SourceImageFileName = imageFileName;
   this->MaskImageFileName = maskFileName;
@@ -78,12 +81,18 @@ PoissonEditingGUI::PoissonEditingGUI(const std::string& imageFileName, const std
 
 void PoissonEditingGUI::showEvent ( QShowEvent * event )
 {
-  this->graphicsView->fitInView(this->ImagePixmapItem, Qt::KeepAspectRatio);
+  if(this->ImagePixmapItem)
+    {
+    this->graphicsView->fitInView(this->ImagePixmapItem, Qt::KeepAspectRatio);
+    }
 }
 
 void PoissonEditingGUI::resizeEvent ( QResizeEvent * event )
 {
-  this->graphicsView->fitInView(this->ImagePixmapItem, Qt::KeepAspectRatio);
+  if(this->ImagePixmapItem)
+    {
+    this->graphicsView->fitInView(this->ImagePixmapItem, Qt::KeepAspectRatio);
+    }
 }
 
 void PoissonEditingGUI::on_btnFill_clicked()
