@@ -19,11 +19,11 @@
 #include "PoissonCloningComputationObject.h"
 
 #include "PoissonCloning.h"
-#include "PoissonCloningGUI.h"
+#include "PoissonCloningWidget.h"
 
 #include <iostream>
 
 void PoissonCloningComputationObject::Step()
 {
-  CloneAllChannels<PoissonCloningGUI::ImageType>(this->SourceImage, this->TargetImage, this->MaskImage, this->ResultImage);
+  CloneAllChannels<PoissonCloningWidget::ImageType>(this->SourceImage, this->TargetImage, this->MaskImage, this->ResultImage);
 }

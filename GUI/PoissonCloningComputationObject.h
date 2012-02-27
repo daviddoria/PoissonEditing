@@ -21,15 +21,15 @@
 
 #include "ComputationObject.h"
 #include "Mask.h"
-#include "PoissonCloningGUI.h"
+#include "PoissonCloningWidget.h"
 
 class PoissonCloningComputationObject : public ComputationObject
 {
 public:
 
-  PoissonCloningGUI::ImageType::Pointer ResultImage;
-  PoissonCloningGUI::ImageType::Pointer SourceImage;
-  PoissonCloningGUI::ImageType::Pointer TargetImage;
+  PoissonCloningWidget::ImageType::Pointer ResultImage;
+  PoissonCloningWidget::ImageType::Pointer SourceImage;
+  PoissonCloningWidget::ImageType::Pointer TargetImage;
 //   ImageType::Pointer Result;
 //   ImageType::Pointer Image;
   Mask::Pointer MaskImage;

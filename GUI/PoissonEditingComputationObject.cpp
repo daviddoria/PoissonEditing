@@ -24,5 +24,5 @@
 
 void PoissonEditingComputationObject::Step()
 {
-  FillAllChannels<PoissonEditingGUI::ImageType>(this->Image, this->MaskImage, this->Result);
+  FillAllChannels<PoissonEditingWidget::ImageType>(this->Image, this->MaskImage, this->Result);
 }

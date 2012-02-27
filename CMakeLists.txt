@@ -20,6 +20,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 #You must set the EIGEN3_INCLUDE_DIR in the 'Advanced' CMake options to /home/doriad/src/eigen or wherever you have extracted Eigen3.
 
+# Eigen3 find hack:
+include_directories(/media/portable/src/Eigen)
+set(EIGEN3_INCLUDE_DIR /media/portable/src/Eigen)
+
 # On Fedora (15) make sure to install the packages suitesparse* to get UMFPACK
 # On Ubuntu (11.4) make sure to install the packages libsuitesparse-dev to get UMFPACK
 

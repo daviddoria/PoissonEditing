@@ -16,7 +16,7 @@
  *
  *=========================================================================*/
 
-#include "PoissonCloningGUI.h"
+#include "PoissonCloningWidget.h"
 
 // Custom
 #include "ImageFileSelector.h"
@@ -38,14 +38,14 @@
 #include <QTimer>
 
 // Default constructor
-PoissonCloningGUI::PoissonCloningGUI()
+PoissonCloningWidget::PoissonCloningWidget() : QMainWindow()
 {
-  DefaultConstructor();
+  SharedConstructor();
 };
 
-PoissonCloningGUI::PoissonCloningGUI(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName)
+PoissonCloningWidget::PoissonCloningWidget(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName) : QMainWindow()
 {
-  DefaultConstructor();
+  SharedConstructor();
   this->SourceImageFileName = sourceImageFileName;
   this->TargetImageFileName = targetImageFileName;
   this->MaskImageFileName = maskFileName;
@@ -53,7 +53,7 @@ PoissonCloningGUI::PoissonCloningGUI(const std::string& sourceImageFileName, con
   OpenImages(this->SourceImageFileName, this->TargetImageFileName, this->MaskImageFileName);
 }
 
-void PoissonCloningGUI::DefaultConstructor()
+void PoissonCloningWidget::SharedConstructor()
 {
   this->setupUi(this);
 
@@ -88,19 +88,25 @@ void PoissonCloningGUI::DefaultConstructor()
   this->SelectionImagePixmapItem = NULL;
 }
 
-void PoissonCloningGUI::showEvent ( QShowEvent * event )
+void PoissonCloningWidget::showEvent ( QShowEvent * event )
 {
-  this->graphicsViewSourceImage->fitInView(this->SourceImagePixmapItem, Qt::KeepAspectRatio);
-  this->graphicsViewTargetImage->fitInView(this->TargetImagePixmapItem, Qt::KeepAspectRatio);
+  if(SourceImagePixmapItem && TargetImagePixmapItem)
+  {
+    this->graphicsViewSourceImage->fitInView(this->SourceImagePixmapItem, Qt::KeepAspectRatio);
+    this->graphicsViewTargetImage->fitInView(this->TargetImagePixmapItem, Qt::KeepAspectRatio);
+  }
 }
 
-void PoissonCloningGUI::resizeEvent ( QResizeEvent * event )
+void PoissonCloningWidget::resizeEvent ( QResizeEvent * event )
 {
-  this->graphicsViewSourceImage->fitInView(this->SourceImagePixmapItem, Qt::KeepAspectRatio);
-  this->graphicsViewTargetImage->fitInView(this->TargetImagePixmapItem, Qt::KeepAspectRatio);
+  if(SourceImagePixmapItem && TargetImagePixmapItem)
+  {
+    this->graphicsViewSourceImage->fitInView(this->SourceImagePixmapItem, Qt::KeepAspectRatio);
+    this->graphicsViewTargetImage->fitInView(this->TargetImagePixmapItem, Qt::KeepAspectRatio);
+  }
 }
   
-void PoissonCloningGUI::OpenImages(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName)
+void PoissonCloningWidget::OpenImages(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName)
 {
   // Load and display source image
   typedef itk::ImageFileReader<ImageType> ImageReaderType;
@@ -149,7 +155,7 @@ void PoissonCloningGUI::OpenImages(const std::string& sourceImageFileName, const
 
 }
 
-void PoissonCloningGUI::on_btnClone_clicked()
+void PoissonCloningWidget::on_btnClone_clicked()
 {
   // Extract the portion of the target image the user has selected.
   
@@ -185,7 +191,7 @@ void PoissonCloningGUI::on_btnClone_clicked()
 
 }
 
-void PoissonCloningGUI::on_actionSaveResult_activated()
+void PoissonCloningWidget::on_actionSaveResult_activated()
 {
   // Get a filename to save
   QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
@@ -202,7 +208,7 @@ void PoissonCloningGUI::on_actionSaveResult_activated()
 }
 
 
-void PoissonCloningGUI::on_actionOpenImage_activated()
+void PoissonCloningWidget::on_actionOpenImage_activated()
 {
   std::vector<std::string> namedImages;
   namedImages.push_back("SourceImage");
@@ -226,7 +232,7 @@ void PoissonCloningGUI::on_actionOpenImage_activated()
     }
 }
 
-void PoissonCloningGUI::on_chkShowMask_clicked()
+void PoissonCloningWidget::on_chkShowMask_clicked()
 {
   if(!this->MaskImagePixmapItem)
     {
@@ -236,17 +242,17 @@ void PoissonCloningGUI::on_chkShowMask_clicked()
 }
 
 
-void PoissonCloningGUI::slot_StartProgressBar()
+void PoissonCloningWidget::slot_StartProgressBar()
 {
   this->progressBar->show();
 }
 
-void PoissonCloningGUI::slot_StopProgressBar()
+void PoissonCloningWidget::slot_StopProgressBar()
 {
   this->progressBar->hide();
 }
 
-void PoissonCloningGUI::slot_IterationComplete()
+void PoissonCloningWidget::slot_IterationComplete()
 {
 //   QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->ResultImage);
 //   this->ResultPixmapItem = this->ResultScene->addPixmap(QPixmap::fromImage(qimage));

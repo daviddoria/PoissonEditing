@@ -22,14 +22,14 @@
 #include "ComputationObject.h"
 #include "Mask.h"
 //#include "Types.h"
-#include "PoissonEditingGUI.h"
+#include "PoissonEditingWidget.h"
 
 class PoissonEditingComputationObject : public ComputationObject
 {
 public:
 
-  PoissonEditingGUI::ImageType::Pointer Result;
-  PoissonEditingGUI::ImageType::Pointer Image;
+  PoissonEditingWidget::ImageType::Pointer Result;
+  PoissonEditingWidget::ImageType::Pointer Image;
 //   ImageType::Pointer Result;
 //   ImageType::Pointer Image;
   Mask::Pointer MaskImage;

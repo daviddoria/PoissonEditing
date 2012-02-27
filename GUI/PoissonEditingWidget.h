@@ -16,10 +16,10 @@
  *
  *=========================================================================*/
 
-#ifndef PoissonEditingGUI_H
-#define PoissonEditingGUI_H
+#ifndef PoissonEditingWidget_H
+#define PoissonEditingWidget_H
 
-#include "ui_PoissonEditingGUI.h"
+#include "ui_PoissonEditingWidget.h"
 
 // ITK
 #include "itkVectorImage.h"
@@ -34,13 +34,13 @@
 #include <QMainWindow>
 class QGraphicsPixmapItem;
 
-class PoissonEditingGUI : public QMainWindow, public Ui::PoissonEditingGUI
+class PoissonEditingWidget : public QMainWindow, public Ui::PoissonEditingWidget
 {
   Q_OBJECT
 public:
-  void DefaultConstructor();
-  PoissonEditingGUI();
-  PoissonEditingGUI(const std::string& imageFileName, const std::string& maskFileName);
+
+  PoissonEditingWidget();
+  PoissonEditingWidget(const std::string& imageFileName, const std::string& maskFileName);
 
   typedef itk::VectorImage<float,2> ImageType;
   
@@ -59,8 +59,10 @@ public slots:
   void slot_StopProgressBar();
   void slot_IterationComplete();
 
-protected:
+private:
 
+  void SharedConstructor();
+    
   void showEvent ( QShowEvent * event );
   void resizeEvent ( QResizeEvent * event );
   

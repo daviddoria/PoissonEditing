@@ -16,7 +16,7 @@
  *
  *=========================================================================*/
 
-#include "PoissonEditingGUI.h"
+#include "PoissonEditingWidget.h"
 
 // Custom
 #include "ImageFileSelector.h"
@@ -37,9 +37,9 @@
 #include <QGraphicsPixmapItem>
 
 // Called by all constructors
-void PoissonEditingGUI::DefaultConstructor()
+void PoissonEditingWidget::SharedConstructor()
 {
-  std::cout << "DefaultConstructor()" << std::endl;
+  std::cout << "SharedConstructor()" << std::endl;
   this->setupUi(this);
 
   this->progressBar->setMinimum(0);
@@ -64,22 +64,22 @@ void PoissonEditingGUI::DefaultConstructor()
 }
 
 // Default constructor
-PoissonEditingGUI::PoissonEditingGUI()
+PoissonEditingWidget::PoissonEditingWidget()
 {
-  std::cout << "PoissonEditingGUI()" << std::endl;
-  DefaultConstructor();
+  std::cout << "PoissonEditingWidget()" << std::endl;
+  SharedConstructor();
 };
 
-PoissonEditingGUI::PoissonEditingGUI(const std::string& imageFileName, const std::string& maskFileName)
+PoissonEditingWidget::PoissonEditingWidget(const std::string& imageFileName, const std::string& maskFileName)
 {
-  std::cout << "PoissonEditingGUI(string, string)" << std::endl;
-  DefaultConstructor();
+  std::cout << "PoissonEditingWidget(string, string)" << std::endl;
+  SharedConstructor();
   this->SourceImageFileName = imageFileName;
   this->MaskImageFileName = maskFileName;
   OpenImageAndMask(this->SourceImageFileName, this->MaskImageFileName);
 }
 
-void PoissonEditingGUI::showEvent ( QShowEvent * event )
+void PoissonEditingWidget::showEvent ( QShowEvent * event )
 {
   if(this->ImagePixmapItem)
     {
@@ -87,7 +87,7 @@ void PoissonEditingGUI::showEvent ( QShowEvent * event )
     }
 }
 
-void PoissonEditingGUI::resizeEvent ( QResizeEvent * event )
+void PoissonEditingWidget::resizeEvent ( QResizeEvent * event )
 {
   if(this->ImagePixmapItem)
     {
@@ -95,7 +95,7 @@ void PoissonEditingGUI::resizeEvent ( QResizeEvent * event )
     }
 }
 
-void PoissonEditingGUI::on_btnFill_clicked()
+void PoissonEditingWidget::on_btnFill_clicked()
 {
   ComputationThread->Operation = ComputationThreadClass::ALLSTEPS;
   PoissonEditingComputationObject* computationObject = new PoissonEditingComputationObject;
@@ -106,7 +106,7 @@ void PoissonEditingGUI::on_btnFill_clicked()
   ComputationThread->start();
 }
 
-void PoissonEditingGUI::on_actionSaveResult_activated()
+void PoissonEditingWidget::on_actionSaveResult_activated()
 {
   // Get a filename to save
   QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
@@ -122,7 +122,7 @@ void PoissonEditingGUI::on_actionSaveResult_activated()
   this->statusBar()->showMessage("Saved result.");
 }
 
-void PoissonEditingGUI::OpenImageAndMask(const std::string& imageFileName, const std::string& maskFileName)
+void PoissonEditingWidget::OpenImageAndMask(const std::string& imageFileName, const std::string& maskFileName)
 {
   // Load and display image
   typedef itk::ImageFileReader<ImageType> ImageReaderType;
@@ -150,7 +150,7 @@ void PoissonEditingGUI::OpenImageAndMask(const std::string& imageFileName, const
   this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
 }
 
-void PoissonEditingGUI::on_actionOpenImage_activated()
+void PoissonEditingWidget::on_actionOpenImage_activated()
 {
   std::cout << "on_actionOpenImage_activated" << std::endl;
   std::vector<std::string> namedImages;
@@ -172,7 +172,7 @@ void PoissonEditingGUI::on_actionOpenImage_activated()
     }
 }
 
-void PoissonEditingGUI::on_chkShowInput_clicked()
+void PoissonEditingWidget::on_chkShowInput_clicked()
 {
   if(!this->ImagePixmapItem)
     {
@@ -181,7 +181,7 @@ void PoissonEditingGUI::on_chkShowInput_clicked()
   this->ImagePixmapItem->setVisible(this->chkShowInput->isChecked());
 }
 
-void PoissonEditingGUI::on_chkShowOutput_clicked()
+void PoissonEditingWidget::on_chkShowOutput_clicked()
 {
   if(!this->ResultPixmapItem)
     {
@@ -190,7 +190,7 @@ void PoissonEditingGUI::on_chkShowOutput_clicked()
   this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
 }
 
-void PoissonEditingGUI::on_chkShowMask_clicked()
+void PoissonEditingWidget::on_chkShowMask_clicked()
 {
   if(!this->MaskImagePixmapItem)
     {
@@ -199,17 +199,17 @@ void PoissonEditingGUI::on_chkShowMask_clicked()
   this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
 }
 
-void PoissonEditingGUI::slot_StartProgressBar()
+void PoissonEditingWidget::slot_StartProgressBar()
 {
   this->progressBar->show();
 }
 
-void PoissonEditingGUI::slot_StopProgressBar()
+void PoissonEditingWidget::slot_StopProgressBar()
 {
   this->progressBar->hide();
 }
 
-void PoissonEditingGUI::slot_IterationComplete()
+void PoissonEditingWidget::slot_IterationComplete()
 {
   QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->Result);
   this->ResultPixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimage));

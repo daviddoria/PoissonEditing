@@ -16,10 +16,10 @@
  *
  *=========================================================================*/
 
-#ifndef PoissonCloningGUI_H
-#define PoissonCloningGUI_H
+#ifndef PoissonCloningWidget_H
+#define PoissonCloningWidget_H
 
-#include "ui_PoissonCloningGUI.h"
+#include "ui_PoissonCloningWidget.h"
 
 // ITK
 #include "itkVectorImage.h"
@@ -32,13 +32,13 @@
 #include <QMainWindow>
 class QGraphicsPixmapItem;
 
-class PoissonCloningGUI : public QMainWindow, public Ui::PoissonCloningGUI
+class PoissonCloningWidget : public QMainWindow, public Ui::PoissonCloningWidget
 {
   Q_OBJECT
 public:
 
-  PoissonCloningGUI();
-  PoissonCloningGUI(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName);
+  PoissonCloningWidget();
+  PoissonCloningWidget(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName);
   
   typedef itk::VectorImage<float,2> ImageType;
     
@@ -59,7 +59,7 @@ protected:
 
   itk::Index<2> SelectedRegionCorner;
   
-  void DefaultConstructor();
+  void SharedConstructor();
   
   void OpenImages(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName);
 
@@ -90,4 +90,4 @@ protected:
   PoissonCloningComputationThreadClass* ComputationThread;
 };
 
-#endif // PoissonEditingGUI_H
+#endif // PoissonEditingWidget_H
