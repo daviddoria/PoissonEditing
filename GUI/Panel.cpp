@@ -64,7 +64,7 @@ void Panel::LoadAndDisplay()
 
   this->Image = reader->GetOutput();
 
-  QImage image = HelpersQt::GetQImageRGB<FloatVectorImageType>(this->Image, this->Image->GetLargestPossibleRegion());
+  QImage image = HelpersQt::GetQImage(this->Image.GetPointer());
   image = HelpersQt::FitToGraphicsView(image, this->GraphicsView);
 
   this->GraphicsScene->clear();

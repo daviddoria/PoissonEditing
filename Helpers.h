@@ -25,31 +25,31 @@ namespace Helpers
 {
 
 template<typename TImage>
-void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output);
+void DeepCopy(const TImage* const input, TImage* const output);
 
 template<typename TImage>
-void DeepCopyVectorImage(typename TImage::Pointer input, typename TImage::Pointer output);
+void DeepCopyVectorImage(const TImage* const input, TImage* const output);
 
 template<typename TImage>
-void WriteImage(typename TImage::Pointer input, std::string filename);
+void WriteImage(const TImage* const input, const std::string& filename);
 
 template<typename TImage>
-void CastAndWriteScalarImage(typename TImage::Pointer input, std::string filename);
+void CastAndWriteScalarImage(const TImage* const input, const std::string& filename);
 
 template<typename TImage>
-void ScaleAndWriteScalarImage(typename TImage::Pointer input, std::string filename);
+void ScaleAndWriteScalarImage(const TImage* const input, const std::string& filename);
 
 template<typename TImage>
-void ClampImage(typename TImage::Pointer image);
+void ClampImage(TImage* const image);
 
 template<typename TImage>
-void ClampVectorImage(typename TImage::Pointer image);
+void ClampVectorImage(TImage* const image);
 
 std::vector<itk::Offset<2> > Get4NeighborOffsets();
 
 std::vector<itk::Offset<2> > Get8NeighborOffsets();
 
-bool IsOnBorder(itk::ImageRegion<2>, itk::Index<2>);
+bool IsOnBorder(const itk::ImageRegion<2>, const itk::Index<2>);
 
 }
 

@@ -16,7 +16,7 @@
 #endif()
 
 SET(PoissonEditingInteractive CACHE BOOL "Build the Poisson editing interactive version")
-#if(PoissonEditingInteractive)
+if(PoissonEditingInteractive)
   message("Building PoissonEditingInteractive")
   QT4_WRAP_UI(PoissonEditingUISrcs PoissonEditingWidget.ui)
   QT4_WRAP_CPP(PoissonEditingMOCSrcs PoissonEditingWidget.h PoissonEditingComputationThread.h ComputationThread.h)
@@ -28,7 +28,7 @@ SET(PoissonEditingInteractive CACHE BOOL "Build the Poisson editing interactive 
   #set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
   INSTALL( TARGETS PoissonEditingInteractive RUNTIME DESTINATION ${INSTALL_DIR} )
   #ADD_TEST(NAME PoissonCloningTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonCloning ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Target.png cloning.png)
-#endif()
+endif()
 
 SET(PoissonCloningInteractive CACHE BOOL "Build the Poisson cloning interactive version")
 #if(PoissonCloningInteractive)

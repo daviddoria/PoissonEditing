@@ -33,9 +33,6 @@
 // STL
 #include <iostream>
 
-// ITK
-#include "itkImageFileReader.h"
-
 // Constructor
 ImageFileSelector::ImageFileSelector(const std::vector<std::string>& namedImages) : NamedImages(namedImages)
 {

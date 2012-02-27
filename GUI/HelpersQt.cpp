@@ -49,12 +49,12 @@ QImage FitToGraphicsView(const QImage qimage, const QGraphicsView* gfx)
 }
 
 
-QImage GetQMaskImage(const Mask::Pointer mask)
+QImage GetQMaskImage(const Mask* const mask)
 {
   return GetQMaskImage(mask, mask->GetLargestPossibleRegion()); 
 }
 
-QImage GetQMaskImage(const Mask::Pointer mask, const itk::ImageRegion<2>& region)
+QImage GetQMaskImage(const Mask* const mask, const itk::ImageRegion<2>& region)
 {
   QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_ARGB32);
 

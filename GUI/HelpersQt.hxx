@@ -21,21 +21,59 @@
 #include "itkRescaleIntensityImageFilter.h"
 #include "itkVectorImage.h"
 #include "itkVectorMagnitudeImageFilter.h"
+#include "itkVectorIndexSelectionCastImageFilter.h"
 
 // Qt
 #include <QColor>
+
+// Custom
+#include "Helpers.h"
 
 namespace HelpersQt
 {
 
 template <typename TImage>
-QImage GetQImageRGB(const typename TImage::Pointer image)
+QImage GetQImage(const TImage* const image)
+{
+  return GetQImage(image, image->GetLargestPossibleRegion());
+}
+
+template <typename TImage>
+QImage GetQImage(const TImage* const image, const itk::ImageRegion<2>& region)
+{
+  if(image->GetNumberOfComponentsPerPixel() == 3)
+  {
+    return GetQImageRGB(image, region);
+  }
+  else if(image->GetNumberOfComponentsPerPixel() == 1)
+  {
+    typedef itk::Image<float, 2> FloatImageType;
+//     FloatImageType::Pointer scalarImage = FloatImageType::New();
+//     Helpers::DeepCopy(image, scalarImage.GetPointer());
+
+    typedef itk::VectorIndexSelectionCastImageFilter<TImage, FloatImageType> IndexSelectionType;
+    typename IndexSelectionType::Pointer indexSelectionFilter = IndexSelectionType::New();
+    indexSelectionFilter->SetIndex(0);
+    indexSelectionFilter->SetInput(image);
+    indexSelectionFilter->Update();
+    
+    //return GetQImageScalar(scalarImage.GetPointer(), region);
+    return GetQImageScalar(indexSelectionFilter->GetOutput(), region);
+  }
+  else
+  {
+    return GetQImageMagnitude(image, region);
+  }
+}
+
+template <typename TImage>
+QImage GetQImageRGB(const TImage* const image)
 {
   return GetQImageRGB<TImage>(image, image->GetLargestPossibleRegion());
 }
 
 template <typename TImage>
-QImage GetQImageRGB(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
+QImage GetQImageRGB(const TImage* const image, const itk::ImageRegion<2>& region)
 {
   QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_RGB888);
 
@@ -74,13 +112,13 @@ QImage GetQImageRGB(const typename TImage::Pointer image, const itk::ImageRegion
 
 
 template <typename TImage>
-QImage GetQImageRGBA(const typename TImage::Pointer image)
+QImage GetQImageRGBA(const TImage* const image)
 {
   return GetQImageRGBA<TImage>(image, image->GetLargestPossibleRegion());
 }
 
 template <typename TImage>
-QImage GetQImageRGBA(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
+QImage GetQImageRGBA(const TImage* const image, const itk::ImageRegion<2>& region)
 {
   QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_ARGB32);
 
@@ -115,13 +153,13 @@ QImage GetQImageRGBA(const typename TImage::Pointer image, const itk::ImageRegio
 }
 
 template <typename TImage>
-QImage GetQImageMagnitude(const typename TImage::Pointer image)
+QImage GetQImageMagnitude(const TImage* const image)
 {
   return GetQImageMagnitude<TImage>(image, image->GetLargestPossibleRegion());
 }
 
 template <typename TImage>
-QImage GetQImageMagnitude(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
+QImage GetQImageMagnitude(const TImage* const image, const itk::ImageRegion<2>& region)
 {
   typedef itk::Image<typename TImage::InternalPixelType> ScalarImageType;
   
@@ -147,7 +185,8 @@ QImage GetQImageMagnitude(const typename TImage::Pointer image, const itk::Image
   regionOfInterestImageFilter->SetInput(rescaleFilter->GetOutput());
   regionOfInterestImageFilter->Update();
 
-  itk::ImageRegionIterator<TImage> imageIterator(regionOfInterestImageFilter->GetOutput(), regionOfInterestImageFilter->GetOutput()->GetLargestPossibleRegion());
+  itk::ImageRegionConstIteratorWithIndex<UnsignedCharScalarImageType> imageIterator(regionOfInterestImageFilter->GetOutput(),
+                                                                                    regionOfInterestImageFilter->GetOutput()->GetLargestPossibleRegion());
 
   while(!imageIterator.IsAtEnd())
     {
@@ -166,13 +205,13 @@ QImage GetQImageMagnitude(const typename TImage::Pointer image, const itk::Image
 }
 
 template <typename TImage>
-QImage GetQImageScalar(const typename TImage::Pointer image)
+QImage GetQImageScalar(const TImage* const image)
 {
   return GetQImageScalar<TImage>(image, image->GetLargestPossibleRegion());
 }
 
 template <typename TImage>
-QImage GetQImageScalar(const typename TImage::Pointer image, const itk::ImageRegion<2>& region)
+QImage GetQImageScalar(const TImage* const image, const itk::ImageRegion<2>& region)
 {
   QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_RGB888);
 
@@ -201,7 +240,7 @@ QImage GetQImageScalar(const typename TImage::Pointer image, const itk::ImageReg
 }
 
 template <typename TImage>
-QImage GetQImageMasked(const typename TImage::Pointer image, const Mask::Pointer mask)
+QImage GetQImageMasked(const TImage* const image, const Mask::Pointer mask)
 {
   if(image->GetLargestPossibleRegion() != mask->GetLargestPossibleRegion())
     {
@@ -212,7 +251,7 @@ QImage GetQImageMasked(const typename TImage::Pointer image, const Mask::Pointer
 }
 
 template <typename TImage>
-QImage GetQImageMasked(const typename TImage::Pointer image, const Mask::Pointer mask, const itk::ImageRegion<2>& region)
+QImage GetQImageMasked(const TImage* const image, const Mask* const mask, const itk::ImageRegion<2>& region)
 {
   QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_RGB888);
 

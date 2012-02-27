@@ -41,39 +41,47 @@ QImage FitToGraphicsView(const QImage qimage, const QGraphicsView* gfx);
 ////////////////////////////////////
 ///////// Function templates (defined in HelpersQt.hxx) /////////
 ////////////////////////////////////
-template <typename TImage>
-QImage GetQImageRGB(const typename TImage::Pointer image);
 
+/** This function looks at the input image and determins which other HelpersQt function to call. */
 template <typename TImage>
-QImage GetQImageRGB(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
-
-template <typename TImage>
-QImage GetQImageRGBA(const typename TImage::Pointer image);
+QImage GetQImage(const TImage* const image);
 
 template <typename TImage>
-QImage GetQImageRGBA(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
+QImage GetQImage(const TImage* const image, const itk::ImageRegion<2>& region);
 
 template <typename TImage>
-QImage GetQImageMagnitude(const typename TImage::Pointer image);
+QImage GetQImageRGB(const TImage* const image);
 
 template <typename TImage>
-QImage GetQImageMagnitude(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
+QImage GetQImageRGB(const TImage* const image, const itk::ImageRegion<2>& region);
 
 template <typename TImage>
-QImage GetQImageScalar(const typename TImage::Pointer image);
+QImage GetQImageRGBA(const TImage* const image);
 
 template <typename TImage>
-QImage GetQImageScalar(const typename TImage::Pointer image, const itk::ImageRegion<2>& region);
+QImage GetQImageRGBA(const TImage* const image, const itk::ImageRegion<2>& region);
 
 template <typename TImage>
-QImage GetQImageMasked(const typename TImage::Pointer image, const Mask::Pointer mask);
+QImage GetQImageMagnitude(const TImage* const image);
 
 template <typename TImage>
-QImage GetQImageMasked(const typename TImage::Pointer image, const Mask::Pointer mask, const itk::ImageRegion<2>& region);
+QImage GetQImageMagnitude(const TImage* const image, const itk::ImageRegion<2>& region);
 
-QImage GetQMaskImage(const Mask::Pointer mask);
+template <typename TImage>
+QImage GetQImageScalar(const TImage* const image);
 
-QImage GetQMaskImage(const Mask::Pointer mask, const itk::ImageRegion<2>& region);
+template <typename TImage>
+QImage GetQImageScalar(const TImage* const image, const itk::ImageRegion<2>& region);
+
+template <typename TImage>
+QImage GetQImageMasked(const TImage* const image, const Mask* const mask);
+
+template <typename TImage>
+QImage GetQImageMasked(const TImage* const image, const Mask* const mask, const itk::ImageRegion<2>& region);
+
+QImage GetQMaskImage(const Mask* const mask);
+
+QImage GetQMaskImage(const Mask* const mask, const itk::ImageRegion<2>& region);
 
 } // end namespace
 

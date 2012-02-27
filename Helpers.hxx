@@ -27,7 +27,7 @@ namespace Helpers
 {
 
 template<typename TImage>
-void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
+void DeepCopy(const TImage* const input, TImage* const output)
 {
   output->SetRegions(input->GetLargestPossibleRegion());
   output->Allocate();
@@ -44,7 +44,7 @@ void DeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
 }
 
 template<typename TImage>
-void DeepCopyVectorImage(typename TImage::Pointer input, typename TImage::Pointer output)
+void DeepCopyVectorImage(const TImage* const input, TImage* const output)
 {
   output->SetRegions(input->GetLargestPossibleRegion());
   output->SetNumberOfComponentsPerPixel(input->GetNumberOfComponentsPerPixel());
@@ -62,7 +62,7 @@ void DeepCopyVectorImage(typename TImage::Pointer input, typename TImage::Pointe
 }
 
 template<typename TImage>
-void WriteImage(typename TImage::Pointer input, std::string filename)
+void WriteImage(const TImage* const input, const std::string& filename)
 {
   typedef  itk::ImageFileWriter< TImage > WriterType;
   typename WriterType::Pointer writer = WriterType::New();
@@ -72,7 +72,7 @@ void WriteImage(typename TImage::Pointer input, std::string filename)
 }
 
 template<typename TImage>
-void WriteVectorImageAsPNG(typename TImage::Pointer input, std::string filename)
+void WriteVectorImageAsPNG(const TImage* const input, const std::string& filename)
 {
   /*
   typedef itk::VectorCastImageFilter< FloatVectorImageType, UnsignedCharVectorImageType > VectorCastImageFilterType;
@@ -95,7 +95,7 @@ void WriteVectorImageAsPNG(typename TImage::Pointer input, std::string filename)
 }
 
 template<typename TImage>
-void ClampImage(typename TImage::Pointer image)
+void ClampImage(TImage* const image)
 {
   itk::ImageRegionIterator<TImage> imageIterator(image, image->GetLargestPossibleRegion());
 
@@ -122,7 +122,7 @@ void ClampImage(typename TImage::Pointer image)
 
 
 template<typename TImage>
-void ClampVectorImage(typename TImage::Pointer image)
+void ClampVectorImage(TImage* const image)
 {
   itk::ImageRegionIterator<TImage> imageIterator(image, image->GetLargestPossibleRegion());
 
@@ -146,6 +146,5 @@ void ClampVectorImage(typename TImage::Pointer image)
     ++imageIterator;
     }// end iterator while
 }
-
 
 }// end namespace

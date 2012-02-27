@@ -24,7 +24,7 @@
 namespace Helpers
 {
 
-bool IsOnBorder(itk::ImageRegion<2> region, itk::Index<2> index)
+bool IsOnBorder(const itk::ImageRegion<2> region, const itk::Index<2> index)
 {
   if(index[0] == region.GetIndex()[0] || index[1] == region.GetIndex()[1] ||
     static_cast<unsigned int>(index[0]) == region.GetIndex()[0] + region.GetSize()[0]-1 ||
@@ -83,7 +83,5 @@ std::vector<itk::Offset<2> > Get8NeighborOffsets()
 
   return offsets;
 }
-
-
 
 } // end namespace
