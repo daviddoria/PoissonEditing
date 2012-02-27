@@ -116,7 +116,7 @@ void PoissonCloningWidget::OpenImages(const std::string& sourceImageFileName, co
 
   Helpers::DeepCopyVectorImage<ImageType>(sourceImageReader->GetOutput(), this->SourceImage);
 
-  QImage qimageSourceImage = HelpersQt::GetQImageRGBA<ImageType>(this->SourceImage);
+  QImage qimageSourceImage = HelpersQt::GetQImage<ImageType>(this->SourceImage);
   this->SourceImagePixmapItem = this->SourceScene->addPixmap(QPixmap::fromImage(qimageSourceImage));
     
   // Load and display target image
@@ -126,7 +126,7 @@ void PoissonCloningWidget::OpenImages(const std::string& sourceImageFileName, co
 
   Helpers::DeepCopyVectorImage<ImageType>(targetImageReader->GetOutput(), this->TargetImage);
 
-  QImage qimageTargetImage = HelpersQt::GetQImageRGBA<ImageType>(this->TargetImage);
+  QImage qimageTargetImage = HelpersQt::GetQImage<ImageType>(this->TargetImage);
   this->TargetImagePixmapItem = this->TargetScene->addPixmap(QPixmap::fromImage(qimageTargetImage));
   this->TargetScene->setSceneRect(qimageTargetImage.rect());
 
@@ -208,7 +208,7 @@ void PoissonCloningWidget::on_actionSaveResult_activated()
 }
 
 
-void PoissonCloningWidget::on_actionOpenImage_activated()
+void PoissonCloningWidget::on_actionOpenImages_activated()
 {
   std::vector<std::string> namedImages;
   namedImages.push_back("SourceImage");
@@ -268,7 +268,7 @@ void PoissonCloningWidget::slot_IterationComplete()
   pasteImageFilter->Update();
 
   // Display the result
-  QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(pasteImageFilter->GetOutput());
+  QImage qimage = HelpersQt::GetQImage<ImageType>(pasteImageFilter->GetOutput());
   //qimage = HelpersQt::FitToGraphicsView(qimage, this->graphicsViewResultImage);
 
   this->ResultPixmapItem = this->ResultScene->addPixmap(QPixmap::fromImage(qimage));

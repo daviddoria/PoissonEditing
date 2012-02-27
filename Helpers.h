@@ -51,6 +51,12 @@ std::vector<itk::Offset<2> > Get8NeighborOffsets();
 
 bool IsOnBorder(const itk::ImageRegion<2>, const itk::Index<2>);
 
+template <class TImage>
+float MinValue(const TImage* const image);
+
+template <class TImage>
+float MaxValue(const TImage* const image);
+
 }
 
 #include "Helpers.hxx"

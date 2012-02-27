@@ -113,15 +113,15 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpenImage"/>
+    <addaction name="actionOpenImages"/>
     <addaction name="actionSaveResult"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionOpenImage">
+  <action name="actionOpenImages">
    <property name="text">
-    <string>Open Image</string>
+    <string>Open Images</string>
    </property>
   </action>
   <action name="actionSaveResult">

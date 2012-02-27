@@ -22,6 +22,7 @@
 #include "itkImageFileWriter.h"
 #include "itkRescaleIntensityImageFilter.h"
 #include "itkVectorCastImageFilter.h"
+#include "itkMinimumMaximumImageCalculator.h"
 
 namespace Helpers
 {
@@ -145,6 +146,34 @@ void ClampVectorImage(TImage* const image)
     imageIterator.Set(pixel);
     ++imageIterator;
     }// end iterator while
+}
+
+template <class TImage>
+float MinValue(const TImage* const image)
+{
+  typedef typename itk::MinimumMaximumImageCalculator<TImage>
+          ImageCalculatorFilterType;
+
+  typename ImageCalculatorFilterType::Pointer imageCalculatorFilter
+          = ImageCalculatorFilterType::New ();
+  imageCalculatorFilter->SetImage(image);
+  imageCalculatorFilter->Compute();
+
+  return imageCalculatorFilter->GetMinimum();
+}
+
+template <class TImage>
+float MaxValue(const TImage* const image)
+{
+  typedef typename itk::MinimumMaximumImageCalculator<TImage>
+          ImageCalculatorFilterType;
+
+  typename ImageCalculatorFilterType::Pointer imageCalculatorFilter
+          = ImageCalculatorFilterType::New ();
+  imageCalculatorFilter->SetImage(image);
+  imageCalculatorFilter->Compute();
+
+  return imageCalculatorFilter->GetMaximum();
 }
 
 }// end namespace

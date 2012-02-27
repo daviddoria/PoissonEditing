@@ -74,6 +74,12 @@ template <typename TImage>
 QImage GetQImageScalar(const TImage* const image, const itk::ImageRegion<2>& region);
 
 template <typename TImage>
+QImage GetQImageScaled(const TImage* const image);
+
+template <typename TImage>
+QImage GetQImageScaled(const TImage* const image, const itk::ImageRegion<2>& region);
+
+template <typename TImage>
 QImage GetQImageMasked(const TImage* const image, const Mask* const mask);
 
 template <typename TImage>

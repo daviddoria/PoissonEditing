@@ -43,6 +43,7 @@ QImage GetQImage(const TImage* const image, const itk::ImageRegion<2>& region)
 {
   if(image->GetNumberOfComponentsPerPixel() == 3)
   {
+    std::cout << "GetQImage: Calling GetQImageRGB." << std::endl;
     return GetQImageRGB(image, region);
   }
   else if(image->GetNumberOfComponentsPerPixel() == 1)
@@ -56,12 +57,34 @@ QImage GetQImage(const TImage* const image, const itk::ImageRegion<2>& region)
     indexSelectionFilter->SetIndex(0);
     indexSelectionFilter->SetInput(image);
     indexSelectionFilter->Update();
-    
-    //return GetQImageScalar(scalarImage.GetPointer(), region);
+
+    float minValue = Helpers::MinValue(indexSelectionFilter->GetOutput());
+    float maxValue = Helpers::MaxValue(indexSelectionFilter->GetOutput());
+    float valueRange = maxValue - minValue;
+    if(valueRange < 20)
+    {
+      std::cout << "GetQImage: Calling GetQImageScaled because range too small." << std::endl;
+      return GetQImageScaled(indexSelectionFilter->GetOutput(), region);
+    }
+
+    if(minValue < 0)
+    {
+      std::cout << "GetQImage: Calling GetQImageScaled because minValue < 0." << std::endl;
+      return GetQImageScaled(indexSelectionFilter->GetOutput(), region);
+    }
+
+    if(maxValue > 255)
+    {
+      std::cout << "GetQImage: Calling GetQImageScaled because minValue < 0." << std::endl;
+      return GetQImageScaled(indexSelectionFilter->GetOutput(), region);
+    }
+
+    std::cout << "GetQImage: Calling GetQImageScalar (value range = " << valueRange << "." << std::endl;
     return GetQImageScalar(indexSelectionFilter->GetOutput(), region);
   }
   else
   {
+    std::cout << "GetQImage: Calling GetQImageMagnitude." << std::endl;
     return GetQImageMagnitude(image, region);
   }
 }
@@ -205,9 +228,51 @@ QImage GetQImageMagnitude(const TImage* const image, const itk::ImageRegion<2>& 
 }
 
 template <typename TImage>
+QImage GetQImageScaled(const TImage* const image)
+{
+  return GetQImageScaled(image, image->GetLargestPossibleRegion());
+}
+
+template <typename TImage>
+QImage GetQImageScaled(const TImage* const image, const itk::ImageRegion<2>& region)
+{
+  QImage qimage(region.GetSize()[0], region.GetSize()[1], QImage::Format_RGB888);
+
+  typedef itk::RegionOfInterestImageFilter< TImage, TImage> RegionOfInterestImageFilterType;
+  typename RegionOfInterestImageFilterType::Pointer regionOfInterestImageFilter = RegionOfInterestImageFilterType::New();
+  regionOfInterestImageFilter->SetRegionOfInterest(region);
+  regionOfInterestImageFilter->SetInput(image);
+  regionOfInterestImageFilter->Update();
+
+  typedef itk::RescaleIntensityImageFilter< TImage, TImage > RescaleFilterType;
+  typename RescaleFilterType::Pointer rescaleFilter = RescaleFilterType::New();
+  rescaleFilter->SetInput(regionOfInterestImageFilter->GetOutput());
+  rescaleFilter->SetOutputMinimum(0);
+  rescaleFilter->SetOutputMaximum(255);
+  rescaleFilter->Update();
+  
+  itk::ImageRegionConstIteratorWithIndex<TImage> imageIterator(rescaleFilter->GetOutput(), rescaleFilter->GetOutput()->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    typename TImage::PixelType pixelValue = imageIterator.Get();
+
+    QColor pixelColor(static_cast<int>(pixelValue), static_cast<int>(pixelValue), static_cast<int>(pixelValue));
+
+    itk::Index<2> index = imageIterator.GetIndex();
+    qimage.setPixel(index[0], index[1], pixelColor.rgb());
+
+    ++imageIterator;
+    }
+
+  //return qimage; // The actual image region
+  return qimage.mirrored(false, true); // The flipped image region
+}
+
+template <typename TImage>
 QImage GetQImageScalar(const TImage* const image)
 {
-  return GetQImageScalar<TImage>(image, image->GetLargestPossibleRegion());
+  return GetQImageScalar(image, image->GetLargestPossibleRegion());
 }
 
 template <typename TImage>
