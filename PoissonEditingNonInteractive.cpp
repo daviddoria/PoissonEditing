@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   maskReader->Update();
   
   FloatVectorImageType::Pointer result = FloatVectorImageType::New();
-  FillAllChannels<FloatVectorImageType>(imageReader->GetOutput(), maskReader->GetOutput(), result);
+  FillAllChannels(imageReader->GetOutput(), maskReader->GetOutput(), result.GetPointer());
   
   // Get and write output
   //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), outputFilename);
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
   writer->SetInput(reassembler->GetOutput());
   writer->Update();
   */
-  Helpers::WriteVectorImageAsPNG<FloatVectorImageType>(result, outputFilename);
+  Helpers::WriteVectorImageAsPNG(result.GetPointer(), outputFilename);
   
   return EXIT_SUCCESS;
 }

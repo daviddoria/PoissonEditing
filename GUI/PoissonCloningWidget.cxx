@@ -43,7 +43,8 @@ PoissonCloningWidget::PoissonCloningWidget() : QMainWindow()
   SharedConstructor();
 };
 
-PoissonCloningWidget::PoissonCloningWidget(const std::string& sourceImageFileName, const std::string& targetImageFileName, const std::string& maskFileName) : QMainWindow()
+PoissonCloningWidget::PoissonCloningWidget(const std::string& sourceImageFileName,
+                                           const std::string& targetImageFileName, const std::string& maskFileName) : QMainWindow()
 {
   SharedConstructor();
   this->SourceImageFileName = sourceImageFileName;
@@ -88,7 +89,7 @@ void PoissonCloningWidget::SharedConstructor()
   this->SelectionImagePixmapItem = NULL;
 }
 
-void PoissonCloningWidget::showEvent ( QShowEvent * event )
+void PoissonCloningWidget::showEvent(QShowEvent* event)
 {
   if(SourceImagePixmapItem && TargetImagePixmapItem)
   {
@@ -97,7 +98,7 @@ void PoissonCloningWidget::showEvent ( QShowEvent * event )
   }
 }
 
-void PoissonCloningWidget::resizeEvent ( QResizeEvent * event )
+void PoissonCloningWidget::resizeEvent(QResizeEvent* event)
 {
   if(SourceImagePixmapItem && TargetImagePixmapItem)
   {

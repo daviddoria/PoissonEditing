@@ -16,6 +16,9 @@
  *
  *=========================================================================*/
 
+#include "PoissonEditing.h" // Appease syntax parser
+
+// Custom
 #include "Helpers.h"
 #include "IndexComparison.h"
 
@@ -42,7 +45,7 @@ PoissonEditing<TImage>::PoissonEditing()
 }
 
 template <typename TImage>
-void PoissonEditing<TImage>::SetImage(const typename TImage::Pointer image)
+void PoissonEditing<TImage>::SetImage(TImage* const image)
 {
   // Copy the 'image' to both the source and target image. The target image can be overridden from PoissonCloning.
   this->SourceImage = image;
@@ -50,14 +53,14 @@ void PoissonEditing<TImage>::SetImage(const typename TImage::Pointer image)
 }
 
 template <typename TImage>
-void PoissonEditing<TImage>::SetGuidanceField(const FloatScalarImageType::Pointer field)
+void PoissonEditing<TImage>::SetGuidanceField(const FloatScalarImageType* const field)
 {
   //this->GuidanceField->Graft(field);
-  Helpers::DeepCopy<FloatScalarImageType>(field, this->GuidanceField);
+  Helpers::DeepCopy(field, this->GuidanceField.GetPointer());
 }
 
 template <typename TImage>
-void PoissonEditing<TImage>::SetMask(const Mask::Pointer mask)
+void PoissonEditing<TImage>::SetMask(Mask* const mask)
 {
   this->MaskImage = mask;
 }
@@ -342,7 +345,7 @@ bool PoissonEditing<TImage>::VerifyMask() const
 }
 
 template <typename TVectorImage>
-void FillAllChannels(const typename TVectorImage::Pointer image, const Mask::Pointer mask, typename TVectorImage::Pointer output)
+void FillAllChannels(const TVectorImage* const image, Mask* const mask, TVectorImage* const output)
 {
   typedef itk::Image<typename TVectorImage::InternalPixelType, 2> ScalarImageType;
   

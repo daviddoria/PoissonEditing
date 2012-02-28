@@ -56,8 +56,8 @@ protected:
 };
 
 template <typename TVectorImage>
-void CloneAllChannels(const typename TVectorImage::Pointer sourceImage, const typename TVectorImage::Pointer targetImage,
-                      const Mask::Pointer mask, typename TVectorImage::Pointer output);
+void CloneAllChannels(const TVectorImage* const sourceImage, const TVectorImage* const targetImage,
+                      Mask* const mask, TVectorImage* const output);
 
 #include "PoissonCloning.txx"
 

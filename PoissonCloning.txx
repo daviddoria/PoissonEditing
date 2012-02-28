@@ -64,8 +64,8 @@ void PoissonCloning<TImage>::PasteMaskedRegionIntoTargetImage()
 
 
 template <typename TVectorImage>
-void CloneAllChannels(const typename TVectorImage::Pointer image, const typename TVectorImage::Pointer targetImage,
-                      const Mask::Pointer mask, typename TVectorImage::Pointer output)
+void CloneAllChannels(const TVectorImage* const image, const TVectorImage* const targetImage,
+                      Mask* const mask, TVectorImage* const output)
 {
   typedef itk::Image<typename TVectorImage::InternalPixelType, 2> ScalarImageType;
   
@@ -105,5 +105,5 @@ void CloneAllChannels(const typename TVectorImage::Pointer image, const typename
   std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
   std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
 
-  Helpers::DeepCopyVectorImage<TVectorImage>(reassembler->GetOutput(), output);
+  Helpers::DeepCopyVectorImage(reassembler->GetOutput(), output);
 }

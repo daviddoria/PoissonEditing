@@ -51,9 +51,9 @@ public:
   
   typedef itk::Image<float, 2> FloatScalarImageType;
   
-  void SetImage(const typename TImage::Pointer image);
-  void SetMask(const Mask::Pointer mask);
-  void SetGuidanceField(const FloatScalarImageType::Pointer field);
+  void SetImage(TImage* const image);
+  void SetMask(Mask* const mask);
+  void SetGuidanceField(const FloatScalarImageType* const field);
   void SetGuidanceFieldToZero();
 
   void FillMaskedRegion();
@@ -80,9 +80,12 @@ protected:
   Mask::Pointer MaskImage;
 };
 
+/**
+ */
+// TODO: 'mask' should be a const pointer to const. The SetMask function currently sets a mutable member, so it cannot be.
 template <typename TVectorImage>
-void FillAllChannels(const typename TVectorImage::Pointer image, const Mask::Pointer mask, typename TVectorImage::Pointer output);
+void FillAllChannels(const TVectorImage* const image, Mask* const mask, TVectorImage* const output);
 
-#include "PoissonEditing.txx"
+#include "PoissonEditing.hpp"
 
 #endif

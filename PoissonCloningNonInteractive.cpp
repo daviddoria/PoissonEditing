@@ -74,11 +74,12 @@ int main(int argc, char* argv[])
             << "Mask image: " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
 
   FloatVectorImageType::Pointer output = FloatVectorImageType::New();
-  CloneAllChannels<FloatVectorImageType>(sourceImageReader->GetOutput(), targetImageReader->GetOutput(), maskReader->GetOutput(), output);
+  CloneAllChannels(sourceImageReader->GetOutput(), targetImageReader->GetOutput(),
+                   maskReader->GetOutput(), output.GetPointer());
   
   // Write output
   //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), "output.mhd");
-  Helpers::WriteVectorImageAsPNG<FloatVectorImageType>(output, outputFilename);
+  Helpers::WriteVectorImageAsPNG(output.GetPointer(), outputFilename);
 
   return EXIT_SUCCESS;
 }
