@@ -24,8 +24,6 @@
 #include "HelpersQt.h"
 #include "Mask.h"
 #include "PoissonEditing.h"
-#include "PoissonEditingComputationThread.h"
-#include "PoissonEditingComputationObject.h"
 
 // ITK
 #include "itkImageFileReader.h"
@@ -35,6 +33,7 @@
 #include <QIcon>
 #include <QFileDialog>
 #include <QGraphicsPixmapItem>
+#include <QtConcurrentRun>
 
 // Called by all constructors
 void PoissonEditingWidget::SharedConstructor()
@@ -42,14 +41,10 @@ void PoissonEditingWidget::SharedConstructor()
   std::cout << "SharedConstructor()" << std::endl;
   this->setupUi(this);
 
-  this->progressBar->setMinimum(0);
-  this->progressBar->setMaximum(0);
-  this->progressBar->hide();
+  this->ProgressDialog = new QProgressDialog();
 
-  this->ComputationThread = new PoissonEditingComputationThreadClass;
-  connect(this->ComputationThread, SIGNAL(StartProgressBarSignal()), this, SLOT(slot_StartProgressBar()));
-  connect(this->ComputationThread, SIGNAL(StopProgressBarSignal()), this, SLOT(slot_StopProgressBar()));
-  connect(this->ComputationThread, SIGNAL(IterationCompleteSignal()), this, SLOT(slot_IterationComplete()));
+  connect(&this->FutureWatcher, SIGNAL(finished()), this, SLOT(slot_finished()));
+  connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
 
   this->Image = ImageType::New();
   this->MaskImage = Mask::New();
@@ -97,13 +92,14 @@ void PoissonEditingWidget::resizeEvent ( QResizeEvent * event )
 
 void PoissonEditingWidget::on_btnFill_clicked()
 {
-  ComputationThread->Operation = ComputationThreadClass::ALLSTEPS;
-  PoissonEditingComputationObject* computationObject = new PoissonEditingComputationObject;
-  computationObject->MaskImage = this->MaskImage;
-  computationObject->Image = this->Image;
-  computationObject->Result = this->Result;
-  ComputationThread->SetObject(computationObject);
-  ComputationThread->start();
+  QFuture<void> future = QtConcurrent::run(FillAllChannels<ImageType>, Image.GetPointer(),
+                                           MaskImage.GetPointer(), Result.GetPointer());
+  this->FutureWatcher.setFuture(future);
+
+  this->ProgressDialog->setMinimum(0);
+  this->ProgressDialog->setMaximum(0);
+  this->ProgressDialog->setWindowModality(Qt::WindowModal);
+  this->ProgressDialog->exec();
 }
 
 void PoissonEditingWidget::on_actionSaveResult_activated()

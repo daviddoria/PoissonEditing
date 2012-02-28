@@ -24,7 +24,6 @@
 #include "HelpersQt.h"
 #include "Mask.h"
 #include "PoissonCloning.h"
-#include "PoissonCloningComputationObject.h"
 
 // ITK
 #include "itkImageFileReader.h"
@@ -36,6 +35,7 @@
 #include <QFileDialog>
 #include <QGraphicsPixmapItem>
 #include <QTimer>
+#include <QtConcurrentRun>
 
 // Default constructor
 PoissonCloningWidget::PoissonCloningWidget() : QMainWindow()
@@ -62,10 +62,10 @@ void PoissonCloningWidget::SharedConstructor()
   this->progressBar->setMaximum(0);
   this->progressBar->hide();
 
-  this->ComputationThread = new PoissonCloningComputationThreadClass;
-  connect(this->ComputationThread, SIGNAL(StartProgressBarSignal()), this, SLOT(slot_StartProgressBar()));
-  connect(this->ComputationThread, SIGNAL(StopProgressBarSignal()), this, SLOT(slot_StopProgressBar()));
-  connect(this->ComputationThread, SIGNAL(IterationCompleteSignal()), this, SLOT(slot_IterationComplete()));
+  this->ProgressDialog = new QProgressDialog();
+
+  connect(&this->FutureWatcher, SIGNAL(finished()), this, SLOT(slot_finished()));
+  connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
   
   this->SourceImage = ImageType::New();
   this->TargetImage = ImageType::New();
@@ -179,16 +179,15 @@ void PoissonCloningWidget::on_btnClone_clicked()
   regionOfInterestImageFilter->Update();
 
   // Perform the cloning
-  //CloneAllChannels<ImageType>(this->SourceImage, regionOfInterestImageFilter->GetOutput(), this->MaskImage, this->ResultImage);
+  QFuture<void> future = QtConcurrent::run(CloneAllChannels<ImageType>, this->SourceImage.GetPointer(),
+                                           regionOfInterestImageFilter->GetOutput(),
+                                           this->MaskImage.GetPointer(), this->ResultImage.GetPointer());
+  this->FutureWatcher.setFuture(future);
 
-  ComputationThread->Operation = ComputationThreadClass::ALLSTEPS;
-  PoissonCloningComputationObject* computationObject = new PoissonCloningComputationObject;
-  computationObject->MaskImage = this->MaskImage;
-  computationObject->SourceImage = this->SourceImage;
-  computationObject->TargetImage = regionOfInterestImageFilter->GetOutput();
-  computationObject->ResultImage = this->ResultImage;
-  ComputationThread->SetObject(computationObject);
-  ComputationThread->start();
+  this->ProgressDialog->setMinimum(0);
+  this->ProgressDialog->setMaximum(0);
+  this->ProgressDialog->setWindowModality(Qt::WindowModal);
+  this->ProgressDialog->exec();
 
 }
 

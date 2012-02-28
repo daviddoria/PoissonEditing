@@ -19,10 +19,9 @@ SET(PoissonEditingInteractive CACHE BOOL "Build the Poisson editing interactive 
 if(PoissonEditingInteractive)
   message("Building PoissonEditingInteractive")
   QT4_WRAP_UI(PoissonEditingUISrcs PoissonEditingWidget.ui)
-  QT4_WRAP_CPP(PoissonEditingMOCSrcs PoissonEditingWidget.h PoissonEditingComputationThread.h ComputationThread.h)
+  QT4_WRAP_CPP(PoissonEditingMOCSrcs PoissonEditingWidget.h)
 
   ADD_EXECUTABLE(PoissonEditingInteractive PoissonEditingInteractive.cpp PoissonEditingWidget.cxx
-                 ComputationThread.cpp PoissonEditingComputationThread.cpp PoissonEditingComputationObject.cpp
                  HelpersQt.cpp ${PoissonEditingUISrcs} ${PoissonEditingMOCSrcs})
   TARGET_LINK_LIBRARIES(PoissonEditingInteractive ${ITK_LIBRARIES} umfpack ${QT_LIBRARIES} FileSelectorLibrary HelpersLibrary )
   #set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
@@ -34,9 +33,8 @@ SET(PoissonCloningInteractive CACHE BOOL "Build the Poisson cloning interactive 
 #if(PoissonCloningInteractive)
   message("Building PoissonCloningInteractive")
   QT4_WRAP_UI(PoissonCloningUISrcs PoissonCloningWidget.ui)
-  QT4_WRAP_CPP(PoissonCloningMOCSrcs PoissonCloningWidget.h PoissonCloningComputationThread.h ComputationThread.h)
+  QT4_WRAP_CPP(PoissonCloningMOCSrcs PoissonCloningWidget.h)
   ADD_EXECUTABLE(PoissonCloningInteractive PoissonCloningInteractive.cpp PoissonCloningWidget.cxx
-                 ComputationThread.cpp PoissonCloningComputationThread.cpp PoissonCloningComputationObject.cpp
                  HelpersQt.cpp ${PoissonCloningUISrcs} ${PoissonCloningMOCSrcs})
   TARGET_LINK_LIBRARIES(PoissonCloningInteractive ${ITK_LIBRARIES} umfpack ${QT_LIBRARIES} FileSelectorLibrary HelpersLibrary)
   #set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")

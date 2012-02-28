@@ -26,10 +26,11 @@
 
 // Custom
 #include "Mask.h"
-#include "PoissonCloningComputationThread.h"
 
 // Qt
 #include <QMainWindow>
+#include <QFutureWatcher>
+#include <QProgressDialog>
 class QGraphicsPixmapItem;
 
 class PoissonCloningWidget : public QMainWindow, public Ui::PoissonCloningWidget
@@ -87,7 +88,8 @@ protected:
   std::string TargetImageFileName;
   std::string MaskImageFileName;
 
-  PoissonCloningComputationThreadClass* ComputationThread;
+  QFutureWatcher<void> FutureWatcher;
+  QProgressDialog* ProgressDialog;
 };
 
 #endif // PoissonEditingWidget_H
