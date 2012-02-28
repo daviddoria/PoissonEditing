@@ -46,19 +46,25 @@ public:
   typedef typename PoissonEditing<TImage>::FloatScalarImageType FloatScalarImageType;
  
   PoissonCloning();
-  void SetTargetImage(typename TImage::Pointer image);
+
+  /** If you are copying a region of an image, use this function - it creates the guidance field (computes the Laplacian) from the provided 'image'. */
+  void SetSourceImage(TImage* const image);
+
+  /** Perform the filling. */
   void PasteMaskedRegionIntoTargetImage();
 
-protected:
+private:
 
-  void CreateGuidanceField(const typename FloatScalarImageType::Pointer sourceImage);
+  /** Compute the Laplacian of the provided source image. */
+  void CreateGuidanceField(const FloatScalarImageType* const sourceImage);
 
+  FloatScalarImageType::Pointer GuidanceField;
 };
 
 template <typename TVectorImage>
 void CloneAllChannels(const TVectorImage* const sourceImage, const TVectorImage* const targetImage,
                       Mask* const mask, TVectorImage* const output);
 
-#include "PoissonCloning.txx"
+#include "PoissonCloning.hpp"
 
 #endif

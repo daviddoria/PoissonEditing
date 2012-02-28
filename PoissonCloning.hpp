@@ -16,6 +16,9 @@
  *
  *=========================================================================*/
 
+#include "PoissonCloning.h" // Appease syntax parser
+
+// Custom
 #include "Helpers.h"
 
 // ITK
@@ -24,27 +27,17 @@
 #include "itkNthElementImageAdaptor.h"
 
 template <typename TImage>
-PoissonCloning<TImage>::PoissonCloning() : PoissonEditing<TImage>() // Call the parent constructor
+PoissonCloning<TImage>::PoissonCloning() : PoissonEditing<TImage>(), GuidanceField(NULL)
 {
 
 }
 
 template <typename TImage>
-void PoissonCloning<TImage>::SetTargetImage(typename TImage::Pointer image)
+void PoissonCloning<TImage>::SetTargetImage(TImage* const image)
 {
   Helpers::DeepCopy<TImage>(image, this->TargetImage);
 }
 
-template <typename TImage>
-void PoissonCloning<TImage>::CreateGuidanceField(const typename FloatScalarImageType::Pointer sourceImage)
-{
-  typedef itk::LaplacianImageFilter<FloatScalarImageType, FloatScalarImageType>  LaplacianFilterType;
-
-  typename LaplacianFilterType::Pointer laplacianFilter = LaplacianFilterType::New();
-  laplacianFilter->SetInput(sourceImage);
-  laplacianFilter->Update();
-  this->SetGuidanceField(laplacianFilter->GetOutput());
-}
 
 template <typename TImage>
 void PoissonCloning<TImage>::PasteMaskedRegionIntoTargetImage()

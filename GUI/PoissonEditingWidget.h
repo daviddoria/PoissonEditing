@@ -62,8 +62,8 @@ private:
 
   void SharedConstructor();
     
-  void showEvent ( QShowEvent * event );
-  void resizeEvent ( QResizeEvent * event );
+  void showEvent(QShowEvent* event);
+  void resizeEvent(QResizeEvent* event);
   
   void OpenImageAndMask(const std::string& imageFileName, const std::string& maskFileName);
 
@@ -84,4 +84,4 @@ private:
   QProgressDialog* ProgressDialog;
 };
 
-#endif // PoissonEditingGUI_H
+#endif // PoissonEditingWidget_H

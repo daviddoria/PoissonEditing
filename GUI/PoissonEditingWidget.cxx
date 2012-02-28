@@ -126,9 +126,9 @@ void PoissonEditingWidget::OpenImageAndMask(const std::string& imageFileName, co
   imageReader->SetFileName(imageFileName);
   imageReader->Update();
 
-  Helpers::DeepCopyVectorImage<ImageType>(imageReader->GetOutput(), this->Image);
+  Helpers::DeepCopyVectorImage(imageReader->GetOutput(), this->Image.GetPointer());
 
-  QImage qimageImage = HelpersQt::GetQImageRGBA<ImageType>(this->Image);
+  QImage qimageImage = HelpersQt::GetQImageRGBA(this->Image.GetPointer());
   this->ImagePixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimageImage));
   this->graphicsView->fitInView(this->ImagePixmapItem);
   this->ImagePixmapItem->setVisible(this->chkShowInput->isChecked());
@@ -139,7 +139,7 @@ void PoissonEditingWidget::OpenImageAndMask(const std::string& imageFileName, co
   maskReader->SetFileName(maskFileName);
   maskReader->Update();
 
-  Helpers::DeepCopy<Mask>(maskReader->GetOutput(), this->MaskImage);
+  Helpers::DeepCopy(maskReader->GetOutput(), this->MaskImage.GetPointer());
 
   QImage qimageMask = HelpersQt::GetQMaskImage(this->MaskImage);
   this->MaskImagePixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimageMask));
@@ -207,7 +207,7 @@ void PoissonEditingWidget::slot_StopProgressBar()
 
 void PoissonEditingWidget::slot_IterationComplete()
 {
-  QImage qimage = HelpersQt::GetQImageRGBA<ImageType>(this->Result);
+  QImage qimage = HelpersQt::GetQImageRGBA(this->Result.GetPointer());
   this->ResultPixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimage));
   this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
 }

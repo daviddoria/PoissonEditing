@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(PoissonEditing)
 ENABLE_TESTING()
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x") # needed to allow default template arguments in function templates
+
 # Where to copy executables when 'make install' is run
 SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 
@@ -53,14 +55,14 @@ if(PoissonEditingNonInteractive)
 endif()
 
 
-SET(PoissonCloningNonInteractive ON CACHE BOOL "Build the Poisson cloning non interactive version")
-if(PoissonCloningNonInteractive)
-  ADD_EXECUTABLE(PoissonCloningNonInteractive PoissonCloningNonInteractive.cpp Helpers.cpp IndexComparison.cpp)
-  TARGET_LINK_LIBRARIES(PoissonCloningNonInteractive ${ITK_LIBRARIES} umfpack HelpersLibrary )
-  #set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
-  INSTALL( TARGETS PoissonCloningNonInteractive RUNTIME DESTINATION ${INSTALL_DIR} )
-  #ADD_TEST(NAME PoissonCloningTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonCloning ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Target.png cloning.png)
-endif()
+# SET(PoissonCloningNonInteractive ON CACHE BOOL "Build the Poisson cloning non interactive version")
+# if(PoissonCloningNonInteractive)
+#   ADD_EXECUTABLE(PoissonCloningNonInteractive PoissonCloningNonInteractive.cpp Helpers.cpp IndexComparison.cpp)
+#   TARGET_LINK_LIBRARIES(PoissonCloningNonInteractive ${ITK_LIBRARIES} umfpack HelpersLibrary )
+#   #set_target_properties(PoissonCloning PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
+#   INSTALL( TARGETS PoissonCloningNonInteractive RUNTIME DESTINATION ${INSTALL_DIR} )
+#   #ADD_TEST(NAME PoissonCloningTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonCloning ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Target.png cloning.png)
+# endif()
 
 
 # 

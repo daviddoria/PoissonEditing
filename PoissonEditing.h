@@ -39,41 +39,55 @@
 // STL
 #include <vector>
 
-/* This class operates on a single channel image. If you would like to use this technique on a multi-channel image,
+/** This class operates on a single channel image. If you would like to use this technique on a multi-channel image,
  * use the free function FillAllChannels.
  */
 
-template <typename TImage>
+template <typename TPixel>
 class PoissonEditing
 {
 public:
   PoissonEditing();
-  
-  typedef itk::Image<float, 2> FloatScalarImageType;
-  
-  void SetImage(TImage* const image);
-  void SetMask(Mask* const mask);
-  void SetGuidanceField(const FloatScalarImageType* const field);
-  void SetGuidanceFieldToZero();
 
+  typedef itk::Image<TPixel, 2> ImageType;
+  typedef itk::Image<float, 2> FloatScalarImageType;
+
+  /** Specify the image to fill. */
+  void SetTargetImage(const ImageType* const image);
+
+  /** Specify the region in which to fill the image. */
+  void SetMask(const Mask* const mask);
+
+  /** Specify a source image from which the guidance field will be produced. */
+  void SetSourceImage(const ImageType* const image);
+  
+  /** Specify a guidance field. */
+  void SetGuidanceField(const FloatScalarImageType* const field);
+
+  /** Perform the filling. */
   void FillMaskedRegion();
 
-  typename TImage::Pointer GetOutput();
+  /** If no source image is provided, use a zero guidance field. */
+  void SetGuidanceFieldToZero();
+
+  /** Get the filled image. */
+  typename ImageType::Pointer GetOutput();
   
 protected:
 
-  // Checks that the mask is the same size as the image and that there are no pixels to be filled on the boundary of the image.
-  bool VerifyMask() const;
+  /** Specify an image to act as the source image. */
+  void CreateGuidanceFieldFromImage(const FloatScalarImageType* const sourceImage);
 
-  // The image to operate on.
-  typename TImage::Pointer SourceImage;
+  /** Checks that the mask is the same size as the image and that there are no pixels to be filled on the boundary of the image. */
+  bool VerifyMask() const;
   
-  // The image to paste pixels into. This is identical to SourceImage in the Editing (vs Cloning) case.
-  typename TImage::Pointer TargetImage;
+  /** The image in which to fill pixels. */
+  typename ImageType::Pointer TargetImage;
   
-  // The result of the algorithm.
-  typename TImage::Pointer Output;
-  
+  /** The result of the algorithm. */
+  typename ImageType::Pointer Output;
+
+  /** The guidance field. */
   FloatScalarImageType::Pointer GuidanceField;
   
   // The image specifying which pixels to fill.
@@ -82,9 +96,8 @@ protected:
 
 /**
  */
-// TODO: 'mask' should be a const pointer to const. The SetMask function currently sets a mutable member, so it cannot be.
-template <typename TVectorImage>
-void FillAllChannels(const TVectorImage* const image, Mask* const mask, TVectorImage* const output);
+template <typename TVectorImage, typename TGuidanceField = itk::VectorImage<float, 2> >
+void FillAllChannels(const TVectorImage* const image, const Mask* const mask, const TVectorImage* const sourceImage, const TGuidanceField* const guidanceField, TVectorImage* const output);
 
 #include "PoissonEditing.hpp"
 

@@ -32,32 +32,33 @@
 int main(int argc, char* argv[])
 {
   // Verify arguments
-  if(argc < 4)
+  if(argc < 6)
     {
-    std::cout << "Usage: inputImage mask targetImage outputImage" << std::endl;
+    std::cout << "Usage: ImageToFill mask sourceImage guidanceField outputImage" << std::endl;
     exit(-1);
     }
 
   // Parse arguments
-  std::string sourceImageFilename = argv[1];
-  std::string sourceMaskFilename = argv[2];
-  std::string targetImageFilename = argv[3];
-  std::string outputFilename = argv[4];
+  std::string targetImageFilename = argv[1];
+  std::string maskFilename = argv[2];
+  std::string sourceImageFilename = argv[3];
+  std::string guidanceFieldFilename = argv[4];
+  std::string outputFilename = argv[5];
 
   // Output arguments
-  std::cout << "Source image: " << sourceImageFilename << std::endl
-            << "Target image: " << targetImageFilename << std::endl
-            << "Mask image: " << sourceMaskFilename << std::endl
+  std::cout << "Target image: " << targetImageFilename << std::endl
+            << "Source image: " << sourceImageFilename << std::endl
+            << "Mask image: " << maskFilename << std::endl
+            << "Guidance field: " << guidanceFieldFilename << std::endl
             << "Output image: " << outputFilename << std::endl;
 
   typedef itk::VectorImage<float, 2> FloatVectorImageType;
 
+  FloatVectorImageType::Pointer sourceImage = NULL;
+  FloatVectorImageType::Pointer guidanceField = NULL;
+  
   // Read images
   typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
-  ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
-  sourceImageReader->SetFileName(sourceImageFilename);
-  sourceImageReader->Update();
-
   ImageReaderType::Pointer targetImageReader = ImageReaderType::New();
   targetImageReader->SetFileName(targetImageFilename);
   targetImageReader->Update();
@@ -65,13 +66,30 @@ int main(int argc, char* argv[])
   // Read mask
   typedef itk::ImageFileReader<Mask> MaskReaderType;
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName(sourceMaskFilename);
+  maskReader->SetFileName(maskFilename);
   maskReader->Update();
 
-  // Output image properties
-  std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-            << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-            << "Mask image: " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+  if(sourceImageFilename != "0")
+  {
+    ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
+    sourceImageReader->SetFileName(sourceImageFilename);
+    sourceImageReader->Update();
+
+    sourceImage = sourceImageReader->GetOutput();
+  }
+
+  if(guidanceFieldFilename != "0")
+  {
+    ImageReaderType::Pointer guidanceFieldReader = ImageReaderType::New();
+    guidanceFieldReader->SetFileName(sourceImageFilename);
+    guidanceFieldReader->Update();
+
+    guidanceField = guidanceFieldReader->GetOutput();
+  }
+//   // Output image properties
+//   std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
+//             << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
+//             << "Mask image: " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
 
   FloatVectorImageType::Pointer output = FloatVectorImageType::New();
   CloneAllChannels(sourceImageReader->GetOutput(), targetImageReader->GetOutput(),

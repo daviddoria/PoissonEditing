@@ -25,51 +25,82 @@
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
+#include "itkCastImageFilter.h"
+#include "itkVectorIndexSelectionCastImageFilter.h"
+#include "itkImageToVectorImageFilter.h"
 
 int main(int argc, char* argv[])
 {
   // Verify arguments
-  if(argc < 4)
+  if(argc < 6)
     {
-    std::cout << "Usage: inputImage mask outputImage" << std::endl;
+    std::cout << "Usage: ImageToFill mask sourceImage guidanceField outputImage" << std::endl;
     exit(-1);
     }
 
   // Parse arguments
-  std::string inputFilename = argv[1];
+  std::string targetImageFilename = argv[1];
   std::string maskFilename = argv[2];
-  std::string outputFilename = argv[3];
+  std::string sourceImageFilename = argv[3];
+  std::string guidanceFieldFilename = argv[4];
+  std::string outputFilename = argv[5];
 
-  // Display arguments
-  std::cout << "Input file: " << inputFilename << std::endl
-            << "Mask file: " << maskFilename << std::endl
-            << "Output file: " << outputFilename << std::endl;
+  // Output arguments
+  std::cout << "Target image: " << targetImageFilename << std::endl
+            << "Source image: " << sourceImageFilename << std::endl
+            << "Mask image: " << maskFilename << std::endl
+            << "Guidance field: " << guidanceFieldFilename << std::endl
+            << "Output image: " << outputFilename << std::endl;
 
   typedef itk::VectorImage<float, 2> FloatVectorImageType;
 
-  typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
-  ImageReaderType::Pointer imageReader = ImageReaderType::New();
-  imageReader->SetFileName(inputFilename);
-  imageReader->Update();
+//   FloatVectorImageType::Pointer sourceImage = NULL;
+//   FloatVectorImageType::Pointer guidanceField = NULL;
 
+  FloatVectorImageType* sourceImage = NULL;
+  FloatVectorImageType* guidanceField = NULL;
+  
+  // Read images
+  typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
+  ImageReaderType::Pointer targetImageReader = ImageReaderType::New();
+  targetImageReader->SetFileName(targetImageFilename);
+  targetImageReader->Update();
+
+  // Read mask
   typedef itk::ImageFileReader<Mask> MaskReaderType;
   MaskReaderType::Pointer maskReader = MaskReaderType::New();
   maskReader->SetFileName(maskFilename);
   maskReader->Update();
-  
-  FloatVectorImageType::Pointer result = FloatVectorImageType::New();
-  FillAllChannels(imageReader->GetOutput(), maskReader->GetOutput(), result.GetPointer());
-  
-  // Get and write output
-  //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), outputFilename);
-  /*
-  typedef  itk::ImageFileWriter< FloatVectorImageType > WriterType;
-  WriterType::Pointer writer = WriterType::New();
-  writer->SetFileName(outputFilename);
-  writer->SetInput(reassembler->GetOutput());
-  writer->Update();
-  */
-  Helpers::WriteVectorImageAsPNG(result.GetPointer(), outputFilename);
-  
+
+  if(sourceImageFilename != "0")
+  {
+    ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
+    sourceImageReader->SetFileName(sourceImageFilename);
+    sourceImageReader->Update();
+
+    sourceImage = sourceImageReader->GetOutput();
+  }
+
+  if(guidanceFieldFilename != "0")
+  {
+    ImageReaderType::Pointer guidanceFieldReader = ImageReaderType::New();
+    guidanceFieldReader->SetFileName(sourceImageFilename);
+    guidanceFieldReader->Update();
+
+    guidanceField = guidanceFieldReader->GetOutput();
+  }
+//   // Output image properties
+//   std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
+//             << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
+//             << "Mask image: " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+
+  FloatVectorImageType::Pointer output = FloatVectorImageType::New();
+  //FillAllChannels(targetImageReader->GetOutput(), maskReader->GetOutput(), sourceImage.GetPointer(), guidanceField.GetPointer(), output.GetPointer());
+  FillAllChannels(targetImageReader->GetOutput(), maskReader->GetOutput(), sourceImage, guidanceField, output.GetPointer());
+
+  // Write output
+  Helpers::WriteImage(output.GetPointer(), outputFilename);
+  // Helpers::WriteVectorImageAsPNG(output.GetPointer(), outputFilename);
+
   return EXIT_SUCCESS;
 }
