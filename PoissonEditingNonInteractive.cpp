@@ -32,39 +32,34 @@
 int main(int argc, char* argv[])
 {
   // Verify arguments
-  if(argc < 6)
+  if(argc < 5)
     {
-    std::cout << "Usage: ImageToFill mask sourceImage guidanceField outputImage" << std::endl;
+    std::cout << "Usage: ImageToFill mask guidanceField outputImage" << std::endl;
     exit(-1);
     }
 
   // Parse arguments
   std::string targetImageFilename = argv[1];
   std::string maskFilename = argv[2];
-  std::string sourceImageFilename = argv[3];
-  std::string guidanceFieldFilename = argv[4];
-  std::string outputFilename = argv[5];
+  std::string guidanceFieldFilename = argv[3];
+  std::string outputFilename = argv[4];
 
   // Output arguments
   std::cout << "Target image: " << targetImageFilename << std::endl
-            << "Source image: " << sourceImageFilename << std::endl
             << "Mask image: " << maskFilename << std::endl
             << "Guidance field: " << guidanceFieldFilename << std::endl
             << "Output image: " << outputFilename << std::endl;
 
-  typedef itk::VectorImage<float, 2> FloatVectorImageType;
+  //typedef itk::VectorImage<float, 2> FloatVectorImageType;
+  typedef itk::Image<float, 2> ImageType;
 
-//   FloatVectorImageType::Pointer sourceImage = NULL;
-//   FloatVectorImageType::Pointer guidanceField = NULL;
-
-  FloatVectorImageType* sourceImage = NULL;
-  FloatVectorImageType* guidanceField = NULL;
-  
   // Read images
-  typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
+  typedef itk::ImageFileReader<ImageType> ImageReaderType;
   ImageReaderType::Pointer targetImageReader = ImageReaderType::New();
   targetImageReader->SetFileName(targetImageFilename);
   targetImageReader->Update();
+
+  std::cout << "Read target image." << std::endl;
 
   // Read mask
   typedef itk::ImageFileReader<Mask> MaskReaderType;
@@ -72,34 +67,27 @@ int main(int argc, char* argv[])
   maskReader->SetFileName(maskFilename);
   maskReader->Update();
 
-  if(sourceImageFilename != "0")
-  {
-    ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
-    sourceImageReader->SetFileName(sourceImageFilename);
-    sourceImageReader->Update();
+  std::cout << "Read mask." << std::endl;
 
-    sourceImage = sourceImageReader->GetOutput();
-  }
+  typedef itk::CovariantVector<float, 2> Vector2Type;
+  typedef itk::Image<Vector2Type, 2> Vector2ImageType;
+  typedef itk::ImageFileReader<Vector2ImageType> GuidanceFieldReaderType;
+  
+  GuidanceFieldReaderType::Pointer guidanceFieldReader = GuidanceFieldReaderType::New();
+  guidanceFieldReader->SetFileName(guidanceFieldFilename);
+  guidanceFieldReader->Update();
 
-  if(guidanceFieldFilename != "0")
-  {
-    ImageReaderType::Pointer guidanceFieldReader = ImageReaderType::New();
-    guidanceFieldReader->SetFileName(sourceImageFilename);
-    guidanceFieldReader->Update();
+  std::cout << "Read guidance field." << std::endl;
 
-    guidanceField = guidanceFieldReader->GetOutput();
-  }
-//   // Output image properties
-//   std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-//             << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-//             << "Mask image: " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
-
-  FloatVectorImageType::Pointer output = FloatVectorImageType::New();
-  //FillAllChannels(targetImageReader->GetOutput(), maskReader->GetOutput(), sourceImage.GetPointer(), guidanceField.GetPointer(), output.GetPointer());
-  FillAllChannels(targetImageReader->GetOutput(), maskReader->GetOutput(), sourceImage, guidanceField, output.GetPointer());
+  typedef PoissonEditing<float> PoissonEditingFilterType;
+  PoissonEditingFilterType poissonFilter;
+  poissonFilter.SetTargetImage(targetImageReader->GetOutput());
+  poissonFilter.SetGuidanceField(guidanceFieldReader->GetOutput());
+  poissonFilter.SetMask(maskReader->GetOutput());
+  poissonFilter.FillMaskedRegionVariational();
 
   // Write output
-  Helpers::WriteImage(output.GetPointer(), outputFilename);
+  Helpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
   // Helpers::WriteVectorImageAsPNG(output.GetPointer(), outputFilename);
 
   return EXIT_SUCCESS;

@@ -47,7 +47,19 @@ template <typename TPixel>
 class PoissonEditing
 {
 public:
+
+  typedef itk::CovariantVector<float, 2> Vector2Type;
+  typedef itk::Image<Vector2Type> Vector2ImageType;
+  typedef Vector2ImageType GuidanceFieldType;
+  typedef Vector2ImageType GradientImageType;
+  typedef itk::Image<float, 2> FloatImageType;
+  
+  enum FillMethodEnum {VARIATIONAL, POISSON};
+  FillMethodEnum FillMethod;
+  
   PoissonEditing();
+
+  void SetFillMethod(FillMethodEnum fillMethod);
 
   typedef itk::Image<TPixel, 2> ImageType;
   typedef itk::Image<float, 2> FloatScalarImageType;
@@ -62,19 +74,24 @@ public:
   void SetSourceImage(const ImageType* const image);
   
   /** Specify a guidance field. */
-  void SetGuidanceField(const FloatScalarImageType* const field);
+  void SetGuidanceField(const GuidanceFieldType* const field);
 
-  /** Perform the filling. */
-  void FillMaskedRegion();
+  /** Perform the filling. Use a discretization of the Poisson equation. */
+  void FillMaskedRegionPoisson();
 
+  /** Perform the filling. Use a discretization of the original variational forumulation. */
+  void FillMaskedRegionVariational();
+  
   /** If no source image is provided, use a zero guidance field. */
   void SetGuidanceFieldToZero();
 
   /** Get the filled image. */
-  typename ImageType::Pointer GetOutput();
+  ImageType* GetOutput();
   
 protected:
 
+  void LaplacianFromGradient(const GradientImageType* const gradientImage, FloatImageType* const outputLaplacian);
+  
   /** Specify an image to act as the source image. */
   void CreateGuidanceFieldFromImage(const FloatScalarImageType* const sourceImage);
 
@@ -88,7 +105,9 @@ protected:
   typename ImageType::Pointer Output;
 
   /** The guidance field. */
-  FloatScalarImageType::Pointer GuidanceField;
+  //FloatScalarImageType::Pointer GuidanceField;
+
+  Vector2ImageType::Pointer GuidanceField;
   
   // The image specifying which pixels to fill.
   Mask::Pointer MaskImage;
@@ -96,8 +115,8 @@ protected:
 
 /**
  */
-template <typename TVectorImage, typename TGuidanceField = itk::VectorImage<float, 2> >
-void FillAllChannels(const TVectorImage* const image, const Mask* const mask, const TVectorImage* const sourceImage, const TGuidanceField* const guidanceField, TVectorImage* const output);
+// template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
+// void FillAllChannels(const TVectorImage* const image, const Mask* const mask, const TGuidanceField* const guidanceField, FillMethodEnum fillMethod, TVectorImage* const output);
 
 #include "PoissonEditing.hpp"
 

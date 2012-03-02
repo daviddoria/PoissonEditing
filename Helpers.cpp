@@ -24,7 +24,7 @@
 namespace Helpers
 {
 
-bool IsOnBorder(const itk::ImageRegion<2> region, const itk::Index<2> index)
+bool IsOnBorder(const itk::ImageRegion<2>& region, const itk::Index<2>& index)
 {
   if(index[0] == region.GetIndex()[0] || index[1] == region.GetIndex()[1] ||
     static_cast<unsigned int>(index[0]) == region.GetIndex()[0] + region.GetSize()[0]-1 ||
@@ -35,6 +35,75 @@ bool IsOnBorder(const itk::ImageRegion<2> region, const itk::Index<2> index)
   return false;
 }
 
+unsigned int CountValid4Neighbors(const itk::Index<2>& pixel, const itk::ImageRegion<2>& region)
+{
+  unsigned int count = 0;
+  itk::Index<2> neighbor0 = {{pixel[0] + 1, pixel[1]}};
+  if(region.IsInside(neighbor0))
+  {
+    count++;
+  }
+  
+  itk::Index<2> neighbor1 = {{pixel[0], pixel[1] + 1}};
+  if(region.IsInside(neighbor1))
+  {
+    count++;
+  }
+  
+  itk::Index<2> neighbor2 = {{pixel[0] - 1, pixel[1]}};
+  if(region.IsInside(neighbor2))
+  {
+    count++;
+  }
+  
+  itk::Index<2> neighbor3 = {{pixel[0], pixel[1] - 1}};
+  if(region.IsInside(neighbor3))
+  {
+    count++;
+  }
+
+  return count;
+}
+
+std::vector<itk::Index<2> > GetValid4NeighborIndices(const itk::Index<2>& pixel, const itk::ImageRegion<2>& region)
+{
+  std::vector<itk::Index<2> > indices;
+
+  itk::Offset<2> offset;
+  offset[0] = -1;
+  offset[1] = 0;
+
+  if(region.IsInside(pixel + offset))
+  {
+    indices.push_back(pixel + offset);
+  }
+
+  offset[0] = 1;
+  offset[1] = 0;
+
+  if(region.IsInside(pixel + offset))
+  {
+    indices.push_back(pixel + offset);
+  }
+
+  offset[0] = 0;
+  offset[1] = -1;
+
+  if(region.IsInside(pixel + offset))
+  {
+    indices.push_back(pixel + offset);
+  }
+
+  offset[0] = 0;
+  offset[1] = 1;
+
+  if(region.IsInside(pixel + offset))
+  {
+    indices.push_back(pixel + offset);
+  }
+
+  return indices;
+}
 
 std::vector<itk::Offset<2> > Get4NeighborOffsets()
 {

@@ -47,9 +47,13 @@ void ClampVectorImage(TImage* const image);
 
 std::vector<itk::Offset<2> > Get4NeighborOffsets();
 
+std::vector<itk::Index<2> > GetValid4NeighborIndices(const itk::Index<2>& pixel, const itk::ImageRegion<2>& region);
+
 std::vector<itk::Offset<2> > Get8NeighborOffsets();
 
-bool IsOnBorder(const itk::ImageRegion<2>, const itk::Index<2>);
+bool IsOnBorder(const itk::ImageRegion<2>&, const itk::Index<2>&);
+
+unsigned int CountValid4Neighbors(const itk::Index<2>& pixel, const itk::ImageRegion<2>& region);
 
 template <class TImage>
 float MinValue(const TImage* const image);

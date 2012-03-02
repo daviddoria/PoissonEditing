@@ -1,3 +1,7 @@
 *.bak
 *.backup
 .fuse_hidden*
+*.blg
+*.brf
+*.bbl
+*.ist
