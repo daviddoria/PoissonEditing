@@ -49,6 +49,10 @@ TARGET_LINK_LIBRARIES(PoissonFillingVariational ${ITK_LIBRARIES} umfpack Helpers
 ADD_EXECUTABLE(PoissonFillingPoisson PoissonFillingPoisson.cpp)
 TARGET_LINK_LIBRARIES(PoissonFillingPoisson ${ITK_LIBRARIES} umfpack HelpersLibrary )
 
+ADD_EXECUTABLE(PoissonFillingNeumann PoissonFillingNeumann.cpp)
+TARGET_LINK_LIBRARIES(PoissonFillingNeumann ${ITK_LIBRARIES} umfpack HelpersLibrary )
+
+
 SET(PoissonEditingNonInteractive ON CACHE BOOL "Build the Poisson editing non interactive version.")
 #if(PoissonEditingNonInteractive)
   ADD_EXECUTABLE(PoissonEditingNonInteractive PoissonEditingNonInteractive.cpp)

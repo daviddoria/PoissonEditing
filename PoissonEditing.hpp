@@ -23,13 +23,13 @@
 #include "IndexComparison.h"
 
 // ITK
+#include "itkAddImageFilter.h"
 #include "itkCastImageFilter.h"
 #include "itkImageRegionConstIterator.h"
 #include "itkImageToVectorImageFilter.h"
 #include "itkLaplacianOperator.h"
 #include "itkLaplacianImageFilter.h"
 #include "itkVectorIndexSelectionCastImageFilter.h"
-
 
 // Eigen
 #include <Eigen/Sparse>
@@ -86,8 +86,114 @@ void PoissonEditing<TPixel>::SetGuidanceFieldToZero()
 }
 
 template <typename TPixel>
+void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
+{
+  typedef std::map<itk::Index<2>, unsigned int, itk::Index<2>::LexicographicCompare> VariableIdMapType;
+  VariableIdMapType variableIdMap;
+
+  itk::ImageRegionIterator<Mask> maskIterator(MaskImage, MaskImage->GetLargestPossibleRegion());
+
+  while(!maskIterator.IsAtEnd())
+    {
+     itk::Index<2> pixelIndex = maskIterator.GetIndex();
+
+     if(this->MaskImage->IsHole(pixelIndex))
+       {
+       variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
+       }
+     ++maskIterator;
+    }
+
+  if(variableIdMap.size() == 0)
+    {
+    std::cerr << "No masked pixels found!" << std::endl;
+    return;
+    }
+
+  // Create the sparse matrix
+  Eigen::SparseMatrix<double> A(variableIdMap.size(), variableIdMap.size());
+  Eigen::VectorXd b(variableIdMap.size());
+
+  for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
+    {
+    itk::Index<2> currentPixelLocation = iter->first;
+    //std::cout << "originalPixel " << originalPixel << std::endl;
+    // The right hand side of the equation starts equal to the value of the guidance field
+
+    Vector2Type guidanceVectorP = this->GuidanceField->GetPixel(currentPixelLocation);
+
+    std::vector<itk::Index<2> > valid4Neighbors = Helpers::GetValid4NeighborIndices(currentPixelLocation,
+                                                                                    MaskImage->GetLargestPossibleRegion());
+
+    // If we are on the boundary, use the Neumann boundary condition only (we cannot use the interior condition because it relies on
+    // An actual value (the Dirchlet boundary) outside the hole).
+    if(MaskImage->HasValid4Neighbor(currentPixelLocation))
+    {
+      std::vector<itk::Index<2> > validNeighbors = MaskImage->GetValid4Neighbors(currentPixelLocation);
+      for(unsigned int neighborId = 0; neighborId < validNeighbors.size(); ++neighborId)
+      {
+        A.insert(variableIdMap[currentPixelLocation], variableIdMap[validNeighbors[neighborId]]) = 1;
+      }
+      // What is n_x and n_y? Just 1/0 and 1/0? Or do you have to do an actual blurred boundary normal computation?
+      A.insert(variableIdMap[currentPixelLocation], variableIdMap[currentPixelLocation]) = validNeighbors.size();
+      b[variableIdMap[currentPixelLocation]] = 0;
+    }
+    else // Internal pixels
+    {
+      // This is the |N_p| f_p term - we put the value |N_p| at the column of this variable (variableId)
+      // and we are currently setting up the 'variableId' equation/row.
+      A.insert(variableIdMap[currentPixelLocation], variableIdMap[currentPixelLocation]) = valid4Neighbors.size();
+
+      // Loop over the valid neighbors
+      float bvalue = 0.0f;
+      for(unsigned int neigbhborId = 0; neigbhborId < valid4Neighbors.size(); ++neigbhborId)
+        {
+        itk::Index<2> currentNeighborLocation = valid4Neighbors[neigbhborId];
+        if(this->MaskImage->IsHole(currentNeighborLocation))
+          {
+          unsigned int neighborVariableId = variableIdMap[currentNeighborLocation];
+          A.insert(variableIdMap[currentPixelLocation], neighborVariableId) = -1.0f;
+          }
+        else
+          {
+          bvalue += TargetImage->GetPixel(currentNeighborLocation);
+          }
+        Vector2Type guidanceVectorQ = this->GuidanceField->GetPixel(currentNeighborLocation);
+        Vector2Type averageGuidanceVector = (guidanceVectorQ + guidanceVectorP) / 2.0f;
+        itk::Offset<2> neighborOffset = currentNeighborLocation - currentPixelLocation;
+        bvalue += averageGuidanceVector[0] * neighborOffset[0] + averageGuidanceVector[1] * neighborOffset[1];
+        }
+      b[variableIdMap[currentPixelLocation]] = bvalue;
+    }
+  }// end for variables
+
+  // Solve the system with Eigen
+  Eigen::VectorXd x(variableIdMap.size());
+  Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
+  if(!lu_of_A.succeeded())
+  {
+    throw std::runtime_error("Decomposiiton failed!");
+  }
+  if(!lu_of_A.solve(b,&x))
+  {
+    throw std::runtime_error("Solving failed!");
+  }
+
+  // Initialize the output by copying the target image into the output. Pixels that are not filled will remain the same in the output.
+  Helpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
+  //Helpers::WriteImage<TImage>(this->Output, "InitializedOutput.mha");
+
+  // Convert solution vector back to image
+  for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
+    {
+    this->Output->SetPixel(iter->first, x(iter->second));
+    }
+}
+
+template <typename TPixel>
 void PoissonEditing<TPixel>::FillMaskedRegionVariational()
 {
+  // TODO: Replace this with a std::map<itk::Index<2>, unsigned int>
   typedef itk::Image<int, 2> IntImageType;
   IntImageType::Pointer variableIdImage = IntImageType::New();
   variableIdImage->SetRegions(this->TargetImage->GetLargestPossibleRegion());
@@ -128,9 +234,11 @@ void PoissonEditing<TPixel>::FillMaskedRegionVariational()
 
     Vector2Type guidanceVectorP = this->GuidanceField->GetPixel(currentPixelLocation);
 
-    std::vector<itk::Index<2> > valid4Neighbors = Helpers::GetValid4NeighborIndices(currentPixelLocation, MaskImage->GetLargestPossibleRegion());
+    std::vector<itk::Index<2> > valid4Neighbors = Helpers::GetValid4NeighborIndices(currentPixelLocation,
+                                                                                    MaskImage->GetLargestPossibleRegion());
 
-    // This is the |N_p| f_p term - we put the value |N_p| at the column of this variable (variableId) and we are currently setting up the 'variableId' equation/row.
+    // This is the |N_p| f_p term - we put the value |N_p| at the column of this variable (variableId)
+    // and we are currently setting up the 'variableId' equation/row.
     A.insert(variableId, variableId) = valid4Neighbors.size();
   
     // Loop over the valid neighbors
@@ -343,7 +451,8 @@ void PoissonEditing<TPixel>::CreateGuidanceFieldFromImage(const FloatScalarImage
 }
 
 template <typename TPixel>
-void PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>::GradientImageType* const gradientImage, FloatImageType* const outputLaplacian)
+void PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>::GradientImageType* const gradientImage,
+                                                   FloatImageType* const outputLaplacian)
 {
   typedef itk::VectorIndexSelectionCastImageFilter<GradientImageType, FloatImageType> IndexSelectionType;
   

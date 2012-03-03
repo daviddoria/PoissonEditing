@@ -224,6 +224,38 @@ void Mask::ExpandHole()
 
 }
 
+std::vector<itk::Index<2> > Mask::GetValid4Neighbors(const itk::Index<2>& pixel)
+{
+  std::vector<itk::Index<2> > neighborhood = Helpers::GetValid4NeighborIndices(pixel, this->GetLargestPossibleRegion());
+
+  std::vector<itk::Index<2> > validNeighbors;
+  
+  for(unsigned int i = 0; i < neighborhood.size(); ++i)
+    {
+    if(this->IsValid(neighborhood[i]))
+      {
+      validNeighbors.push_back(neighborhood[i]);
+      }
+    }
+
+  return validNeighbors;
+}
+
+bool Mask::HasValid4Neighbor(const itk::Index<2>& pixel)
+{
+  std::vector<itk::Index<2> > neighbors = Helpers::GetValid4NeighborIndices(pixel, this->GetLargestPossibleRegion());
+
+  for(unsigned int i = 0; i < neighbors.size(); ++i)
+    {
+    if(this->IsValid(neighbors[i]))
+      {
+      return true;
+      }
+    }
+
+  return false;
+}
+
 bool Mask::HasHoleNeighbor(const itk::Index<2>& pixel)
 {
   std::vector<itk::Offset<2> > offsets = Helpers::Get8NeighborOffsets();

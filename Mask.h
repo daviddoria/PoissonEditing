@@ -76,6 +76,10 @@ public:
 
   bool HasHoleNeighbor(const itk::Index<2>& pixel);
 
+  bool HasValid4Neighbor(const itk::Index<2>& pixel);
+
+  std::vector<itk::Index<2> > GetValid4Neighbors(const itk::Index<2>& pixel);
+
   void Invert();
 
   void Cleanup();

@@ -81,7 +81,10 @@ public:
 
   /** Perform the filling. Use a discretization of the original variational forumulation. */
   void FillMaskedRegionVariational();
-  
+
+  /** Perform the filling. Use a discretization of the original variational forumulation. */
+  void FillMaskedRegionNeumann();
+
   /** If no source image is provided, use a zero guidance field. */
   void SetGuidanceFieldToZero();
 
