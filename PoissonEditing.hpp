@@ -99,6 +99,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
 
      if(this->MaskImage->IsHole(pixelIndex))
        {
+       std::cout << "Adding variable " << variableIdMap.size() << std::endl;
        variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
        }
      ++maskIterator;
@@ -110,36 +111,47 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
     return;
     }
 
+  std::cout << "There are " << variableIdMap.size() << " variables." << std::endl;
+
   // Create the sparse matrix
   Eigen::SparseMatrix<double> A(variableIdMap.size(), variableIdMap.size());
   Eigen::VectorXd b(variableIdMap.size());
 
+  unsigned int numberOfInteriorPixels = 0;
+  unsigned int numberOfBoundaryPixels = 0;
+  
   for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
     itk::Index<2> currentPixelLocation = iter->first;
     //std::cout << "originalPixel " << originalPixel << std::endl;
     // The right hand side of the equation starts equal to the value of the guidance field
 
+    assert(this->MaskImage->IsHole(currentPixelLocation));
+  
     Vector2Type guidanceVectorP = this->GuidanceField->GetPixel(currentPixelLocation);
-
-    std::vector<itk::Index<2> > valid4Neighbors = Helpers::GetValid4NeighborIndices(currentPixelLocation,
-                                                                                    MaskImage->GetLargestPossibleRegion());
 
     // If we are on the boundary, use the Neumann boundary condition only (we cannot use the interior condition because it relies on
     // An actual value (the Dirchlet boundary) outside the hole).
+    // What is n_x and n_y? Just 1/0 and 1/0? Or do you have to do an actual blurred boundary normal computation?
     if(MaskImage->HasValid4Neighbor(currentPixelLocation))
     {
+      numberOfBoundaryPixels++;
       std::vector<itk::Index<2> > validNeighbors = MaskImage->GetValid4Neighbors(currentPixelLocation);
+      float bvalue = 0.0f;
       for(unsigned int neighborId = 0; neighborId < validNeighbors.size(); ++neighborId)
       {
-        A.insert(variableIdMap[currentPixelLocation], variableIdMap[validNeighbors[neighborId]]) = 1;
+        bvalue += TargetImage->GetPixel(validNeighbors[neighborId]);
       }
-      // What is n_x and n_y? Just 1/0 and 1/0? Or do you have to do an actual blurred boundary normal computation?
+
       A.insert(variableIdMap[currentPixelLocation], variableIdMap[currentPixelLocation]) = validNeighbors.size();
-      b[variableIdMap[currentPixelLocation]] = 0;
+      b[variableIdMap[currentPixelLocation]] = bvalue;
     }
     else // Internal pixels
     {
+      numberOfInteriorPixels++;
+
+      std::vector<itk::Index<2> > valid4Neighbors = Helpers::GetValid4NeighborIndices(currentPixelLocation,
+                                                                                    MaskImage->GetLargestPossibleRegion());
       // This is the |N_p| f_p term - we put the value |N_p| at the column of this variable (variableId)
       // and we are currently setting up the 'variableId' equation/row.
       A.insert(variableIdMap[currentPixelLocation], variableIdMap[currentPixelLocation]) = valid4Neighbors.size();
@@ -167,6 +179,9 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
     }
   }// end for variables
 
+  std::cout << "There were " << numberOfInteriorPixels << " interior pixels." << std::endl;
+  std::cout << "There were " << numberOfBoundaryPixels << " boundary pixels." << std::endl;
+  
   // Solve the system with Eigen
   Eigen::VectorXd x(variableIdMap.size());
   Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
@@ -193,42 +208,37 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
 template <typename TPixel>
 void PoissonEditing<TPixel>::FillMaskedRegionVariational()
 {
-  // TODO: Replace this with a std::map<itk::Index<2>, unsigned int>
-  typedef itk::Image<int, 2> IntImageType;
-  IntImageType::Pointer variableIdImage = IntImageType::New();
-  variableIdImage->SetRegions(this->TargetImage->GetLargestPossibleRegion());
-  variableIdImage->Allocate();
-  variableIdImage->FillBuffer(-1);
+  typedef std::map<itk::Index<2>, unsigned int, itk::Index<2>::LexicographicCompare> VariableIdMapType;
+  VariableIdMapType variableIdMap;
 
-  std::vector<itk::Index<2> > variablePixels;
+  itk::ImageRegionIterator<Mask> maskIterator(MaskImage, MaskImage->GetLargestPossibleRegion());
 
-  itk::ImageRegionIterator<IntImageType> variableIdImageIterator(variableIdImage, variableIdImage->GetLargestPossibleRegion());
-
-  while(!variableIdImageIterator.IsAtEnd())
+  while(!maskIterator.IsAtEnd())
     {
-     itk::Index<2> pixelIndex = variableIdImageIterator.GetIndex();
+     itk::Index<2> pixelIndex = maskIterator.GetIndex();
 
      if(this->MaskImage->IsHole(pixelIndex))
        {
-       variableIdImageIterator.Set(variablePixels.size());
-       variablePixels.push_back(pixelIndex);
+       std::cout << "Adding variable " << variableIdMap.size() << std::endl;
+       variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
        }
-     ++variableIdImageIterator;
+     ++maskIterator;
     }
 
-  if(variablePixels.size() == 0)
+  if(variableIdMap.size() == 0)
     {
     std::cerr << "No masked pixels found!" << std::endl;
     return;
     }
 
   // Create the sparse matrix
-  Eigen::SparseMatrix<double> A(variablePixels.size(), variablePixels.size());
-  Eigen::VectorXd b(variablePixels.size());
+  Eigen::SparseMatrix<double> A(variableIdMap.size(), variableIdMap.size());
+  Eigen::VectorXd b(variableIdMap.size());
 
-  for(unsigned int variableId = 0; variableId < variablePixels.size(); variableId++)
+  for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
-    itk::Index<2> currentPixelLocation = variablePixels[variableId];
+    itk::Index<2> currentPixelLocation = iter->first;
+    unsigned int variableId = iter->second;
     //std::cout << "originalPixel " << originalPixel << std::endl;
     // The right hand side of the equation starts equal to the value of the guidance field
 
@@ -248,7 +258,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionVariational()
       itk::Index<2> currentNeighborLocation = valid4Neighbors[neigbhborId];
       if(this->MaskImage->IsHole(currentNeighborLocation))
         {
-        unsigned int neighborVariableId = variableIdImage->GetPixel(currentNeighborLocation);
+        unsigned int neighborVariableId = variableIdMap[currentNeighborLocation];
         A.insert(variableId, neighborVariableId) = -1.0f;
         }
       else
@@ -265,7 +275,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionVariational()
   }// end for variables
 
   // Solve the system with Eigen
-  Eigen::VectorXd x(variablePixels.size());
+  Eigen::VectorXd x(variableIdMap.size());
   Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
   if(!lu_of_A.succeeded())
   {
@@ -281,9 +291,9 @@ void PoissonEditing<TPixel>::FillMaskedRegionVariational()
   //Helpers::WriteImage<TImage>(this->Output, "InitializedOutput.mha");
 
   // Convert solution vector back to image
-  for(unsigned int i = 0; i < variablePixels.size(); i++)
+  for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
-    this->Output->SetPixel(variablePixels[i], x(i));
+    this->Output->SetPixel(iter->first, x(iter->second));
     }
 }
 
@@ -292,33 +302,26 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
 {
   //Helpers::WriteImage<TImage>(this->TargetImage, "FillMaskedRegion_TargetImage.mha");
 
-  // Initialize the output by copying the target image into the output. Pixels that are not filled will remain the same in the output.
-  Helpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
   //Helpers::WriteImage<TImage>(this->Output, "InitializedOutput.mha");
 
-  typedef itk::Image<int, 2> IntImageType;
-  IntImageType::Pointer variableIdImage = IntImageType::New();
-  variableIdImage->SetRegions(this->TargetImage->GetLargestPossibleRegion());
-  variableIdImage->Allocate();
-  variableIdImage->FillBuffer(-1);
+  typedef std::map<itk::Index<2>, unsigned int, itk::Index<2>::LexicographicCompare> VariableIdMapType;
+  VariableIdMapType variableIdMap;
 
-  std::vector<itk::Index<2> > variablePixels;
+  itk::ImageRegionIterator<Mask> maskIterator(MaskImage, MaskImage->GetLargestPossibleRegion());
 
-  itk::ImageRegionIterator<IntImageType> variableIdImageIterator(variableIdImage, variableIdImage->GetLargestPossibleRegion());
-
-  while(!variableIdImageIterator.IsAtEnd())
+  while(!maskIterator.IsAtEnd())
     {
-     itk::Index<2> pixelIndex = variableIdImageIterator.GetIndex();
+     itk::Index<2> pixelIndex = maskIterator.GetIndex();
 
      if(this->MaskImage->IsHole(pixelIndex))
        {
-       variableIdImageIterator.Set(variablePixels.size());
-       variablePixels.push_back(pixelIndex);
+       std::cout << "Adding variable " << variableIdMap.size() << std::endl;
+       variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
        }
-     ++variableIdImageIterator;
+     ++maskIterator;
     }
 
-  if(variablePixels.size() == 0)
+  if(variableIdMap.size() == 0)
     {
     std::cerr << "No masked pixels found!" << std::endl;
     return;
@@ -331,17 +334,19 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
   laplacianOperator.CreateToRadius(radius);
 
   // Create the sparse matrix
-  Eigen::SparseMatrix<double> A(variablePixels.size(), variablePixels.size());
-  Eigen::VectorXd b(variablePixels.size());
+  Eigen::SparseMatrix<double> A(variableIdMap.size(), variableIdMap.size());
+  Eigen::VectorXd b(variableIdMap.size());
 
   FloatImageType::Pointer laplacian = FloatImageType::New();
   laplacian->SetRegions(MaskImage->GetLargestPossibleRegion());
   laplacian->Allocate();
   LaplacianFromGradient(GuidanceField, laplacian);
+  Helpers::WriteImage(laplacian.GetPointer(), "laplacian.mha");
   
-  for(unsigned int variableId = 0; variableId < variablePixels.size(); variableId++)
+  for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
-    itk::Index<2> originalPixel = variablePixels[variableId];
+    itk::Index<2> originalPixel = iter->first;
+    unsigned int variableId = iter->second;
     //std::cout << "originalPixel " << originalPixel << std::endl;
     // The right hand side of the equation starts equal to the value of the guidance field
 
@@ -365,7 +370,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
       if(this->MaskImage->IsHole(currentPixel))
         {
         // If the pixel is masked, add it as part of the unknown matrix
-        A.insert(variableId, variableIdImage->GetPixel(currentPixel)) = laplacianOperator.GetElement(offset);
+        A.insert(variableId, variableIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
         }
       else
         {
@@ -377,7 +382,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
   }// end for variables
 
   // Solve the system with Eigen
-  Eigen::VectorXd x(variablePixels.size());
+  Eigen::VectorXd x(variableIdMap.size());
   Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
   if(!lu_of_A.succeeded())
   {
@@ -389,9 +394,12 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
   }
 
   // Convert solution vector back to image
-  for(unsigned int i = 0; i < variablePixels.size(); i++)
+  // Initialize the output by copying the target image into the output. Pixels that are not filled will remain the same in the output.
+  Helpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
+  
+  for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
-    this->Output->SetPixel(variablePixels[i], x(i));
+    this->Output->SetPixel(iter->first, x(iter->second));
     }
 } // end FillMaskedRegion
 
@@ -456,20 +464,28 @@ void PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>:
 {
   typedef itk::VectorIndexSelectionCastImageFilter<GradientImageType, FloatImageType> IndexSelectionType;
   
-  IndexSelectionType::Pointer xFilter = IndexSelectionType::New();
-  xFilter->SetIndex(0);
-  xFilter->SetInput(gradientImage);
-  xFilter->Update();
+  IndexSelectionType::Pointer xIndexSelectionFilter = IndexSelectionType::New();
+  xIndexSelectionFilter->SetIndex(0);
+  xIndexSelectionFilter->SetInput(gradientImage);
+  xIndexSelectionFilter->Update();
 
-  IndexSelectionType::Pointer yFilter = IndexSelectionType::New();
-  yFilter->SetIndex(1);
-  yFilter->SetInput(gradientImage);
-  yFilter->Update();
+  // The the x derivative of the x derivative (second x partial)
+  FloatImageType::Pointer xSecondDerivative = FloatImageType::New();
+  Helpers::CentralDifferenceDerivative(xIndexSelectionFilter->GetOutput(), 0, xSecondDerivative.GetPointer());
+  
+  IndexSelectionType::Pointer yIndexSelectionFilter = IndexSelectionType::New();
+  yIndexSelectionFilter->SetIndex(1);
+  yIndexSelectionFilter->SetInput(gradientImage);
+  yIndexSelectionFilter->Update();
 
+  // The the y derivative of the y derivative (second y partial)
+  FloatImageType::Pointer ySecondDerivative = FloatImageType::New();
+  Helpers::CentralDifferenceDerivative(yIndexSelectionFilter->GetOutput(), 1, ySecondDerivative.GetPointer());
+  
   typedef itk::AddImageFilter<FloatImageType, FloatImageType> AddImageFilterType;
   AddImageFilterType::Pointer addFilter = AddImageFilterType::New ();
-  addFilter->SetInput1(xFilter->GetOutput());
-  addFilter->SetInput2(yFilter->GetOutput());
+  addFilter->SetInput1(xSecondDerivative);
+  addFilter->SetInput2(ySecondDerivative);
   addFilter->Update();
 
   Helpers::DeepCopy(addFilter->GetOutput(), outputLaplacian);

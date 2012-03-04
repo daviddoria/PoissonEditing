@@ -45,21 +45,23 @@ add_subdirectory(GUI)
 
 ADD_EXECUTABLE(PoissonFillingVariational PoissonFillingVariational.cpp)
 TARGET_LINK_LIBRARIES(PoissonFillingVariational ${ITK_LIBRARIES} umfpack HelpersLibrary )
+INSTALL( TARGETS PoissonFillingVariational RUNTIME DESTINATION ${INSTALL_DIR} )
 
 ADD_EXECUTABLE(PoissonFillingPoisson PoissonFillingPoisson.cpp)
 TARGET_LINK_LIBRARIES(PoissonFillingPoisson ${ITK_LIBRARIES} umfpack HelpersLibrary )
+INSTALL( TARGETS PoissonFillingPoisson RUNTIME DESTINATION ${INSTALL_DIR} )
 
 ADD_EXECUTABLE(PoissonFillingNeumann PoissonFillingNeumann.cpp)
 TARGET_LINK_LIBRARIES(PoissonFillingNeumann ${ITK_LIBRARIES} umfpack HelpersLibrary )
+INSTALL( TARGETS PoissonFillingNeumann RUNTIME DESTINATION ${INSTALL_DIR} )
 
-
-SET(PoissonEditingNonInteractive ON CACHE BOOL "Build the Poisson editing non interactive version.")
+#SET(PoissonEditingNonInteractive ON CACHE BOOL "Build the Poisson editing non interactive version.")
 #if(PoissonEditingNonInteractive)
-  ADD_EXECUTABLE(PoissonEditingNonInteractive PoissonEditingNonInteractive.cpp)
-  TARGET_LINK_LIBRARIES(PoissonEditingNonInteractive ${ITK_LIBRARIES} umfpack HelpersLibrary )
+  #ADD_EXECUTABLE(PoissonEditingNonInteractive PoissonEditingNonInteractive.cpp)
+  #TARGET_LINK_LIBRARIES(PoissonEditingNonInteractive ${ITK_LIBRARIES} umfpack HelpersLibrary )
   #set_target_properties(PoissonEditing PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
   #INSTALL( TARGETS PoissonEditingNonInteractive RUNTIME DESTINATION ${INSTALL_DIR} )
-  message("EXECUTABLE_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH}")
+  #message("EXECUTABLE_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH}")
   #ADD_TEST(NAME PoissonEditingTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonEditing ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png editing.png)
   #ADD_TEST(PoissonEditingTest ${EXECUTABLE_OUTPUT_PATH}/PoissonEditing ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png PoissonEditingOutput.mhd)
 #endif()

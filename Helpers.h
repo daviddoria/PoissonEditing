@@ -61,6 +61,9 @@ float MinValue(const TImage* const image);
 template <class TImage>
 float MaxValue(const TImage* const image);
 
+template <class TImage>
+void CentralDifferenceDerivative(const TImage* const image, const unsigned int direction, TImage* const output);
+
 }
 
 #include "Helpers.hxx"

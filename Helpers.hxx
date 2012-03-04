@@ -23,6 +23,9 @@
 #include "itkRescaleIntensityImageFilter.h"
 #include "itkVectorCastImageFilter.h"
 #include "itkMinimumMaximumImageCalculator.h"
+#include "itkDerivativeImageFilter.h"
+#include "itkNeighborhoodOperatorImageFilter.h"
+#include "itkForwardDifferenceOperator.h"
 
 namespace Helpers
 {
@@ -174,6 +177,39 @@ float MaxValue(const TImage* const image)
   imageCalculatorFilter->Compute();
 
   return imageCalculatorFilter->GetMaximum();
+}
+
+template <class TImage>
+void CentralDifferenceDerivative(const TImage* const image, const unsigned int direction, TImage* const output)
+{
+  typedef itk::DerivativeImageFilter<TImage, TImage> DerivativeImageFilterType;
+  typename DerivativeImageFilterType::Pointer derivativeFilter = DerivativeImageFilterType::New();
+  derivativeFilter->SetDirection(direction);
+  derivativeFilter->SetOrder(1);
+  derivativeFilter->SetInput(image);
+  derivativeFilter->Update();
+
+  DeepCopy(derivativeFilter->GetOutput(), output);
+}
+
+template <class TImage>
+void ForwardDifferenceDerivative(const TImage* const image, const unsigned int direction, TImage* const output)
+{
+  typedef itk::ForwardDifferenceOperator<float, 2> OperatorType;
+  itk::Size<2> radius;
+  radius.Fill(1); // a radius of 1x1 creates a 3x3 operator
+  
+  OperatorType derivativeOperator;
+  derivativeOperator.SetDirection(direction);
+  derivativeOperator.CreateToRadius(radius);
+
+  typedef itk::NeighborhoodOperatorImageFilter<TImage, TImage> NeighborhoodOperatorImageFilterType;
+  typename NeighborhoodOperatorImageFilterType::Pointer derivativeFilter = NeighborhoodOperatorImageFilterType::New();
+  derivativeFilter->SetOperator(derivativeOperator);
+  derivativeFilter->SetInput(image);
+  derivativeFilter->Update();
+
+  DeepCopy(derivativeFilter->GetOutput(), output);
 }
 
 }// end namespace
