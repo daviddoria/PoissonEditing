@@ -54,8 +54,6 @@ public slots:
   void on_chkShowOutput_clicked();
   void on_chkShowMask_clicked();
 
-  void slot_StartProgressBar();
-  void slot_StopProgressBar();
   void slot_IterationComplete();
 
 private:

@@ -47,7 +47,7 @@ void PoissonEditingWidget::SharedConstructor()
 
   this->ProgressDialog = new QProgressDialog();
 
-  connect(&this->FutureWatcher, SIGNAL(finished()), this, SLOT(slot_finished()));
+  connect(&this->FutureWatcher, SIGNAL(finished()), this, SLOT(slot_IterationComplete()));
   connect(&this->FutureWatcher, SIGNAL(finished()), this->ProgressDialog , SLOT(cancel()));
 
   this->Image = ImageType::New();
@@ -97,8 +97,8 @@ void PoissonEditingWidget::resizeEvent ( QResizeEvent * event )
 void PoissonEditingWidget::on_btnFill_clicked()
 {
   typedef itk::Image<itk::CovariantVector<float, 2>, 2> GuidanceFieldType;
-  //std::vector<GuidanceFieldType::Pointer> guidanceFields;
-  std::vector<GuidanceFieldType*> guidanceFields;
+  std::vector<GuidanceFieldType::Pointer> guidanceFields;
+  //std::vector<GuidanceFieldType*> guidanceFields;
   for(unsigned int channel = 0; channel < Image->GetNumberOfComponentsPerPixel(); ++channel)
   {
     GuidanceFieldType::Pointer guidanceField = GuidanceFieldType::New();
@@ -110,10 +110,16 @@ void PoissonEditingWidget::on_btnFill_clicked()
     guidanceFields.push_back(guidanceField);
   }
 
+  std::vector<GuidanceFieldType*> guidanceFieldsRawPointers;
+  for(unsigned int channel = 0; channel < Image->GetNumberOfComponentsPerPixel(); ++channel)
+  {
+    guidanceFieldsRawPointers.push_back(guidanceFields[channel]);
+  }
+  
 //   QFuture<void> future = QtConcurrent::run(FillAllChannels<ImageType>, Image.GetPointer(), MaskImage.GetPointer(),
   QFuture<void> future = QtConcurrent::run(FillAllChannels<ImageType, GuidanceFieldType>, Image.GetPointer(),
                                            MaskImage.GetPointer(),
-                                           guidanceFields, Result.GetPointer());
+                                           guidanceFieldsRawPointers, Result.GetPointer());
 
   this->FutureWatcher.setFuture(future);
 
@@ -215,16 +221,6 @@ void PoissonEditingWidget::on_chkShowMask_clicked()
     return;
     }
   this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
-}
-
-void PoissonEditingWidget::slot_StartProgressBar()
-{
-  this->progressBar->show();
-}
-
-void PoissonEditingWidget::slot_StopProgressBar()
-{
-  this->progressBar->hide();
 }
 
 void PoissonEditingWidget::slot_IterationComplete()

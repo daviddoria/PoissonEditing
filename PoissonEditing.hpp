@@ -328,7 +328,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
 
      if(this->MaskImage->IsHole(pixelIndex))
        {
-       std::cout << "Adding variable " << variableIdMap.size() << std::endl;
+       //std::cout << "Adding variable " << variableIdMap.size() << std::endl;
        variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
        }
      ++maskIterator;
