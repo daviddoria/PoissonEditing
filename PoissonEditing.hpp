@@ -559,7 +559,7 @@ void FillAllChannels(const TVectorImage* const image, const Mask* const mask,
     poissonFilter.SetMask(mask);
 
     // Perform the actual filling
-    poissonFilter.FillMaskedRegion();
+    poissonFilter.FillMaskedRegionPoisson();
 
     poissonFilters.push_back(poissonFilter);
 

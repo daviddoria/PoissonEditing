@@ -27,6 +27,7 @@
 #include "QtHelpers/QtHelpers.h"
 #include "QtHelpers/ITKQtHelpers.h"
 #include "Mask/Mask.h"
+#include "Mask/MaskQt.h"
 
 // ITK
 #include "itkImageFileReader.h"
@@ -95,8 +96,24 @@ void PoissonEditingWidget::resizeEvent ( QResizeEvent * event )
 
 void PoissonEditingWidget::on_btnFill_clicked()
 {
-  QFuture<void> future = QtConcurrent::run(FillAllChannels<ImageType>, Image.GetPointer(), MaskImage.GetPointer(),
-                         guidanceFields, Result.GetPointer());
+  typedef itk::Image<itk::CovariantVector<float, 2>, 2> GuidanceFieldType;
+  //std::vector<GuidanceFieldType::Pointer> guidanceFields;
+  std::vector<GuidanceFieldType*> guidanceFields;
+  for(unsigned int channel = 0; channel < Image->GetNumberOfComponentsPerPixel(); ++channel)
+  {
+    GuidanceFieldType::Pointer guidanceField = GuidanceFieldType::New();
+    guidanceField->SetRegions(Image->GetLargestPossibleRegion());
+    guidanceField->Allocate();
+    GuidanceFieldType::PixelType zeroVector;
+    zeroVector.Fill(0);
+    ITKHelpers::SetImageToConstant(guidanceField.GetPointer(), zeroVector);
+    guidanceFields.push_back(guidanceField);
+  }
+
+//   QFuture<void> future = QtConcurrent::run(FillAllChannels<ImageType>, Image.GetPointer(), MaskImage.GetPointer(),
+  QFuture<void> future = QtConcurrent::run(FillAllChannels<ImageType, GuidanceFieldType>, Image.GetPointer(),
+                                           MaskImage.GetPointer(),
+                                           guidanceFields, Result.GetPointer());
 
   this->FutureWatcher.setFuture(future);
 
@@ -146,7 +163,7 @@ void PoissonEditingWidget::OpenImageAndMask(const std::string& imageFileName, co
 
   ITKHelpers::DeepCopy(maskReader->GetOutput(), this->MaskImage.GetPointer());
 
-  QImage qimageMask = this->MaskImage->GetQtImage();
+  QImage qimageMask = MaskQt::GetQtImage(this->MaskImage);
   this->MaskImagePixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimageMask));
   this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
 }

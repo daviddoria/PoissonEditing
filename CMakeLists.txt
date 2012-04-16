@@ -39,34 +39,33 @@ FIND_PACKAGE(Umfpack REQUIRED)
 include_directories(${UMFPACK_INCLUDES})
 include_directories(${EIGEN3_INCLUDE_DIR}/unsupported/)
 
-#add_library(HelpersLibrary Helpers.cpp Mask.cpp IndexComparison.cpp)
-
 # Submodules
 add_subdirectory(Helpers)
 add_subdirectory(ITKHelpers)
 add_subdirectory(Mask)
 
+# GUI
 add_subdirectory(GUI)
 
-ADD_EXECUTABLE(PoissonFillingLaplacian PoissonFillingLaplacian.cpp)
-TARGET_LINK_LIBRARIES(PoissonFillingLaplacian ${ITK_LIBRARIES} umfpack
-libHelpers libITKHelpers libMask)
-INSTALL( TARGETS PoissonFillingLaplacian RUNTIME DESTINATION ${INSTALL_DIR} )
-
-ADD_EXECUTABLE(PoissonFillingVariational PoissonFillingVariational.cpp)
-TARGET_LINK_LIBRARIES(PoissonFillingVariational ${ITK_LIBRARIES} umfpack
-libHelpers libITKHelpers libMask)
-INSTALL( TARGETS PoissonFillingVariational RUNTIME DESTINATION ${INSTALL_DIR} )
+# ADD_EXECUTABLE(PoissonFillingLaplacian PoissonFillingLaplacian.cpp)
+# TARGET_LINK_LIBRARIES(PoissonFillingLaplacian ${ITK_LIBRARIES} umfpack
+# libHelpers libITKHelpers libMask)
+# INSTALL( TARGETS PoissonFillingLaplacian RUNTIME DESTINATION ${INSTALL_DIR} )
+# 
+# ADD_EXECUTABLE(PoissonFillingVariational PoissonFillingVariational.cpp)
+# TARGET_LINK_LIBRARIES(PoissonFillingVariational ${ITK_LIBRARIES} umfpack
+# libHelpers libITKHelpers libMask)
+# INSTALL( TARGETS PoissonFillingVariational RUNTIME DESTINATION ${INSTALL_DIR} )
 
 ADD_EXECUTABLE(PoissonFillingPoisson PoissonFillingPoisson.cpp)
 TARGET_LINK_LIBRARIES(PoissonFillingPoisson ${ITK_LIBRARIES} umfpack
 libHelpers libITKHelpers libMask)
 INSTALL( TARGETS PoissonFillingPoisson RUNTIME DESTINATION ${INSTALL_DIR} )
 
-ADD_EXECUTABLE(PoissonFillingNeumann PoissonFillingNeumann.cpp)
-TARGET_LINK_LIBRARIES(PoissonFillingNeumann ${ITK_LIBRARIES} umfpack
-libHelpers libITKHelpers libMask)
-INSTALL( TARGETS PoissonFillingNeumann RUNTIME DESTINATION ${INSTALL_DIR} )
+# ADD_EXECUTABLE(PoissonFillingNeumann PoissonFillingNeumann.cpp)
+# TARGET_LINK_LIBRARIES(PoissonFillingNeumann ${ITK_LIBRARIES} umfpack
+# libHelpers libITKHelpers libMask)
+# INSTALL( TARGETS PoissonFillingNeumann RUNTIME DESTINATION ${INSTALL_DIR} )
 
 #SET(PoissonEditingNonInteractive ON CACHE BOOL "Build the Poisson editing non interactive version.")
 #if(PoissonEditingNonInteractive)
