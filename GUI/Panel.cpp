@@ -20,9 +20,12 @@
 
 // Custom
 #include "FileSelectionWidget.h"
-#include "Helpers.h"
-#include "HelpersQt.h"
-#include "Mask.h"
+
+// Submodules
+#include "Helpers/Helpers.h"
+#include "Mask/Mask.h"
+#include "QtHelpers/QtHelpers.h"
+#include "QtHelpers/ITKQtHelpers.h"
 
 // Qt
 #include <QFileSystemModel>
@@ -55,17 +58,19 @@ Panel::Panel()
 void Panel::LoadAndDisplay()
 {
   // sender()
-  //this->SelectionWidget->FileName = this->SelectionWidget->currentIndex().data(QFileSystemModel::FilePathRole).toString().toStdString();
+  //this->SelectionWidget->FileName =
+  //    this->SelectionWidget->currentIndex().data(QFileSystemModel::FilePathRole).toString().toStdString();
   typedef itk::VectorImage<float, 2> FloatVectorImageType;
   typedef itk::ImageFileReader<FloatVectorImageType> ReaderType;
   ReaderType::Pointer reader = ReaderType::New();
-  reader->SetFileName(this->SelectionWidget->currentIndex().data(QFileSystemModel::FilePathRole).toString().toStdString());
+  reader->SetFileName(this->SelectionWidget->currentIndex().data(QFileSystemModel::FilePathRole)
+          .toString().toStdString());
   reader->Update();
 
   this->Image = reader->GetOutput();
 
-  QImage image = HelpersQt::GetQImage(this->Image.GetPointer());
-  image = HelpersQt::FitToGraphicsView(image, this->GraphicsView);
+  QImage image = ITKQtHelpers::GetQImageColor(this->Image.GetPointer());
+  image = QtHelpers::FitToGraphicsView(image, this->GraphicsView);
 
   this->GraphicsScene->clear();
   this->GraphicsScene->addPixmap(QPixmap::fromImage(image));

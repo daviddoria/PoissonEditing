@@ -24,8 +24,8 @@
 // ITK
 #include "itkVectorImage.h"
 
-// Custom
-#include "Mask.h"
+// Submodules
+#include "Mask/Mask.h"
 
 // Qt
 #include <QMainWindow>

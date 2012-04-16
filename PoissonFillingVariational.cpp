@@ -18,6 +18,9 @@
 
 #include "PoissonEditing.h"
 
+// Submodules
+#include "ITKHelpers/ITKHelpers.h"
+
 // STL
 #include <iostream>
 
@@ -87,7 +90,7 @@ int main(int argc, char* argv[])
   poissonFilter.FillMaskedRegionVariational();
 
   // Write output
-  Helpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
+  ITKHelpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
   // Helpers::WriteVectorImageAsPNG(output.GetPointer(), outputFilename);
 
   return EXIT_SUCCESS;

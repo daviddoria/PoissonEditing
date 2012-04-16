@@ -29,7 +29,7 @@
 // http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
 
 // Custom
-#include "Mask.h"
+#include "Mask/Mask.h"
 
 // ITK
 #include "itkCovariantVector.h"
@@ -90,6 +90,8 @@ public:
 
   /** Get the filled image. */
   ImageType* GetOutput();
+
+  void SetLaplacian(FloatScalarImageType* const laplacian);
   
 protected:
 
@@ -98,9 +100,10 @@ protected:
   /** Specify an image to act as the source image. */
   void CreateGuidanceFieldFromImage(const FloatScalarImageType* const sourceImage);
 
-  /** Checks that the mask is the same size as the image and that there are no pixels to be filled on the boundary of the image. */
+  /** Checks that the mask is the same size as the image and that there are no pixels to be
+   * filled on the boundary of the image. */
   bool VerifyMask() const;
-  
+
   /** The image in which to fill pixels. */
   typename ImageType::Pointer TargetImage;
   
@@ -108,18 +111,23 @@ protected:
   typename ImageType::Pointer Output;
 
   /** The guidance field. */
-  //FloatScalarImageType::Pointer GuidanceField;
-
   Vector2ImageType::Pointer GuidanceField;
-  
+
   // The image specifying which pixels to fill.
   Mask::Pointer MaskImage;
+
+  FloatScalarImageType* Laplacian;
 };
 
 /**
+ * This function performs the hole filling operation on each channel of a VectorImage independently.
+ * The 'guidanceFields' argument must be the same length as the number of channels of 'image'.
+ * Each element of the 'guidanceFields' vector is a 2-channel derivative image (channel 0 is the
+ * x deriviative and channel 1 is the y deriviative.
  */
-// template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
-// void FillAllChannels(const TVectorImage* const image, const Mask* const mask, const TGuidanceField* const guidanceField, FillMethodEnum fillMethod, TVectorImage* const output);
+template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
+void FillAllChannels(const TVectorImage* const image, const Mask* const mask,
+                     const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output);
 
 #include "PoissonEditing.hpp"
 

@@ -18,9 +18,9 @@
 
 #include "PoissonEditing.h" // Appease syntax parser
 
-// Custom
-#include "Helpers.h"
-#include "IndexComparison.h"
+// Submodules
+#include "Helpers/Helpers.h"
+#include "ITKHelpers/ITKHelpers.h"
 
 // ITK
 #include "itkAddImageFilter.h"
@@ -44,6 +44,14 @@ PoissonEditing<TPixel>::PoissonEditing()
 
   this->GuidanceField = GuidanceFieldType::New();
   this->MaskImage = Mask::New();
+
+  Laplacian = NULL;
+}
+
+template <typename TPixel>
+void PoissonEditing<TPixel>::SetLaplacian(FloatScalarImageType* const laplacian)
+{
+  Laplacian = laplacian;
 }
 
 template <typename TPixel>
@@ -55,13 +63,13 @@ void PoissonEditing<TPixel>::SetFillMethod(FillMethodEnum fillMethod)
 template <typename TPixel>
 void PoissonEditing<TPixel>::SetTargetImage(const ImageType* const image)
 {
-  Helpers::DeepCopy(image, this->TargetImage.GetPointer());
+  ITKHelpers::DeepCopy(image, this->TargetImage.GetPointer());
 }
 
 template <typename TPixel>
 void PoissonEditing<TPixel>::SetGuidanceField(const GuidanceFieldType* const field)
 {
-  Helpers::DeepCopy(field, this->GuidanceField.GetPointer());
+  ITKHelpers::DeepCopy(field, this->GuidanceField.GetPointer());
 }
 
 template <typename TPixel>
@@ -73,7 +81,7 @@ void PoissonEditing<TPixel>::SetSourceImage(const ImageType* const image)
 template <typename TPixel>
 void PoissonEditing<TPixel>::SetMask(const Mask* const mask)
 {
-  Helpers::DeepCopy(mask, this->MaskImage.GetPointer());
+  ITKHelpers::DeepCopy(mask, this->MaskImage.GetPointer());
 }
 
 template <typename TPixel>
@@ -99,7 +107,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
 
      if(this->MaskImage->IsHole(pixelIndex))
        {
-       std::cout << "Adding variable " << variableIdMap.size() << std::endl;
+       // std::cout << "Adding variable " << variableIdMap.size() << std::endl;
        variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
        }
      ++maskIterator;
@@ -130,7 +138,8 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
   
     Vector2Type guidanceVectorP = this->GuidanceField->GetPixel(currentPixelLocation);
 
-    // If we are on the boundary, use the Neumann boundary condition only (we cannot use the interior condition because it relies on
+    // If we are on the boundary, use the Neumann boundary condition only
+    // (we cannot use the interior condition because it relies on
     // An actual value (the Dirchlet boundary) outside the hole).
     // What is n_x and n_y? Just 1/0 and 1/0? Or do you have to do an actual blurred boundary normal computation?
     if(MaskImage->HasValid4Neighbor(currentPixelLocation))
@@ -150,8 +159,9 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
     {
       numberOfInteriorPixels++;
 
-      std::vector<itk::Index<2> > valid4Neighbors = Helpers::GetValid4NeighborIndices(currentPixelLocation,
-                                                                                    MaskImage->GetLargestPossibleRegion());
+      std::vector<itk::Index<2> > valid4Neighbors =
+               ITKHelpers::Get4NeighborIndicesInsideRegion(currentPixelLocation,
+                                                           MaskImage->GetLargestPossibleRegion());
       // This is the |N_p| f_p term - we put the value |N_p| at the column of this variable (variableId)
       // and we are currently setting up the 'variableId' equation/row.
       A.insert(variableIdMap[currentPixelLocation], variableIdMap[currentPixelLocation]) = valid4Neighbors.size();
@@ -194,8 +204,9 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
     throw std::runtime_error("Solving failed!");
   }
 
-  // Initialize the output by copying the target image into the output. Pixels that are not filled will remain the same in the output.
-  Helpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
+  // Initialize the output by copying the target image into the output.
+  // Pixels that are not filled will remain the same in the output.
+  ITKHelpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
   //Helpers::WriteImage<TImage>(this->Output, "InitializedOutput.mha");
 
   // Convert solution vector back to image
@@ -219,7 +230,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionVariational()
 
      if(this->MaskImage->IsHole(pixelIndex))
        {
-       std::cout << "Adding variable " << variableIdMap.size() << std::endl;
+       //std::cout << "Adding variable " << variableIdMap.size() << std::endl;
        variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
        }
      ++maskIterator;
@@ -244,8 +255,9 @@ void PoissonEditing<TPixel>::FillMaskedRegionVariational()
 
     Vector2Type guidanceVectorP = this->GuidanceField->GetPixel(currentPixelLocation);
 
-    std::vector<itk::Index<2> > valid4Neighbors = Helpers::GetValid4NeighborIndices(currentPixelLocation,
-                                                                                    MaskImage->GetLargestPossibleRegion());
+    std::vector<itk::Index<2> > valid4Neighbors =
+            ITKHelpers::Get4NeighborIndicesInsideRegion(currentPixelLocation,
+                                                        MaskImage->GetLargestPossibleRegion());
 
     // This is the |N_p| f_p term - we put the value |N_p| at the column of this variable (variableId)
     // and we are currently setting up the 'variableId' equation/row.
@@ -286,8 +298,9 @@ void PoissonEditing<TPixel>::FillMaskedRegionVariational()
     throw std::runtime_error("Solving failed!");
   }
 
-  // Initialize the output by copying the target image into the output. Pixels that are not filled will remain the same in the output.
-  Helpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
+  // Initialize the output by copying the target image into the output.
+  // Pixels that are not filled will remain the same in the output.
+  ITKHelpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
   //Helpers::WriteImage<TImage>(this->Output, "InitializedOutput.mha");
 
   // Convert solution vector back to image
@@ -340,9 +353,17 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
   FloatImageType::Pointer laplacian = FloatImageType::New();
   laplacian->SetRegions(MaskImage->GetLargestPossibleRegion());
   laplacian->Allocate();
-  LaplacianFromGradient(GuidanceField, laplacian);
-  Helpers::WriteImage(laplacian.GetPointer(), "laplacian.mha");
-  
+  if(!Laplacian)
+  {
+    LaplacianFromGradient(GuidanceField, laplacian);
+  }
+  else
+  {
+    ITKHelpers::DeepCopy(Laplacian, laplacian.GetPointer());
+  }
+
+  ITKHelpers::WriteImage(laplacian.GetPointer(), "laplacian.mha");
+
   for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
     itk::Index<2> originalPixel = iter->first;
@@ -394,8 +415,9 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
   }
 
   // Convert solution vector back to image
-  // Initialize the output by copying the target image into the output. Pixels that are not filled will remain the same in the output.
-  Helpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
+  // Initialize the output by copying the target image into the output.
+  // Pixels that are not filled will remain the same in the output.
+  ITKHelpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
   
   for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
@@ -459,8 +481,9 @@ void PoissonEditing<TPixel>::CreateGuidanceFieldFromImage(const FloatScalarImage
 }
 
 template <typename TPixel>
-void PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>::GradientImageType* const gradientImage,
-                                                   FloatImageType* const outputLaplacian)
+void
+PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>::GradientImageType* const gradientImage,
+                                              FloatImageType* const outputLaplacian)
 {
   typedef itk::VectorIndexSelectionCastImageFilter<GradientImageType, FloatImageType> IndexSelectionType;
   
@@ -471,7 +494,7 @@ void PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>:
 
   // The the x derivative of the x derivative (second x partial)
   FloatImageType::Pointer xSecondDerivative = FloatImageType::New();
-  Helpers::CentralDifferenceDerivative(xIndexSelectionFilter->GetOutput(), 0, xSecondDerivative.GetPointer());
+  ITKHelpers::CentralDifferenceDerivative(xIndexSelectionFilter->GetOutput(), 0, xSecondDerivative.GetPointer());
   
   IndexSelectionType::Pointer yIndexSelectionFilter = IndexSelectionType::New();
   yIndexSelectionFilter->SetIndex(1);
@@ -480,7 +503,7 @@ void PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>:
 
   // The the y derivative of the y derivative (second y partial)
   FloatImageType::Pointer ySecondDerivative = FloatImageType::New();
-  Helpers::CentralDifferenceDerivative(yIndexSelectionFilter->GetOutput(), 1, ySecondDerivative.GetPointer());
+  ITKHelpers::CentralDifferenceDerivative(yIndexSelectionFilter->GetOutput(), 1, ySecondDerivative.GetPointer());
   
   typedef itk::AddImageFilter<FloatImageType, FloatImageType> AddImageFilterType;
   AddImageFilterType::Pointer addFilter = AddImageFilterType::New ();
@@ -488,93 +511,65 @@ void PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>:
   addFilter->SetInput2(ySecondDerivative);
   addFilter->Update();
 
-  Helpers::DeepCopy(addFilter->GetOutput(), outputLaplacian);
+  ITKHelpers::DeepCopy(addFilter->GetOutput(), outputLaplacian);
 }
 
+template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
+void FillAllChannels(const TVectorImage* const image, const Mask* const mask,
+                     const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output)
+{
+  if(!mask)
+  {
+    throw std::runtime_error("You must specify a mask!");
+  }
 
+  if(guidanceFields.size() != image->GetNumberOfComponentsPerPixel())
+  {
+    std::stringstream ss;
+    ss << "There are " << image->GetNumberOfComponentsPerPixel() << " channels but "
+       << guidanceFields.size() << " guidance fields were specified (these must match).";
+    throw std::runtime_error(ss.str());
+  }
+  
+  typedef itk::Image<typename TVectorImage::InternalPixelType, 2> ScalarImageType;
 
-/** This function should be called with none or one of sourceImage or guidanceField non-null. For example, to use a source image, call:
- * FillAllChannels(image, mask, sourceImage, NULL, output)
- * To use a precomputed guidance field, call:
- * FillAllChannels(image, mask, NULL, guidanceField, output)
- * To use a zero guidance field, call:
- * FillAllChannels(image, mask, NULL, NULL, output)
- */
-// template <typename TVectorImage, typename TGuidanceField>
-// void FillAllChannels(const TVectorImage* const image, const Mask* const mask, const TGuidanceField* const guidanceField,
-//                      PoissonEditing<typename TVectorImage::InternalPixelType>::FillMethodEnum fillMethod, TVectorImage* const output)
-// {
-//   if(!mask)
-//   {
-//     throw std::runtime_error("You must specify a mask!");
-//   }
-// 
-//   typedef itk::Image<typename TVectorImage::InternalPixelType, 2> ScalarImageType;
-//   typedef itk::Image<typename TGuidanceField::InternalPixelType, 2> ScalarGuidanceFieldType;
-// 
-//   typedef itk::ImageToVectorImageFilter<ScalarImageType> ReassemblerType;
-//   typename ReassemblerType::Pointer reassembler = ReassemblerType::New();
-// 
-//   // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
-//   typedef PoissonEditing<typename TVectorImage::InternalPixelType> PoissonEditingFilterType;
-//   
-//   std::vector<PoissonEditingFilterType> poissonFilters;//(imageReader->GetOutput()->GetNumberOfComponentsPerPixel());
-//     
-//   for(unsigned int component = 0; component < image->GetNumberOfComponentsPerPixel(); component++)
-//     {
-//     std::cout << "Filling component " << component << std::endl;
-//     PoissonEditingFilterType poissonFilter;
-//   
-//     // Disassemble the target image into its components
-//     typedef itk::VectorIndexSelectionCastImageFilter<TVectorImage, ScalarImageType> TargetDisassemblerType;
-//     typename TargetDisassemblerType::Pointer targetDisassembler = TargetDisassemblerType::New();
-//     targetDisassembler->SetIndex(component);
-//     targetDisassembler->SetInput(image);
-//     targetDisassembler->Update();
-//     poissonFilter.SetTargetImage(targetDisassembler->GetOutput());
-//   
-//     if(sourceImage)
-//     {
-//       std::cout << "FillAllChannels::Using source image." << std::endl;
-//       typedef itk::VectorIndexSelectionCastImageFilter<TVectorImage, ScalarImageType> SourceDisassemblerType;
-//       typename SourceDisassemblerType::Pointer sourceDisassembler = SourceDisassemblerType::New();
-//       sourceDisassembler->SetIndex(component);
-//       sourceDisassembler->SetInput(sourceImage);
-//       sourceDisassembler->Update();
-// 
-//       poissonFilter.SetSourceImage(sourceDisassembler->GetOutput());
-//     }
-//     else if(guidanceField)
-//     {
-//       std::cout << "FillAllChannels::Using guidance field." << std::endl;
-//       typedef itk::VectorIndexSelectionCastImageFilter<TGuidanceField, ScalarGuidanceFieldType> GuidanceFieldDisassemblerType;
-//       typename GuidanceFieldDisassemblerType::Pointer guidanceFieldDisassembler = GuidanceFieldDisassemblerType::New();
-//       guidanceFieldDisassembler->SetIndex(component);
-//       guidanceFieldDisassembler->SetInput(guidanceField);
-//       guidanceFieldDisassembler->Update();
-// 
-//       poissonFilter.SetGuidanceField(guidanceFieldDisassembler->GetOutput());
-//     }
-//     else
-//     {
-//       std::cout << "FillAllChannels:: Using zero guidance field." << std::endl;
-//       poissonFilter.SetGuidanceFieldToZero();
-//     }
-// 
-//     poissonFilter.SetMask(mask);
-// 
-//     // Perform the actual filling
-//     if(FillMethod = VARIATIONAL
-//     poissonFilter.FillMaskedRegion();
-// 
-//     poissonFilters.push_back(poissonFilter);
-// 
-//     reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
-//     }
-//   
-//   reassembler->Update();
-//   std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
-//   std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
-//   
-//   Helpers::DeepCopyVectorImage(reassembler->GetOutput(), output);
-// }
+  typedef itk::ImageToVectorImageFilter<ScalarImageType> ReassemblerType;
+  typename ReassemblerType::Pointer reassembler = ReassemblerType::New();
+
+  // Perform the Poisson reconstruction on each channel independently
+  typedef PoissonEditing<typename TVectorImage::InternalPixelType> PoissonEditingFilterType;
+
+  std::vector<PoissonEditingFilterType> poissonFilters;
+
+  for(unsigned int component = 0; component < image->GetNumberOfComponentsPerPixel(); component++)
+    {
+    std::cout << "Filling component " << component << std::endl;
+    PoissonEditingFilterType poissonFilter;
+
+    // Disassemble the target image into its components
+    typedef itk::VectorIndexSelectionCastImageFilter<TVectorImage, ScalarImageType> TargetDisassemblerType;
+    typename TargetDisassemblerType::Pointer targetDisassembler = TargetDisassemblerType::New();
+    targetDisassembler->SetIndex(component);
+    targetDisassembler->SetInput(image);
+    targetDisassembler->Update();
+    poissonFilter.SetTargetImage(targetDisassembler->GetOutput());
+
+    poissonFilter.SetGuidanceField(guidanceFields[component]);
+
+    poissonFilter.SetMask(mask);
+
+    // Perform the actual filling
+    poissonFilter.FillMaskedRegion();
+
+    poissonFilters.push_back(poissonFilter);
+
+    reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
+    }
+
+  reassembler->Update();
+  std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel()
+            << std::endl;
+  std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+
+  ITKHelpers::DeepCopy(reassembler->GetOutput(), output);
+}

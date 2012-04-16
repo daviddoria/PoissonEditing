@@ -20,10 +20,13 @@
 
 // Custom
 #include "ImageFileSelector.h"
-#include "HelpersOutput.h"
-#include "HelpersQt.h"
-#include "Mask.h"
 #include "PoissonEditing.h"
+
+// Submodules
+#include "ITKHelpers/ITKHelpers.h"
+#include "QtHelpers/QtHelpers.h"
+#include "QtHelpers/ITKQtHelpers.h"
+#include "Mask/Mask.h"
 
 // ITK
 #include "itkImageFileReader.h"
@@ -92,8 +95,9 @@ void PoissonEditingWidget::resizeEvent ( QResizeEvent * event )
 
 void PoissonEditingWidget::on_btnFill_clicked()
 {
-  QFuture<void> future = QtConcurrent::run(FillAllChannels<ImageType>, Image.GetPointer(),
-                                           MaskImage.GetPointer(), Result.GetPointer());
+  QFuture<void> future = QtConcurrent::run(FillAllChannels<ImageType>, Image.GetPointer(), MaskImage.GetPointer(),
+                         guidanceFields, Result.GetPointer());
+
   this->FutureWatcher.setFuture(future);
 
   this->ProgressDialog->setMinimum(0);
@@ -105,7 +109,8 @@ void PoissonEditingWidget::on_btnFill_clicked()
 void PoissonEditingWidget::on_actionSaveResult_activated()
 {
   // Get a filename to save
-  QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".", "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
+  QString fileName = QFileDialog::getSaveFileName(this, "Save File", ".",
+                                                  "Image Files (*.jpg *.jpeg *.bmp *.png *.mha)");
 
   if(fileName.toStdString().empty())
     {
@@ -113,8 +118,8 @@ void PoissonEditingWidget::on_actionSaveResult_activated()
     return;
     }
 
-  HelpersOutput::WriteImage<ImageType>(this->Result, fileName.toStdString());
-  HelpersOutput::WriteRGBImage<ImageType>(this->Result, fileName.toStdString() + ".png");
+  ITKHelpers::WriteImage(this->Result.GetPointer(), fileName.toStdString());
+  ITKHelpers::WriteRGBImage(this->Result.GetPointer(), fileName.toStdString() + ".png");
   this->statusBar()->showMessage("Saved result.");
 }
 
@@ -126,9 +131,9 @@ void PoissonEditingWidget::OpenImageAndMask(const std::string& imageFileName, co
   imageReader->SetFileName(imageFileName);
   imageReader->Update();
 
-  Helpers::DeepCopyVectorImage(imageReader->GetOutput(), this->Image.GetPointer());
+  ITKHelpers::DeepCopy(imageReader->GetOutput(), this->Image.GetPointer());
 
-  QImage qimageImage = HelpersQt::GetQImageRGBA(this->Image.GetPointer());
+  QImage qimageImage = ITKQtHelpers::GetQImageRGBA(this->Image.GetPointer());
   this->ImagePixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimageImage));
   this->graphicsView->fitInView(this->ImagePixmapItem);
   this->ImagePixmapItem->setVisible(this->chkShowInput->isChecked());
@@ -139,9 +144,9 @@ void PoissonEditingWidget::OpenImageAndMask(const std::string& imageFileName, co
   maskReader->SetFileName(maskFileName);
   maskReader->Update();
 
-  Helpers::DeepCopy(maskReader->GetOutput(), this->MaskImage.GetPointer());
+  ITKHelpers::DeepCopy(maskReader->GetOutput(), this->MaskImage.GetPointer());
 
-  QImage qimageMask = HelpersQt::GetQMaskImage(this->MaskImage);
+  QImage qimageMask = this->MaskImage->GetQtImage();
   this->MaskImagePixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimageMask));
   this->MaskImagePixmapItem->setVisible(this->chkShowMask->isChecked());
 }
@@ -207,7 +212,7 @@ void PoissonEditingWidget::slot_StopProgressBar()
 
 void PoissonEditingWidget::slot_IterationComplete()
 {
-  QImage qimage = HelpersQt::GetQImageRGBA(this->Result.GetPointer());
+  QImage qimage = ITKQtHelpers::GetQImageRGBA(this->Result.GetPointer());
   this->ResultPixmapItem = this->Scene->addPixmap(QPixmap::fromImage(qimage));
   this->ResultPixmapItem->setVisible(this->chkShowOutput->isChecked());
 }

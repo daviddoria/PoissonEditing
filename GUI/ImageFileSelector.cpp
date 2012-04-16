@@ -16,12 +16,14 @@
  *
  *=========================================================================*/
 
+// Submodules
+#include "Helpers/Helpers.h"
+#include "Mask/Mask.h"
+#include "QtHelpers/QtHelpers.h"
+
 // Custom
 #include "ImageFileSelector.h"
 #include "FileSelectionWidget.h"
-#include "Helpers.h"
-#include "HelpersQt.h"
-#include "Mask.h"
 
 // Qt
 #include <QPushButton>

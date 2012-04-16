@@ -1,0 +1,12 @@
+[submodule "Mask"]
+	path = Mask
+	url = git@github.com:daviddoria/Mask.git
+[submodule "Helpers"]
+	path = Helpers
+	url = git@github.com:daviddoria/Helpers.git
+[submodule "ITKHelpers"]
+	path = ITKHelpers
+	url = git@github.com:daviddoria/ITKHelpers.git
+[submodule "GUI/QtHelpers"]
+	path = GUI/QtHelpers
+	url = git@github.com:daviddoria/QtHelpers.git

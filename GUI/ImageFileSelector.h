@@ -21,9 +21,11 @@
 
 #include "ui_FileSelector.h"
 
+// Submodules
+#include "Mask/Mask.h"
+
 // Custom
 #include "FileSelectionWidget.h"
-#include "Mask.h"
 #include "Panel.h"
 
 // Qt

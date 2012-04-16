@@ -18,6 +18,9 @@
 
 #include "PoissonEditing.h"
 
+// Submodules
+#include "ITKHelpers/ITKHelpers.h"
+
 // STL
 #include <iostream>
 
@@ -35,7 +38,7 @@ int main(int argc, char* argv[])
   if(argc < 5)
     {
     std::cout << "Usage: ImageToFill mask guidanceField outputImage" << std::endl;
-    exit(-1);
+    return EXIT_FAILURE;
     }
 
   // Parse arguments
@@ -87,7 +90,7 @@ int main(int argc, char* argv[])
   poissonFilter.FillMaskedRegionPoisson();
 
   // Write output
-  Helpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
+  ITKHelpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
   // Helpers::WriteVectorImageAsPNG(output.GetPointer(), outputFilename);
 
   return EXIT_SUCCESS;
