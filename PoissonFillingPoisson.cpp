@@ -19,7 +19,7 @@
 #include "PoissonEditing.h"
 
 // Submodules
-#include "ITKHelpers/ITKHelpers.h"
+#include "Mask/ITKHelpers/ITKHelpers.h"
 
 // STL
 #include <iostream>

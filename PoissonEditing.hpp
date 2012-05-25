@@ -19,8 +19,8 @@
 #include "PoissonEditing.h" // Appease syntax parser
 
 // Submodules
-#include "Helpers/Helpers.h"
-#include "ITKHelpers/ITKHelpers.h"
+#include "Mask/ITKHelpers/Helpers/Helpers.h"
+#include "Mask/ITKHelpers/ITKHelpers.h"
 
 // ITK
 #include "itkAddImageFilter.h"

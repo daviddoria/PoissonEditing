@@ -20,12 +20,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # Tell CMake to also look in the source directory to find some .cmake files (Eigen3 and Umfpack)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
-#You must set the EIGEN3_INCLUDE_DIR in the 'Advanced' CMake options to /home/doriad/src/eigen or wherever you have extracted Eigen3.
-
-# Eigen3 find hack:
-include_directories(/media/portable/src/Eigen)
-set(EIGEN3_INCLUDE_DIR /media/portable/src/Eigen)
-
 # On Fedora (15) make sure to install the packages suitesparse* to get UMFPACK
 # On Ubuntu (11.4) make sure to install the packages libsuitesparse-dev to get UMFPACK
 
@@ -37,7 +31,6 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_
 #UMFPACK
 FIND_PACKAGE(Umfpack REQUIRED)
 include_directories(${UMFPACK_INCLUDES})
-include_directories(${EIGEN3_INCLUDE_DIR}/unsupported/)
 
 # Submodules
 add_subdirectory(Mask)
@@ -57,7 +50,7 @@ add_subdirectory(GUI)
 
 ADD_EXECUTABLE(PoissonFillingPoisson PoissonFillingPoisson.cpp)
 TARGET_LINK_LIBRARIES(PoissonFillingPoisson ${ITK_LIBRARIES} umfpack
-libHelpers libITKHelpers libMask)
+Mask)
 INSTALL( TARGETS PoissonFillingPoisson RUNTIME DESTINATION ${INSTALL_DIR} )
 
 # ADD_EXECUTABLE(PoissonFillingNeumann PoissonFillingNeumann.cpp)

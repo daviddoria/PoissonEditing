@@ -22,10 +22,10 @@
 #include "FileSelectionWidget.h"
 
 // Submodules
-#include "Helpers/Helpers.h"
+#include "Mask/ITKHelpers/Helpers/Helpers.h"
 #include "Mask/Mask.h"
 #include "QtHelpers/QtHelpers.h"
-#include "QtHelpers/ITKQtHelpers.h"
+#include "ITKQtHelpers/ITKQtHelpers.h"
 
 // Qt
 #include <QFileSystemModel>

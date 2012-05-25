@@ -3,11 +3,13 @@
 
 add_subdirectory(QtHelpers)
 
-  FIND_PACKAGE(Qt4 REQUIRED)
-  INCLUDE(${QT_USE_FILE})
+add_subdirectory(ITKQtHelpers)
 
-  # Let Qt find it's MOCed files
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+FIND_PACKAGE(Qt4 REQUIRED)
+INCLUDE(${QT_USE_FILE})
+
+# Let Qt find it's MOCed files
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 #   QT4_WRAP_UI(FileSelectorUISrcs FileSelector.ui FileSelectionWidget.ui)
 #   QT4_WRAP_CPP(FileSelectorMOCSrcs FileSelector.h FileSelectionWidget.h)
