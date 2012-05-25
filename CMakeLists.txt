@@ -40,8 +40,6 @@ include_directories(${UMFPACK_INCLUDES})
 include_directories(${EIGEN3_INCLUDE_DIR}/unsupported/)
 
 # Submodules
-add_subdirectory(Helpers)
-add_subdirectory(ITKHelpers)
 add_subdirectory(Mask)
 
 # GUI
