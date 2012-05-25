@@ -92,7 +92,17 @@ public:
   ImageType* GetOutput();
 
   void SetLaplacian(FloatScalarImageType* const laplacian);
-  
+
+  /**
+    * This function performs the hole filling operation on each channel of a VectorImage independently.
+    * The 'guidanceFields' argument must be the same length as the number of channels of 'image'.
+    * Each element of the 'guidanceFields' vector is a 2-channel derivative image (channel 0 is the
+    * x deriviative and channel 1 is the y deriviative.
+    */
+    template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
+    static void FillAllChannels(const TVectorImage* const image, const Mask* const mask,
+                        const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output);
+
 protected:
 
   void LaplacianFromGradient(const GradientImageType* const gradientImage, FloatImageType* const outputLaplacian);
@@ -119,15 +129,7 @@ protected:
   FloatScalarImageType* Laplacian;
 };
 
-/**
- * This function performs the hole filling operation on each channel of a VectorImage independently.
- * The 'guidanceFields' argument must be the same length as the number of channels of 'image'.
- * Each element of the 'guidanceFields' vector is a 2-channel derivative image (channel 0 is the
- * x deriviative and channel 1 is the y deriviative.
- */
-template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
-void FillAllChannels(const TVectorImage* const image, const Mask* const mask,
-                     const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output);
+
 
 #include "PoissonEditing.hpp"
 

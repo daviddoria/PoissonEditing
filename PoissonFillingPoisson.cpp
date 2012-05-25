@@ -62,8 +62,8 @@ int main(int argc, char* argv[])
   std::cout << "Pixel Type is " << imageIO->GetComponentTypeAsString(pixelType)
             << std::endl;
 
-  //typedef itk::VectorImage<float, 2> FloatVectorImageType;
-  typedef itk::Image<float, 2> ImageType;
+  typedef itk::VectorImage<float, 2> ImageType;
+  //typedef itk::Image<float, 2> ImageType;
 
   // Read images
   typedef itk::ImageFileReader<ImageType> ImageReaderType;
@@ -91,21 +91,29 @@ int main(int argc, char* argv[])
 
   std::cout << "Read guidance field." << std::endl;
 
-  typedef PoissonEditing<float> PoissonEditingFilterType;
-  PoissonEditingFilterType poissonFilter;
-  poissonFilter.SetTargetImage(targetImageReader->GetOutput());
-  poissonFilter.SetGuidanceField(guidanceFieldReader->GetOutput());
-  poissonFilter.SetMask(maskReader->GetOutput());
-  poissonFilter.FillMaskedRegionPoisson();
+//   typedef PoissonEditing<float> PoissonEditingFilterType;
+//   PoissonEditingFilterType poissonFilter;
+//   poissonFilter.SetTargetImage(targetImageReader->GetOutput());
+//   poissonFilter.SetGuidanceField(guidanceFieldReader->GetOutput());
+//   poissonFilter.SetMask(maskReader->GetOutput());
+//   poissonFilter.FillMaskedRegionPoisson();
+
+  std::vector<Vector2ImageType*> guidanceFields(targetImageReader->GetOutput()->GetNumberOfComponentsPerPixel(),
+                                               guidanceFieldReader->GetOutput());
+
+  ImageType::Pointer output = ImageType::New();
+  
+  PoissonEditing<float>::FillAllChannels(targetImageReader->GetOutput(), maskReader->GetOutput(),
+                                         guidanceFields, output.GetPointer());
 
   // Write output
   if(pixelType == itk::ImageIOBase::UCHAR)
   {
-    //ITKHelpers::WriteRGBImage(poissonFilter.GetOutput(), outputFilename);
+    ITKHelpers::WriteRGBImage(output.GetPointer(), outputFilename);
   }
   else
   {
-    ITKHelpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
+    ITKHelpers::WriteImage(output.GetPointer(), outputFilename);
   }
 
   return EXIT_SUCCESS;

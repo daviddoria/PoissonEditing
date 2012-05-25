@@ -514,8 +514,9 @@ PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>::Grad
   ITKHelpers::DeepCopy(addFilter->GetOutput(), outputLaplacian);
 }
 
-template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
-void FillAllChannels(const TVectorImage* const image, const Mask* const mask,
+template <typename TPixel>
+template <typename TVectorImage, typename TGuidanceField>
+void PoissonEditing<TPixel>::FillAllChannels(const TVectorImage* const image, const Mask* const mask,
                      const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output)
 {
   if(!mask)
