@@ -53,6 +53,15 @@ int main(int argc, char* argv[])
             << "Guidance field: " << guidanceFieldFilename << std::endl
             << "Output image: " << outputFilename << std::endl;
 
+  itk::ImageIOBase::Pointer imageIO =
+  itk::ImageIOFactory::CreateImageIO(
+      targetImageFilename.c_str(), itk::ImageIOFactory::ReadMode);
+  imageIO->ReadImageInformation();
+  typedef itk::ImageIOBase::IOComponentType ScalarPixelType;
+  const ScalarPixelType pixelType = imageIO->GetComponentType();
+  std::cout << "Pixel Type is " << imageIO->GetComponentTypeAsString(pixelType)
+            << std::endl;
+
   //typedef itk::VectorImage<float, 2> FloatVectorImageType;
   typedef itk::Image<float, 2> ImageType;
 
@@ -90,8 +99,14 @@ int main(int argc, char* argv[])
   poissonFilter.FillMaskedRegionPoisson();
 
   // Write output
-  ITKHelpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
-  // Helpers::WriteVectorImageAsPNG(output.GetPointer(), outputFilename);
+  if(pixelType == itk::ImageIOBase::UCHAR)
+  {
+    //ITKHelpers::WriteRGBImage(poissonFilter.GetOutput(), outputFilename);
+  }
+  else
+  {
+    ITKHelpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
+  }
 
   return EXIT_SUCCESS;
 }
