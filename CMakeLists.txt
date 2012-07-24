@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(PoissonEditing)
 ENABLE_TESTING()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x") # needed to allow default template arguments in function templates
+# needed to allow default template arguments in function templates
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
 
 # Where to copy executables when 'make install' is run
 SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
@@ -25,7 +26,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 # On Ubuntu (11.4) make sure to install the packages libsuitesparse-dev to get UMFPACK
 
 FIND_PACKAGE(Eigen3 REQUIRED) #requires FindEigen3.cmake to be in the source directory
-
 include_directories(${EIGEN3_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR}/unsupported/)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET")
 
@@ -39,12 +39,6 @@ if(NOT TARGET Mask)
   include_directories(${Mask_includes})
 endif()
 
-# GUI
-SET(PoissonEditing_BuildGUI ON CACHE BOOL "Build GUI?")
-if(PoissonEditing_BuildGUI)
-  add_subdirectory(GUI)
-endif()
-
 # ADD_EXECUTABLE(PoissonFillingLaplacian PoissonFillingLaplacian.cpp)
 # TARGET_LINK_LIBRARIES(PoissonFillingLaplacian ${ITK_LIBRARIES} umfpack
 # libHelpers libITKHelpers libMask)
@@ -54,6 +48,10 @@ endif()
 # TARGET_LINK_LIBRARIES(PoissonFillingVariational ${ITK_LIBRARIES} umfpack
 # libHelpers libITKHelpers libMask)
 # INSTALL( TARGETS PoissonFillingVariational RUNTIME DESTINATION ${INSTALL_DIR} )
+
+if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+  set(PoissonEditing_includes ${Mask_includes} ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+endif()
 
 ADD_EXECUTABLE(PoissonFillingPoisson PoissonFillingPoisson.cpp)
 TARGET_LINK_LIBRARIES(PoissonFillingPoisson ${ITK_LIBRARIES} umfpack
