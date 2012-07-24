@@ -14,9 +14,6 @@ FIND_PACKAGE(ITK 4 REQUIRED  ITKCommon ITKIOImageBase ITKDistanceMap
 ITKImageIntensity ITKImageFeature ITKMathematicalMorphology ITKBinaryMathematicalMorphology)
 INCLUDE(${ITK_USE_FILE})
 
-# Let our GUI directory find our core files
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 #### Eigen and UMFPACK ####
 
 # Tell CMake to also look in the source directory to find some .cmake files (Eigen3 and Umfpack)
