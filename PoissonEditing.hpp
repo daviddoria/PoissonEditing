@@ -193,15 +193,13 @@ void PoissonEditing<TPixel>::FillMaskedRegionNeumann()
   std::cout << "There were " << numberOfBoundaryPixels << " boundary pixels." << std::endl;
   
   // Solve the system with Eigen
-  Eigen::VectorXd x(variableIdMap.size());
-  Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
-  if(!lu_of_A.succeeded())
+  Eigen::UmfPackLU<Eigen::SparseMatrix<double> > lu_of_A(A);
+
+  Eigen::VectorXd x = lu_of_A.solve(b);
+
+  if(lu_of_A.info() != Eigen::Success)
   {
-    throw std::runtime_error("Decomposiiton failed!");
-  }
-  if(!lu_of_A.solve(b,&x))
-  {
-    throw std::runtime_error("Solving failed!");
+    throw std::runtime_error("Decomposition failed!");
   }
 
   // Initialize the output by copying the target image into the output.
@@ -287,15 +285,11 @@ void PoissonEditing<TPixel>::FillMaskedRegionVariational()
   }// end for variables
 
   // Solve the system with Eigen
-  Eigen::VectorXd x(variableIdMap.size());
-  Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
-  if(!lu_of_A.succeeded())
+  Eigen::UmfPackLU<Eigen::SparseMatrix<double> > lu_of_A(A);
+  Eigen::VectorXd x = lu_of_A.solve(b);
+  if(lu_of_A.info() != Eigen::Success)
   {
-    throw std::runtime_error("Decomposiiton failed!");
-  }
-  if(!lu_of_A.solve(b,&x))
-  {
-    throw std::runtime_error("Solving failed!");
+    throw std::runtime_error("Decomposition failed!");
   }
 
   // Initialize the output by copying the target image into the output.
@@ -403,15 +397,11 @@ void PoissonEditing<TPixel>::FillMaskedRegionPoisson()
   }// end for variables
 
   // Solve the system with Eigen
-  Eigen::VectorXd x(variableIdMap.size());
-  Eigen::SparseLU<Eigen::SparseMatrix<double>,Eigen::UmfPack> lu_of_A(A);
-  if(!lu_of_A.succeeded())
+  Eigen::UmfPackLU<Eigen::SparseMatrix<double> > lu_of_A(A);
+  Eigen::VectorXd x = lu_of_A.solve(b);
+  if(lu_of_A.info() != Eigen::Success)
   {
-    throw std::runtime_error("Decomposiiton failed!");
-  }
-  if(!lu_of_A.solve(b,&x))
-  {
-    throw std::runtime_error("Solving failed!");
+    throw std::runtime_error("Decomposition failed!");
   }
 
   // Convert solution vector back to image
