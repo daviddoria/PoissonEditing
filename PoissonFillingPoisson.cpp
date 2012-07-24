@@ -30,7 +30,7 @@
 #include "itkImageFileWriter.h"
 #include "itkCastImageFilter.h"
 #include "itkVectorIndexSelectionCastImageFilter.h"
-#include "itkImageToVectorImageFilter.h"
+#include "itkComposeImageFilter.h"
 
 int main(int argc, char* argv[])
 {
@@ -98,11 +98,12 @@ int main(int argc, char* argv[])
 //   poissonFilter.SetMask(maskReader->GetOutput());
 //   poissonFilter.FillMaskedRegionPoisson();
 
-  std::vector<Vector2ImageType*> guidanceFields(targetImageReader->GetOutput()->GetNumberOfComponentsPerPixel(),
-                                               guidanceFieldReader->GetOutput());
+  std::vector<Vector2ImageType*> guidanceFields(
+         targetImageReader->GetOutput()->GetNumberOfComponentsPerPixel(),
+         guidanceFieldReader->GetOutput());
 
   ImageType::Pointer output = ImageType::New();
-  
+
   PoissonEditing<float>::FillAllChannels(targetImageReader->GetOutput(), maskReader->GetOutput(),
                                          guidanceFields, output.GetPointer());
 

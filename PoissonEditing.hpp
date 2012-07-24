@@ -26,7 +26,7 @@
 #include "itkAddImageFilter.h"
 #include "itkCastImageFilter.h"
 #include "itkImageRegionConstIterator.h"
-#include "itkImageToVectorImageFilter.h"
+#include "itkComposeImageFilter.h"
 #include "itkLaplacianOperator.h"
 #include "itkLaplacianImageFilter.h"
 #include "itkVectorIndexSelectionCastImageFilter.h"
@@ -534,7 +534,7 @@ void PoissonEditing<TPixel>::FillAllChannels(const TVectorImage* const image, co
   
   typedef itk::Image<typename TVectorImage::InternalPixelType, 2> ScalarImageType;
 
-  typedef itk::ImageToVectorImageFilter<ScalarImageType> ReassemblerType;
+  typedef itk::ComposeImageFilter<ScalarImageType> ReassemblerType;
   typename ReassemblerType::Pointer reassembler = ReassemblerType::New();
 
   // Perform the Poisson reconstruction on each channel independently
@@ -564,7 +564,7 @@ void PoissonEditing<TPixel>::FillAllChannels(const TVectorImage* const image, co
 
     poissonFilters.push_back(poissonFilter);
 
-    reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
+    reassembler->SetInput(component, poissonFilters[component].GetOutput());
     }
 
   reassembler->Update();

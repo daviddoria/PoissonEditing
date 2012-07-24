@@ -9,7 +9,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x") # needed to allow d
 SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 
 #### ITK ####
-FIND_PACKAGE(ITK REQUIRED)
+FIND_PACKAGE(ITK 4 REQUIRED  ITKCommon ITKIOImageBase ITKDistanceMap
+ITKImageIntensity ITKImageFeature ITKMathematicalMorphology ITKBinaryMathematicalMorphology)
 INCLUDE(${ITK_USE_FILE})
 
 # Let our GUI directory find our core files
@@ -33,10 +34,16 @@ FIND_PACKAGE(Umfpack REQUIRED)
 include_directories(${UMFPACK_INCLUDES})
 
 # Submodules
-add_subdirectory(Mask)
+if(NOT TARGET Mask)
+  add_subdirectory(Mask)
+  include_directories(${Mask_includes})
+endif()
 
 # GUI
-add_subdirectory(GUI)
+SET(PoissonEditing_BuildGUI ON CACHE BOOL "Build GUI?")
+if(PoissonEditing_BuildGUI)
+  add_subdirectory(GUI)
+endif()
 
 # ADD_EXECUTABLE(PoissonFillingLaplacian PoissonFillingLaplacian.cpp)
 # TARGET_LINK_LIBRARIES(PoissonFillingLaplacian ${ITK_LIBRARIES} umfpack
