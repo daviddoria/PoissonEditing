@@ -17,19 +17,19 @@
  *=========================================================================*/
 
 #include "PoissonEditing.h"
-#include "Types.h"
 
+// STL
 #include <iostream>
 
+// ITK
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkCastImageFilter.h"
 #include "itkNeighborhoodOperatorImageFilter.h"
 #include "itkBackwardDifferenceOperator.h"
-//#include "itkSobelOperator.h"
-//#include "itkGaussianDerivativeOperator.h"
-//#include "itkDerivativeImageFilter.h"
+
+typedef itk::Image<float, 2> FloatScalarImageType;
 
 void DerivativesToLaplacian(FloatScalarImageType::Pointer xDerivative,
                             FloatScalarImageType::Pointer yDerivative,
@@ -57,46 +57,47 @@ int main(int argc, char* argv[])
             << "output " << outputFilename << std::endl;
 
   // Read files
-  typedef itk::ImageFileReader<FloatSingleChannelImageType> ImageReaderType;
+  typedef itk::ImageFileReader<FloatScalarImageType> ImageReaderType;
   ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
   sourceImageReader->SetFileName(sourceImageFilename);
   sourceImageReader->Update();
 
-  typedef itk::Image<itk::CovariantVector<float, 2>, 2> DerivativeImageType;
+  //typedef itk::Image<itk::CovariantVector<float, 2>, 2> DerivativeImageType;
+  typedef itk::VectorImage<float, 2> DerivativeImageType;
   typedef itk::ImageFileReader<DerivativeImageType> DerivativeImageReaderType;
   DerivativeImageReaderType::Pointer derivativeImageReader = DerivativeImageReaderType::New();
   derivativeImageReader->SetFileName(derivativeImageFilename);
   derivativeImageReader->Update();
 
-  typedef itk::ImageFileReader<UnsignedCharScalarImageType> MaskReaderType;
-  MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName(maskFilename);
-  maskReader->Update();
+  typedef itk::Image<unsigned char, 2> UnsignedCharScalarImageType;
+
+  Mask::Pointer mask = Mask::New();
+  mask->Read(maskFilename);
 
   // Extract components of derivative
   FloatScalarImageType::Pointer derivativeX = FloatScalarImageType::New();
-  Helpers::ExtractComponent<DerivativeImageType>(derivativeImageReader->GetOutput(), 0, derivativeX);
-  Helpers::WriteImage<FloatScalarImageType>(derivativeX, "xDerivative.mhd");
+  ITKHelpers::ExtractChannel(derivativeImageReader->GetOutput(), 0, derivativeX.GetPointer());
+  ITKHelpers::WriteImage(derivativeX.GetPointer(), "xDerivative.mhd");
 
   FloatScalarImageType::Pointer derivativeY = FloatScalarImageType::New();
-  Helpers::ExtractComponent<DerivativeImageType>(derivativeImageReader->GetOutput(), 1, derivativeY);
-  Helpers::WriteImage<FloatScalarImageType>(derivativeY, "yDerivative.mhd");
+  ITKHelpers::ExtractChannel(derivativeImageReader->GetOutput(), 1, derivativeY.GetPointer());
+  ITKHelpers::WriteImage(derivativeY.GetPointer(), "yDerivative.mhd");
 
   // Create Laplacian from derivatives
   FloatScalarImageType::Pointer laplacian = FloatScalarImageType::New();
   DerivativesToLaplacian(derivativeX, derivativeY, laplacian);
-  Helpers::WriteImage<FloatScalarImageType>(laplacian, "LaplacianFromDerivatives.mhd");
+  ITKHelpers::WriteImage(laplacian.GetPointer(), "LaplacianFromDerivatives.mhd");
 
   // Fill hole
-  PoissonEditing<FloatSingleChannelImageType> poissonEditing;
-  poissonEditing.SetImage(sourceImageReader->GetOutput());
-  poissonEditing.SetGuidanceField(laplacian);
-  poissonEditing.SetMask(maskReader->GetOutput());
-  poissonEditing.FillMaskedRegion();
+  PoissonEditing<float> poissonEditing;
+  poissonEditing.SetTargetImage(sourceImageReader->GetOutput());
+  poissonEditing.SetLaplacian(laplacian.GetPointer());
+  poissonEditing.SetMask(mask);
+  poissonEditing.FillMaskedRegionPoisson();
 
-  FloatSingleChannelImageType::Pointer outputImage = poissonEditing.GetOutput();
+  FloatScalarImageType::Pointer outputImage = poissonEditing.GetOutput();
 
-  Helpers::WriteImage<FloatSingleChannelImageType>(outputImage, outputFilename);
+  ITKHelpers::WriteImage(outputImage.GetPointer(), outputFilename);
 
   return EXIT_SUCCESS;
 }

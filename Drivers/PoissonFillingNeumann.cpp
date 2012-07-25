@@ -30,7 +30,7 @@
 #include "itkImageFileWriter.h"
 #include "itkCastImageFilter.h"
 #include "itkVectorIndexSelectionCastImageFilter.h"
-#include "itkImageToVectorImageFilter.h"
+#include "itkComposeImageFilter.h"
 
 int main(int argc, char* argv[])
 {
@@ -65,10 +65,8 @@ int main(int argc, char* argv[])
   std::cout << "Read target image." << std::endl;
 
   // Read mask
-  typedef itk::ImageFileReader<Mask> MaskReaderType;
-  MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName(maskFilename);
-  maskReader->Update();
+  Mask::Pointer mask = Mask::New();
+  mask->Read(maskFilename);
 
   std::cout << "Read mask." << std::endl;
 
@@ -86,8 +84,8 @@ int main(int argc, char* argv[])
   PoissonEditingFilterType poissonFilter;
   poissonFilter.SetTargetImage(targetImageReader->GetOutput());
   poissonFilter.SetGuidanceField(guidanceFieldReader->GetOutput());
-  poissonFilter.SetMask(maskReader->GetOutput());
-  poissonFilter.FillMaskedRegionVariational();
+  poissonFilter.SetMask(mask);
+  poissonFilter.FillMaskedRegionNeumann();
 
   // Write output
   ITKHelpers::WriteImage(poissonFilter.GetOutput(), outputFilename);

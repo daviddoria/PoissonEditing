@@ -16,7 +16,7 @@
  *
  *=========================================================================*/
 
-#include "PoissonCloning.h"
+#include "PoissonEditing.h"
 
 // STL
 #include <iostream>
@@ -27,7 +27,7 @@
 #include "itkImageFileWriter.h"
 #include "itkCastImageFilter.h"
 #include "itkVectorIndexSelectionCastImageFilter.h"
-#include "itkImageToVectorImageFilter.h"
+#include "itkComposeImageFilter.h"
 
 int main(int argc, char* argv[])
 {
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
   if(argc < 6)
     {
     std::cout << "Usage: ImageToFill mask sourceImage guidanceField outputImage" << std::endl;
-    exit(-1);
+    return EXIT_FAILURE;
     }
 
   // Parse arguments
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 
   FloatVectorImageType::Pointer sourceImage = NULL;
   FloatVectorImageType::Pointer guidanceField = NULL;
-  
+
   // Read images
   typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
   ImageReaderType::Pointer targetImageReader = ImageReaderType::New();
@@ -64,10 +64,8 @@ int main(int argc, char* argv[])
   targetImageReader->Update();
 
   // Read mask
-  typedef itk::ImageFileReader<Mask> MaskReaderType;
-  MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName(maskFilename);
-  maskReader->Update();
+  Mask::Pointer mask = Mask::New();
+  mask->Read(maskFilename);
 
   if(sourceImageFilename != "0")
   {
@@ -89,15 +87,17 @@ int main(int argc, char* argv[])
 //   // Output image properties
 //   std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
 //             << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-//             << "Mask image: " << maskReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+//             << "Mask image: " << mask->GetLargestPossibleRegion().GetSize() << std::endl;
 
   FloatVectorImageType::Pointer output = FloatVectorImageType::New();
-  CloneAllChannels(sourceImageReader->GetOutput(), targetImageReader->GetOutput(),
-                   maskReader->GetOutput(), output.GetPointer());
-  
+
+  // TODO: Convert this to the new API
+//   PoissonEditing<float>::FillAllChannels(sourceImage, targetImageReader->GetOutput(),
+//                    mask, output.GetPointer());
+
   // Write output
   //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), "output.mhd");
-  Helpers::WriteVectorImageAsPNG(output.GetPointer(), outputFilename);
+  ITKHelpers::WriteRGBImage(output.GetPointer(), outputFilename);
 
   return EXIT_SUCCESS;
 }

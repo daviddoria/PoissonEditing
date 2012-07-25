@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright David Doria 2011 daviddoria@gmail.com
+ *  Copyright David Doria 2012 daviddoria@gmail.com
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public:
   
   enum FillMethodEnum {VARIATIONAL, POISSON};
   FillMethodEnum FillMethod;
-  
+
   PoissonEditing();
 
   void SetFillMethod(FillMethodEnum fillMethod);
@@ -72,7 +72,7 @@ public:
 
   /** Specify a source image from which the guidance field will be produced. */
   void SetSourceImage(const ImageType* const image);
-  
+
   /** Specify a guidance field. */
   void SetGuidanceField(const GuidanceFieldType* const field);
 
@@ -101,35 +101,34 @@ public:
     */
     template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
     static void FillAllChannels(const TVectorImage* const image, const Mask* const mask,
-                        const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output);
+                                const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output);
 
 protected:
 
   void LaplacianFromGradient(const GradientImageType* const gradientImage, FloatImageType* const outputLaplacian);
-  
+
   /** Specify an image to act as the source image. */
   void CreateGuidanceFieldFromImage(const FloatScalarImageType* const sourceImage);
 
   /** Checks that the mask is the same size as the image and that there are no pixels to be
-   * filled on the boundary of the image. */
+    * filled on the boundary of the image. */
   bool VerifyMask() const;
 
   /** The image in which to fill pixels. */
   typename ImageType::Pointer TargetImage;
-  
+
   /** The result of the algorithm. */
   typename ImageType::Pointer Output;
 
   /** The guidance field. */
   Vector2ImageType::Pointer GuidanceField;
 
-  // The image specifying which pixels to fill.
+  /** The image specifying which pixels to fill. */
   Mask::Pointer MaskImage;
 
+  /** The Laplacian. */
   FloatScalarImageType* Laplacian;
 };
-
-
 
 #include "PoissonEditing.hpp"
 

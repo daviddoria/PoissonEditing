@@ -16,9 +16,7 @@
  *
  *=========================================================================*/
 
-//#include "PoissonCloning.h"
 #include "PoissonEditing.h"
-#include "Types.h"
 
 #include <iostream>
 
@@ -32,12 +30,12 @@
 
 // vector image support
 #include "itkVectorIndexSelectionCastImageFilter.h"
-#include "itkImageToVectorImageFilter.h"
+#include "itkComposeImageFilter.h"
 
-/*
- * This program expects an N channel image and a Laplacian image with the corresponding number
- * of components
- */
+/**
+  * This program expects an N channel image and a Laplacian image with the corresponding number
+  * of components
+  */
 
 int main(int argc, char* argv[])
 {
@@ -48,6 +46,10 @@ int main(int argc, char* argv[])
     exit(-1);
     }
 
+  typedef itk::VectorImage<float, 2> FloatVectorImageType;
+  typedef itk::Image<float, 2> FloatScalarImageType;
+  typedef itk::Image<unsigned char, 2> UnsignedCharScalarImageType;
+  
   // Parse arguments
   std::string sourceImageFilename = argv[1];
   std::string maskFilename = argv[2];
@@ -75,27 +77,25 @@ int main(int argc, char* argv[])
   if(laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel() != sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel())
     {
     std::cerr << "The number of components of the source image is " <<  sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel()
-	      << " which must (but does not) match the number of components of the Laplacian image: " 
-	      << laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
+              << " which must (but does not) match the number of components of the Laplacian image: " 
+              << laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
     return EXIT_FAILURE;
     }
-  
+
   // Read the mask
-  typedef itk::ImageFileReader<UnsignedCharScalarImageType> MaskReaderType;
-  MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName(maskFilename);
-  maskReader->Update();
+  Mask::Pointer mask = Mask::New();
+  mask->Read(maskFilename);
 
   typedef itk::VectorIndexSelectionCastImageFilter<FloatVectorImageType, FloatScalarImageType> DisassemblerType;
-  typedef itk::ImageToVectorImageFilter<FloatScalarImageType> ReassemblerType;
+  typedef itk::ComposeImageFilter<FloatScalarImageType> ReassemblerType;
   ReassemblerType::Pointer reassembler = ReassemblerType::New();
   // Perform the Poisson reconstruction on each channel (source/Laplacian pair) independently
-  std::vector<PoissonEditing<FloatScalarImageType> > poissonFilters;
-  
+  std::vector<PoissonEditing<float> > poissonFilters;
+
   for(unsigned int component = 0; component < laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); component++)
     {
     // Disassemble the image into its components
-    
+
     DisassemblerType::Pointer sourceDisassembler = DisassemblerType::New();
     sourceDisassembler->SetIndex(component);
     sourceDisassembler->SetInput(sourceImageReader->GetOutput());
@@ -106,21 +106,21 @@ int main(int argc, char* argv[])
     laplacianDisassembler->SetInput(laplacianImageReader->GetOutput());
     laplacianDisassembler->Update();
     
-    PoissonEditing<FloatScalarImageType> poissonFilter;
+    PoissonEditing<float> poissonFilter;
     poissonFilters.push_back(poissonFilter);
-    poissonFilters[component].SetImage(sourceDisassembler->GetOutput());
-    poissonFilters[component].SetGuidanceField(laplacianDisassembler->GetOutput());
-    poissonFilters[component].SetMask(maskReader->GetOutput());
-    poissonFilters[component].FillMaskedRegion();
+    poissonFilters[component].SetTargetImage(sourceDisassembler->GetOutput());
+    poissonFilters[component].SetLaplacian(laplacianDisassembler->GetOutput());
+    poissonFilters[component].SetMask(mask);
+    poissonFilters[component].FillMaskedRegionPoisson();
 
     // Reassemble the image
-    reassembler->SetNthInput(component, poissonFilters[component].GetOutput());
+    reassembler->SetInput(component, poissonFilters[component].GetOutput());
     }
-  
+
   reassembler->Update();
-  
+
   // Get and write output
-  Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), outputFilename);
+  ITKHelpers::WriteImage(reassembler->GetOutput(), outputFilename);
 
   return EXIT_SUCCESS;
 }
