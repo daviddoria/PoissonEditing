@@ -17,20 +17,25 @@ INCLUDE(${ITK_USE_FILE})
 #### Eigen and UMFPACK ####
 
 # Tell CMake to also look in the source directory to find some .cmake files (Eigen3 and Umfpack)
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 # On Fedora (15) make sure to install the packages suitesparse* to get UMFPACK
 # On Ubuntu (11.4) make sure to install the packages libsuitesparse-dev to get UMFPACK
 
 # Set the CMake variable to the value of the environment variable.
 # If the build is absolutely fresh, this will be the case if the CMake variable EIGEN3_INCLUDE_DIR is not set.
-if(NOT DEFINED EIGEN3_INCLUDE_DIR) 
+if(NOT DEFINED EIGEN3_INCLUDE_DIR)
   set(EIGEN3_INCLUDE_DIR $ENV{EIGEN3_INCLUDE_DIR})
+  message("Set EIGEN3_INCLUDE_DIR to ${EIGEN3_INCLUDE_DIR} from environment variable of the same name.")
+else()
+  message("EIGEN3_INCLUDE_DIR is ${EIGEN3_INCLUDE_DIR}")
 endif()
+
 FIND_PACKAGE(Eigen3 REQUIRED) #requires FindEigen3.cmake to be in the source directory
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 #UMFPACK
+# TODO: Currently if this find_package occurs in a parent directory, a strange libamd error occurs.
 # FIND_PACKAGE(Umfpack REQUIRED)
 # include_directories(${UMFPACK_INCLUDES})
 
