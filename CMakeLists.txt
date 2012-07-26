@@ -50,8 +50,8 @@ if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
 # Even though this is a header-only libary, create a library so the linking can be done more easily in parents.
-add_library(PoissonEditing)
-target_link_libraries(PoissonEditing Mask QtHelpers umfpack)
+add_custom_target(PoissonEditing PoissonEditing.hpp)
+#target_link_libraries(PoissonEditing Mask QtHelpers umfpack)
 
 SET(PoissonEditing_BuildTests OFF CACHE BOOL "PoissonEditing_BuildTests")
 if(PoissonEditing_BuildTests)
