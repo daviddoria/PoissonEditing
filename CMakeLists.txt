@@ -48,7 +48,9 @@ if(NOT TARGET Mask)
 endif()
 
 if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
-  set(PoissonEditing_includes ${Mask_includes} ${EIGEN3_INCLUDE_DIR} ${UMFPACK_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+  set(PoissonEditing_includes ${Mask_includes} ${EIGEN3_INCLUDE_DIR} ${UMFPACK_INCLUDES}
+      ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+  set(PoissonEditing_libraries Mask umfpack PARENT_SCOPE)
 endif()
 
 # Even though this is a header-only libary, create a library so the linking can be done more easily in parents.

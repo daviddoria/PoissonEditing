@@ -60,8 +60,11 @@ void TestVectorImage()
   std::vector<PoissonEditingType::GuidanceFieldType*> guidanceFields(
          image->GetNumberOfComponentsPerPixel(), guidanceField);
 
-  PoissonEditingType::FillAllChannels(image.GetPointer(), mask,
-                                      guidanceFields, output.GetPointer());
+  PoissonEditingType::FillImage(image.GetPointer(), mask,
+                                guidanceFields, output.GetPointer());
+
+  PoissonEditingType::FillImage(image.GetPointer(), mask,
+                                guidanceField, output.GetPointer());
 }
 
 void TestScalarImage()
@@ -79,8 +82,8 @@ void TestScalarImage()
 
   PoissonEditingType::GuidanceFieldType::Pointer guidanceField = PoissonEditingType::GuidanceFieldType::New();
 
-  PoissonEditingType::FillAllChannels(image.GetPointer(), mask,
-                                      guidanceField.GetPointer(), output.GetPointer());
+  PoissonEditingType::FillImage(image.GetPointer(), mask,
+                                guidanceField.GetPointer(), output.GetPointer());
 }
 
 void TestCovariantVectorImage()
@@ -101,6 +104,12 @@ void TestCovariantVectorImage()
   std::vector<PoissonEditingType::GuidanceFieldType*> guidanceFields(
          image->GetNumberOfComponentsPerPixel(), guidanceField);
 
-  PoissonEditingType::FillAllChannels(image.GetPointer(), mask,
-                                      guidanceFields, output.GetPointer());
+  PoissonEditingType::FillImage(image.GetPointer(), mask,
+                                guidanceFields, output.GetPointer());
+
+//   PoissonEditingType::FillImage(image.GetPointer(), mask.GetPointer(),
+//                                 guidanceField.GetPointer(), output.GetPointer());
+
+  PoissonEditingType::FillImage(image.GetPointer(), mask.GetPointer(),
+                                output.GetPointer());
 }

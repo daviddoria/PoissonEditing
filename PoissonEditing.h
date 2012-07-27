@@ -99,14 +99,38 @@ public:
     * Each element of the 'guidanceFields' vector is a 2-channel derivative image (channel 0 is the
     * x deriviative and channel 1 is the y deriviative.
     */
-    template <typename TImage, typename TGuidanceField = typename PoissonEditing<TPixel>::GuidanceFieldType >
-    static void FillAllChannels(const TImage* const image, const Mask* const mask,
-                                const std::vector<TGuidanceField*> guidanceFields, TImage* const output);
+    template <typename TImage>
+    static void FillVectorImage(const TImage* const image, const Mask* const mask,
+                                const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
 
-    /** Specialization for scalar images */
-    template <typename TScalarPixel, typename TGuidanceField = typename PoissonEditing<TPixel>::GuidanceFieldType >
-    static void FillAllChannels(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
-                                const TGuidanceField* const guidanceField, itk::Image<TScalarPixel, 2>* const output);
+    /** Overload for scalar images. Note that this takes only a single guidance field instead of a vector of guidance fields. */
+    template <typename TScalarPixel>
+    static void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
+                                const GuidanceFieldType* const guidanceField, itk::Image<TScalarPixel, 2>* const output);
+
+    /** For scalar images. This calls FillScalarImage. */
+    template <typename TScalarPixel>
+    static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
+                          const GuidanceFieldType* const guidanceField, itk::Image<TScalarPixel, 2>* const output);
+
+    /** For vector images. This calls FillVectorImage. */
+    template <typename TImage>
+    static void FillImage(const TImage* const image, const Mask* const mask,
+                          const GuidanceFieldType* const guidanceField, TImage* const output);
+
+    /** For vector images with different guidance fields for each channel. This calls FillVectorImage. */
+    template <typename TImage>
+    static void FillImage(const TImage* const image, const Mask* const mask,
+                          const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
+
+    /** For Image<CovariantVector> images. This calls FillVectorImage. */
+    template <typename TComponent, unsigned int NumberOfComponents>
+    static void FillImage(const itk::Image<itk::CovariantVector<TComponent,
+                                NumberOfComponents>, 2>* const image,
+                          const Mask* const mask,
+                          const GuidanceFieldType* const guidanceField,
+                          itk::Image<itk::CovariantVector<TComponent, NumberOfComponents>, 2>* const output);
+
 
 protected:
 
