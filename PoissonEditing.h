@@ -99,9 +99,14 @@ public:
     * Each element of the 'guidanceFields' vector is a 2-channel derivative image (channel 0 is the
     * x deriviative and channel 1 is the y deriviative.
     */
-    template <typename TVectorImage, typename TGuidanceField = itk::Image<itk::CovariantVector<float, 2>, 2> >
-    static void FillAllChannels(const TVectorImage* const image, const Mask* const mask,
-                                const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output);
+    template <typename TImage, typename TGuidanceField = typename PoissonEditing<TPixel>::GuidanceFieldType >
+    static void FillAllChannels(const TImage* const image, const Mask* const mask,
+                                const std::vector<TGuidanceField*> guidanceFields, TImage* const output);
+
+    /** Specialization for scalar images */
+    template <typename TScalarPixel, typename TGuidanceField = typename PoissonEditing<TPixel>::GuidanceFieldType >
+    static void FillAllChannels(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
+                                const TGuidanceField* const guidanceField, itk::Image<TScalarPixel, 2>* const output);
 
 protected:
 

@@ -34,7 +34,7 @@
 // Eigen
 #include <Eigen/Sparse>
 #include <Eigen/UmfPackSupport>
-#include <Eigen/SparseExtra>
+//#include <Eigen/SparseExtra>
 
 template <typename TPixel>
 PoissonEditing<TPixel>::PoissonEditing()
@@ -505,9 +505,9 @@ PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>::Grad
 }
 
 template <typename TPixel>
-template <typename TVectorImage, typename TGuidanceField>
-void PoissonEditing<TPixel>::FillAllChannels(const TVectorImage* const image, const Mask* const mask,
-                     const std::vector<TGuidanceField*> guidanceFields, TVectorImage* const output)
+template <typename TImage, typename TGuidanceField>
+void PoissonEditing<TPixel>::FillAllChannels(const TImage* const image, const Mask* const mask,
+                     const std::vector<TGuidanceField*> guidanceFields, TImage* const output)
 {
   if(!mask)
   {
@@ -522,45 +522,66 @@ void PoissonEditing<TPixel>::FillAllChannels(const TVectorImage* const image, co
     throw std::runtime_error(ss.str());
   }
   
-  typedef itk::Image<typename TVectorImage::InternalPixelType, 2> ScalarImageType;
+  typedef itk::Image<typename TypeTraits<typename TImage::PixelType>::ComponentType, 2> ScalarImageType;
 
-  typedef itk::ComposeImageFilter<ScalarImageType> ReassemblerType;
+  typedef itk::ComposeImageFilter<ScalarImageType, TImage> ReassemblerType;
   typename ReassemblerType::Pointer reassembler = ReassemblerType::New();
 
   // Perform the Poisson reconstruction on each channel independently
-  typedef PoissonEditing<typename TVectorImage::InternalPixelType> PoissonEditingFilterType;
+//   typedef PoissonEditing<typename TypeTraits<typename TImage::PixelType>::ComponentType> PoissonEditingFilterType;
+// 
+//   std::vector<PoissonEditingFilterType> poissonFilters;
+// 
+//   for(unsigned int component = 0; component < image->GetNumberOfComponentsPerPixel(); component++)
+//     {
+//     std::cout << "Filling component " << component << std::endl;
+//     PoissonEditingFilterType poissonFilter;
+// 
+//     // Disassemble the target image into its components
+//     typedef itk::VectorIndexSelectionCastImageFilter<TImage, ScalarImageType> TargetDisassemblerType;
+//     typename TargetDisassemblerType::Pointer targetDisassembler = TargetDisassemblerType::New();
+//     targetDisassembler->SetIndex(component);
+//     targetDisassembler->SetInput(image);
+//     targetDisassembler->Update();
+//     poissonFilter.SetTargetImage(targetDisassembler->GetOutput());
+// 
+//     poissonFilter.SetGuidanceField(guidanceFields[component]);
+// 
+//     poissonFilter.SetMask(mask);
+// 
+//     // Perform the actual filling
+//     poissonFilter.FillMaskedRegionPoisson();
+// 
+//     poissonFilters.push_back(poissonFilter);
+// 
+//     reassembler->SetInput(component, poissonFilters[component].GetOutput());
+//     }
+// 
+//   reassembler->Update();
+//   std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel()
+//             << std::endl;
+//   std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+// 
+//   ITKHelpers::DeepCopy(reassembler->GetOutput(), output);
+}
 
-  std::vector<PoissonEditingFilterType> poissonFilters;
+/** Specialization for scalar images */
+template <typename TPixel>
+template <typename TScalarPixel, typename TGuidanceField>
+void PoissonEditing<TPixel>::FillAllChannels(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
+                            const TGuidanceField* const guidanceField, itk::Image<TScalarPixel, 2>* const output)
+{
+  typedef PoissonEditing<TScalarPixel> PoissonEditingFilterType;
+  PoissonEditingFilterType poissonFilter;
 
-  for(unsigned int component = 0; component < image->GetNumberOfComponentsPerPixel(); component++)
-    {
-    std::cout << "Filling component " << component << std::endl;
-    PoissonEditingFilterType poissonFilter;
+  poissonFilter.SetTargetImage(image);
 
-    // Disassemble the target image into its components
-    typedef itk::VectorIndexSelectionCastImageFilter<TVectorImage, ScalarImageType> TargetDisassemblerType;
-    typename TargetDisassemblerType::Pointer targetDisassembler = TargetDisassemblerType::New();
-    targetDisassembler->SetIndex(component);
-    targetDisassembler->SetInput(image);
-    targetDisassembler->Update();
-    poissonFilter.SetTargetImage(targetDisassembler->GetOutput());
+  poissonFilter.SetGuidanceField(guidanceField);
 
-    poissonFilter.SetGuidanceField(guidanceFields[component]);
+  poissonFilter.SetMask(mask);
 
-    poissonFilter.SetMask(mask);
+  // Perform the actual filling
+  poissonFilter.FillMaskedRegionPoisson();
 
-    // Perform the actual filling
-    poissonFilter.FillMaskedRegionPoisson();
-
-    poissonFilters.push_back(poissonFilter);
-
-    reassembler->SetInput(component, poissonFilters[component].GetOutput());
-    }
-
-  reassembler->Update();
-  std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel()
-            << std::endl;
-  std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
-
-  ITKHelpers::DeepCopy(reassembler->GetOutput(), output);
+  ITKHelpers::DeepCopy(poissonFilter.GetOutput(), output);
 }

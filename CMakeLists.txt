@@ -10,7 +10,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
 SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 
 #### ITK ####
-FIND_PACKAGE(ITK 4 REQUIRED  ITKCommon ITKIOImageBase ITKDistanceMap
+FIND_PACKAGE(ITK 4 REQUIRED  ITKCommon ITKIOImageBase ITKDistanceMap ITKIOPNG ITKIOMeta
 ITKImageIntensity ITKImageFeature ITKMathematicalMorphology ITKBinaryMathematicalMorphology)
 INCLUDE(${ITK_USE_FILE})
 
@@ -24,7 +24,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 # Set the CMake variable to the value of the environment variable.
 # If the build is absolutely fresh, this will be the case if the CMake variable EIGEN3_INCLUDE_DIR is not set.
-if(NOT DEFINED EIGEN3_INCLUDE_DIR)
+if(NOT EIGEN3_INCLUDE_DIR)
   set(EIGEN3_INCLUDE_DIR $ENV{EIGEN3_INCLUDE_DIR})
   message("Set EIGEN3_INCLUDE_DIR to ${EIGEN3_INCLUDE_DIR} from environment variable of the same name.")
 else()
@@ -36,8 +36,10 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 #UMFPACK
 # TODO: Currently if this find_package occurs in a parent directory, a strange libamd error occurs.
-# FIND_PACKAGE(Umfpack REQUIRED)
-# include_directories(${UMFPACK_INCLUDES})
+#if(NOT UMFPACK_LIBRARIES) # Maybe this guard fixes the above error?
+  FIND_PACKAGE(Umfpack REQUIRED)
+  include_directories(${UMFPACK_INCLUDES})
+#endif()
 
 # Submodules
 if(NOT TARGET Mask)
@@ -46,7 +48,7 @@ if(NOT TARGET Mask)
 endif()
 
 if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
-  set(PoissonEditing_includes ${Mask_includes} ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+  set(PoissonEditing_includes ${Mask_includes} ${EIGEN3_INCLUDE_DIR} ${UMFPACK_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
 endif()
 
 # Even though this is a header-only libary, create a library so the linking can be done more easily in parents.
