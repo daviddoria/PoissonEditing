@@ -19,16 +19,7 @@
 #ifndef POISSONEDITING_H
 #define POISSONEDITING_H
 
-// Inspiration for this technique came from Tommer Leyvand's implementation:
-// http://www.leyvand.com/research/adv-graphics/ex1.htm
-//
-// The method is based on "Poisson Image Editing" paper, Pe'rez et. al. [SIGGRAPH/2003].
-
-// More information can be found here:
-// http://en.wikipedia.org/wiki/Discrete_Poisson_equation
-// http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
-
-// Custom
+// Submodules
 #include "Mask/Mask.h"
 
 // ITK
@@ -39,9 +30,16 @@
 // STL
 #include <vector>
 
-/** This class operates on a single channel image. If you would like to use this technique on a multi-channel image,
- * use the free function FillAllChannels.
- */
+/** This class operates on a single channel image. If you would like to use this technique on a
+  * multi-channel image,use the static FillImage functions.
+  * Inspiration for this technique came from Tommer Leyvand's implementation:
+  * http://www.leyvand.com/research/adv-graphics/ex1.htm
+
+  * The method is based on "Poisson Image Editing" paper, Pe'rez et. al. [SIGGRAPH/2003].
+  * More information can be found here:
+  * http://en.wikipedia.org/wiki/Discrete_Poisson_equation
+  * http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
+  */
 
 template <typename TPixel>
 class PoissonEditing
@@ -53,7 +51,7 @@ public:
   typedef Vector2ImageType GuidanceFieldType;
   typedef Vector2ImageType GradientImageType;
   typedef itk::Image<float, 2> FloatImageType;
-  
+
   enum FillMethodEnum {VARIATIONAL, POISSON};
   FillMethodEnum FillMethod;
 
@@ -77,13 +75,7 @@ public:
   void SetGuidanceField(const GuidanceFieldType* const field);
 
   /** Perform the filling. Use a discretization of the Poisson equation. */
-  void FillMaskedRegionPoisson();
-
-  /** Perform the filling. Use a discretization of the original variational forumulation. */
-  void FillMaskedRegionVariational();
-
-  /** Perform the filling. Use a discretization of the original variational forumulation. */
-  void FillMaskedRegionNeumann();
+  void FillMaskedRegion();
 
   /** If no source image is provided, use a zero guidance field. */
   void SetGuidanceFieldToZero();
@@ -103,15 +95,18 @@ public:
     static void FillVectorImage(const TImage* const image, const Mask* const mask,
                                 const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
 
-    /** Overload for scalar images. Note that this takes only a single guidance field instead of a vector of guidance fields. */
+    /** Overload for scalar images. Note that this takes only a single guidance field instead
+      * of a vector of guidance fields. */
     template <typename TScalarPixel>
     static void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
-                                const GuidanceFieldType* const guidanceField, itk::Image<TScalarPixel, 2>* const output);
+                                const GuidanceFieldType* const guidanceField,
+                                itk::Image<TScalarPixel, 2>* const output);
 
     /** For scalar images. This calls FillScalarImage. */
     template <typename TScalarPixel>
     static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
-                          const GuidanceFieldType* const guidanceField, itk::Image<TScalarPixel, 2>* const output);
+                          const GuidanceFieldType* const guidanceField,
+                          itk::Image<TScalarPixel, 2>* const output);
 
     /** For vector images. This calls FillVectorImage. */
     template <typename TImage>
@@ -134,7 +129,8 @@ public:
 
 protected:
 
-  void LaplacianFromGradient(const GradientImageType* const gradientImage, FloatImageType* const outputLaplacian);
+  void LaplacianFromGradient(const GradientImageType* const gradientImage,
+                             FloatImageType* const outputLaplacian);
 
   /** Specify an image to act as the source image. */
   void CreateGuidanceFieldFromImage(const FloatScalarImageType* const sourceImage);
