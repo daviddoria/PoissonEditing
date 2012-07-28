@@ -99,9 +99,8 @@ void PoissonEditing<TPixel>::SetGuidanceFieldToZero()
 template <typename TPixel>
 void PoissonEditing<TPixel>::FillMaskedRegion()
 {
-  //Helpers::WriteImage<TImage>(this->TargetImage, "FillMaskedRegion_TargetImage.mha");
-
-  //Helpers::WriteImage<TImage>(this->Output, "InitializedOutput.mha");
+  //ITKHelpers::WriteImage(this->TargetImage, "FillMaskedRegion_TargetImage.mha");
+  //ITKHelpers::WriteImage(this->Output, "InitializedOutput.mha");
 
   // Create a map that stores the ID of each hole pixel
   typedef std::map<itk::Index<2>, unsigned int, itk::Index<2>::LexicographicCompare> VariableIdMapType;
@@ -137,7 +136,11 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
   unsigned int numberOfPixelsInKernel = laplacianOperator.GetSize()[0] * laplacianOperator.GetSize()[1];
 
   // Create the sparse matrix
-  Eigen::SparseMatrix<double> A(variableIdMap.size(), variableIdMap.size());
+  typedef Eigen::SparseMatrix<double> SparseMatrixType;
+  SparseMatrixType A(variableIdMap.size(), variableIdMap.size());
+  A.reserve(Eigen::VectorXi::Constant(variableIdMap.size(),5));
+
+  // Create the right-hand-side vector
   Eigen::VectorXd b(variableIdMap.size());
 
   // Create a laplacian image from the provided gradient field if it is not provided directly
@@ -158,7 +161,7 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
   // Create the row of the matrix for each pixel
   for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
-    std::cout << "Creating equation for variable " << iter->second << std::endl;
+    //std::cout << "Creating equation for variable " << iter->second << std::endl;
     itk::Index<2> originalPixel = iter->first;
     unsigned int variableId = iter->second;
     //std::cout << "originalPixel " << originalPixel << std::endl;
@@ -196,9 +199,11 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
   }// end for variables
 
   // Solve the system with Eigen
-  Eigen::UmfPackLU<Eigen::SparseMatrix<double> > lu_of_A(A);
-  Eigen::VectorXd x = lu_of_A.solve(b);
-  if(lu_of_A.info() != Eigen::Success)
+  //Eigen::UmfPackLU<SparseMatrixType> sparseSolver(A); // If A is not symmetric, this works but depends on UmfPack
+  //Eigen::BiCGSTAB<SparseMatrixType> sparseSolver(A); // If A is not sparse, this works and is built into Eigen
+  Eigen::SimplicialLDLT<SparseMatrixType> sparseSolver(A); // If A is really symmetric (check this), this is the best
+  Eigen::VectorXd x = sparseSolver.solve(b);
+  if(sparseSolver.info() != Eigen::Success)
   {
     throw std::runtime_error("Decomposition failed!");
   }
