@@ -165,8 +165,8 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
     itk::Index<2> originalPixel = iter->first;
     unsigned int variableId = iter->second;
     //std::cout << "originalPixel " << originalPixel << std::endl;
-    // The right hand side of the equation starts equal to the value of the guidance field
 
+    // The right hand side of the equation starts equal to the value of the guidance field
     double bvalue = laplacian->GetPixel(originalPixel);
 
     // Loop over the kernel around the current pixel
@@ -198,10 +198,8 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
     b[variableId] = bvalue;
   }// end for variables
 
-  // Solve the system with Eigen
-  //Eigen::UmfPackLU<SparseMatrixType> sparseSolver(A); // If A is not symmetric, this works but depends on UmfPack
-  //Eigen::BiCGSTAB<SparseMatrixType> sparseSolver(A); // If A is not sparse, this works and is built into Eigen
-  Eigen::SimplicialLDLT<SparseMatrixType> sparseSolver(A); // If A is really symmetric (check this), this is the best
+  // Solve the (symmetric) system
+  Eigen::SimplicialLDLT<SparseMatrixType> sparseSolver(A);
   Eigen::VectorXd x = sparseSolver.solve(b);
   if(sparseSolver.info() != Eigen::Success)
   {
@@ -212,7 +210,7 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
   // Initialize the output by copying the target image into the output.
   // Pixels that are not filled will remain the same in the output.
   ITKHelpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
-  
+
   for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
     {
     this->Output->SetPixel(iter->first, x(iter->second));
