@@ -35,7 +35,6 @@
 
 // Eigen
 #include <Eigen/Sparse>
-#include <Eigen/UmfPackSupport>
 
 template <typename TPixel>
 PoissonEditing<TPixel>::PoissonEditing()

@@ -16,7 +16,7 @@ INCLUDE(${ITK_USE_FILE})
 
 #### Eigen ####
 
-# Tell CMake to also look in the source directory to find some .cmake files (Eigen3 and Umfpack)
+# Tell CMake to also look in the source directory to find some .cmake files
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 # Set the CMake variable to the value of the environment variable.
@@ -38,7 +38,7 @@ if(NOT TARGET Mask)
 endif()
 
 if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
-  set(PoissonEditing_includes ${Mask_includes} ${EIGEN3_INCLUDE_DIR} ${UMFPACK_INCLUDES}
+  set(PoissonEditing_includes ${Mask_includes} ${EIGEN3_INCLUDE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
   set(PoissonEditing_libraries Mask PARENT_SCOPE)
   message("PoissonEditing submodule used from ${CMAKE_CURRENT_SOURCE_DIR}")

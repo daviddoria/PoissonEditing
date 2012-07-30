@@ -107,9 +107,7 @@ void TestCovariantVectorImage()
   PoissonEditingType::FillImage(image.GetPointer(), mask,
                                 guidanceFields, output.GetPointer());
 
-//   PoissonEditingType::FillImage(image.GetPointer(), mask.GetPointer(),
-//                                 guidanceField.GetPointer(), output.GetPointer());
-
   PoissonEditingType::FillImage(image.GetPointer(), mask.GetPointer(),
-                                output.GetPointer());
+                                guidanceField.GetPointer(), output.GetPointer());
+
 }

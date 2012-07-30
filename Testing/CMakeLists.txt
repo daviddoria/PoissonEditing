@@ -4,7 +4,7 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_executable(TypeTesting TypeTesting.cpp)
-target_link_libraries(TypeTesting Mask umfpack)
+target_link_libraries(TypeTesting Mask)
 
 # ADD_TEST(NAME PoissonEditingTest COMMAND ${EXECUTABLE_OUTPUT_PATH}/PoissonEditing ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png editing.png)
 # 
