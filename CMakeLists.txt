@@ -47,7 +47,6 @@ endif()
 
 # Even though this is a header-only libary, create a library so the linking can be done more easily in parents.
 add_custom_target(PoissonEditing PoissonEditing.hpp)
-#target_link_libraries(PoissonEditing Mask QtHelpers)
 
 SET(PoissonEditing_BuildTests OFF CACHE BOOL "PoissonEditing_BuildTests")
 if(PoissonEditing_BuildTests)
