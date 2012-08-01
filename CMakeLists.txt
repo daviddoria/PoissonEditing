@@ -35,10 +35,11 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 if(NOT TARGET Mask)
   add_subdirectory(Mask)
   include_directories(${Mask_includes})
+  set(PoissonEditing_includes ${PoissonEditing_includes} ${Mask_includes})
 endif()
 
 if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
-  set(PoissonEditing_includes ${Mask_includes} ${EIGEN3_INCLUDE_DIR}
+  set(PoissonEditing_includes ${PoissonEditing_includes} #${EIGEN3_INCLUDE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
   set(PoissonEditing_libraries Mask PARENT_SCOPE)
   message("PoissonEditing submodule used from ${CMAKE_CURRENT_SOURCE_DIR}")
