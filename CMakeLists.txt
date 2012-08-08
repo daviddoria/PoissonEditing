@@ -10,10 +10,12 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
 SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 
 #### ITK ####
-FIND_PACKAGE(ITK 4 REQUIRED  ITKCommon ITKIOImageBase ITKDistanceMap ITKIOPNG ITKIOMeta
-ITKImageIntensity ITKImageFeature ITKMathematicalMorphology ITKBinaryMathematicalMorphology)
-INCLUDE(${ITK_USE_FILE})
-
+if(NOT ITK_FOUND)
+  FIND_PACKAGE(ITK 4 REQUIRED ITKCommon ITKIOImageBase ITKDistanceMap ITKIOPNG ITKIOMeta
+                              ITKImageIntensity ITKImageFeature ITKMathematicalMorphology
+                              ITKBinaryMathematicalMorphology)
+  INCLUDE(${ITK_USE_FILE})
+endif()
 #### Eigen ####
 
 # Tell CMake to also look in the source directory to find some .cmake files
@@ -28,8 +30,10 @@ else()
   message("EIGEN3_INCLUDE_DIR is ${EIGEN3_INCLUDE_DIR}")
 endif()
 
-FIND_PACKAGE(Eigen3 REQUIRED) #requires FindEigen3.cmake to be in the source directory
-include_directories(${EIGEN3_INCLUDE_DIR})
+if(NOT EIGEN3_FOUND)
+  FIND_PACKAGE(Eigen3 REQUIRED) #requires FindEigen3.cmake to be in the source directory
+  include_directories(${EIGEN3_INCLUDE_DIR})
+endif()
 
 # Submodules
 if(NOT TARGET Mask)
