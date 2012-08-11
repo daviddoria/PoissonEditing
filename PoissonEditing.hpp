@@ -359,9 +359,9 @@ void PoissonEditing<TPixel>::FillVectorImage(const TImage* const image, const Ma
   }
 
   reassembler->Update();
-  std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel()
-            << std::endl;
-  std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+//   std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel()
+//             << std::endl;
+//   std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
 
   ITKHelpers::DeepCopy(reassembler->GetOutput(), output);
 }
