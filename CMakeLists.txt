@@ -40,12 +40,13 @@ if(NOT TARGET Mask)
   add_subdirectory(Mask)
   include_directories(${Mask_includes})
   set(PoissonEditing_includes ${PoissonEditing_includes} ${Mask_includes})
+  set(PoissonEditing_libraries ${PoissonEditing_libraries} ${Mask_libraries})
 endif()
 
 if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
   set(PoissonEditing_includes ${PoissonEditing_includes} #${EIGEN3_INCLUDE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
-  set(PoissonEditing_libraries Mask PARENT_SCOPE)
+  set(PoissonEditing_libraries ${PoissonEditing_libraries} PARENT_SCOPE)
   message("PoissonEditing submodule used from ${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 
@@ -61,3 +62,12 @@ SET(PoissonEditing_BuildDrivers OFF CACHE BOOL "PoissonEditing_BuildDrivers")
 if(PoissonEditing_BuildDrivers)
   add_subdirectory(Drivers)
 endif()
+
+add_custom_target(PoissonEditingSources SOURCES
+PoissonEditing.h
+PoissonEditing.hpp
+PoissonEditingNeumann.h
+PoissonEditingNeumann.hpp
+PoissonEditingVariational.h
+PoissonEditingVariational.hpp
+)
