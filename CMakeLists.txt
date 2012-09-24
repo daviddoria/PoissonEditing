@@ -59,13 +59,13 @@ set_property(GLOBAL PROPERTY PoissonEditingIncludeDirs ${PoissonEditing_include_
 set_property(GLOBAL PROPERTY PoissonEditingLibs ${PoissonEditing_libraries})
 
 # Build the tests if requested.
-SET(PoissonEditing_BuildTests OFF CACHE BOOL "PoissonEditing_BuildTests")
+option(PoissonEditing_BuildTests "PoissonEditing_BuildTests" OFF)
 if(PoissonEditing_BuildTests)
   add_subdirectory(Testing)
 endif()
 
 # Build the drivers if requested.
-SET(PoissonEditing_BuildDrivers OFF CACHE BOOL "PoissonEditing_BuildDrivers")
+option(PoissonEditing_BuildDrivers "PoissonEditing_BuildDrivers" OFF)
 if(PoissonEditing_BuildDrivers)
   add_subdirectory(Drivers)
 endif()
@@ -79,3 +79,9 @@ PoissonEditingNeumann.hpp
 PoissonEditingVariational.h
 PoissonEditingVariational.hpp
 )
+
+# Display where this code was used from (if it is used as a submodule, there may be multiple instances of this submodule in the project, only the first of which is used)
+option(PoissonEditing_ShowSubmoduleLocation "Show the path from which PoissonEditing was used?" OFF)
+if(PoissonEditing_ShowSubmoduleLocation)
+  message("PoissonEditing used from ${CMAKE_CURRENT_SOURCE_DIR}")
+endif(PoissonEditing_ShowSubmoduleLocation)
