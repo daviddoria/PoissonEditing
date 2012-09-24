@@ -46,21 +46,24 @@ class PoissonEditing
 {
 public:
 
+  /** Define some image types. */
   typedef itk::CovariantVector<float, 2> Vector2Type;
   typedef itk::Image<Vector2Type> Vector2ImageType;
   typedef Vector2ImageType GuidanceFieldType;
   typedef Vector2ImageType GradientImageType;
   typedef itk::Image<float, 2> FloatImageType;
+  typedef itk::Image<TPixel, 2> ImageType;
+  typedef itk::Image<float, 2> FloatScalarImageType;
 
+  /** Enumerate the potential fill methods. */
   enum FillMethodEnum {VARIATIONAL, POISSON};
   FillMethodEnum FillMethod;
 
+  /** Construtor. */
   PoissonEditing();
 
+  /** Specify which method to use. */
   void SetFillMethod(FillMethodEnum fillMethod);
-
-  typedef itk::Image<TPixel, 2> ImageType;
-  typedef itk::Image<float, 2> FloatScalarImageType;
 
   /** Specify the image to fill. */
   void SetTargetImage(const ImageType* const image);
@@ -102,23 +105,26 @@ public:
                                 const GuidanceFieldType* const guidanceField,
                                 itk::Image<TScalarPixel, 2>* const output);
 
+    /** The following functions are overloads that call one of the above functions (FillVectorImage or FillScalarImage) based on the type of images that
+      * are passed. */
+
     /** For scalar images. This calls FillScalarImage. */
     template <typename TScalarPixel>
     static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
                           const GuidanceFieldType* const guidanceField,
                           itk::Image<TScalarPixel, 2>* const output);
 
-    /** For vector images. This calls FillVectorImage. */
+    /** For vector images. This calls FillVectorImage with the same guidance field for each channel. */
     template <typename TImage>
     static void FillImage(const TImage* const image, const Mask* const mask,
                           const GuidanceFieldType* const guidanceField, TImage* const output);
 
-    /** For vector images with different guidance fields for each channel. This calls FillVectorImage. */
+    /** For vector images. This calls FillVectorImage with different guidance fields for each channel. */
     template <typename TImage>
     static void FillImage(const TImage* const image, const Mask* const mask,
                           const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
 
-    /** For Image<CovariantVector> images. This calls FillVectorImage. */
+    /** For Image<CovariantVector> images. This calls FillVectorImage with the same guidance field for each channel. */
     template <typename TComponent, unsigned int NumberOfComponents>
     static void FillImage(const itk::Image<itk::CovariantVector<TComponent,
                                 NumberOfComponents>, 2>* const image,
@@ -126,9 +132,9 @@ public:
                           const GuidanceFieldType* const guidanceField,
                           itk::Image<itk::CovariantVector<TComponent, NumberOfComponents>, 2>* const output);
 
-
 protected:
 
+  /** Compute the Laplacian from the Gradient. */
   void LaplacianFromGradient(const GradientImageType* const gradientImage,
                              FloatImageType* const outputLaplacian);
 

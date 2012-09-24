@@ -399,7 +399,7 @@ void PoissonEditing<TPixel>::FillImage(const itk::Image<TScalarPixel, 2>* const 
   FillScalarImage(image, mask, guidanceField, output);
 }
 
-/** For vector images. */
+/** For vector images with the same guidance field for each channel. */
 template <typename TPixel>
 template <typename TImage>
 void PoissonEditing<TPixel>::
