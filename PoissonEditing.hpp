@@ -105,7 +105,7 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
   typedef std::map<itk::Index<2>, unsigned int, itk::Index<2>::LexicographicCompare> VariableIdMapType;
   VariableIdMapType variableIdMap;
 
-  itk::ImageRegionIterator<Mask> maskIterator(MaskImage, MaskImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<Mask> maskIterator(this->MaskImage, this->MaskImage->GetLargestPossibleRegion());
 
   while(!maskIterator.IsAtEnd())
     {
@@ -122,7 +122,7 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
 
   if(variableIdMap.size() == 0)
     {
-    std::cerr << "No masked pixels found!" << std::endl;
+    std::cerr << "PoissonEditing::FillMaskedRegion(): No masked pixels found!" << std::endl;
     return;
     }
 
