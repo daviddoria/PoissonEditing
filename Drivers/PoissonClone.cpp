@@ -29,75 +29,76 @@
 #include "itkVectorIndexSelectionCastImageFilter.h"
 #include "itkComposeImageFilter.h"
 
+// Submodules
+#include "ITKHelpers/ITKContainerInterface.h"
+
 int main(int argc, char* argv[])
 {
   // Verify arguments
-  if(argc < 6)
+  if(argc < 5)
   {
-    std::cout << "Usage: ImageToFill mask sourceImage guidanceField outputImage" << std::endl;
+    std::cout << "Usage: ImageToFill sourceImage sourceImageMask outputImage" << std::endl;
     return EXIT_FAILURE;
   }
 
   // Parse arguments
   std::string targetImageFilename = argv[1];
-  std::string maskFilename = argv[2];
-  std::string sourceImageFilename = argv[3];
-  std::string guidanceFieldFilename = argv[4];
-  std::string outputFilename = argv[5];
+  std::string sourceImageFilename = argv[2];
+  std::string sourceImageMaskFilename = argv[3];
+  std::string outputFilename = argv[4];
 
   // Output arguments
   std::cout << "Target image: " << targetImageFilename << std::endl
             << "Source image: " << sourceImageFilename << std::endl
-            << "Mask image: " << maskFilename << std::endl
-            << "Guidance field: " << guidanceFieldFilename << std::endl
+            << "Source image mask: " << sourceImageMaskFilename << std::endl
             << "Output image: " << outputFilename << std::endl;
 
-  typedef itk::VectorImage<float, 2> FloatVectorImageType;
-
-  FloatVectorImageType::Pointer sourceImage = NULL;
-  FloatVectorImageType::Pointer guidanceField = NULL;
+  typedef itk::VectorImage<float, 2> ImageType;
 
   // Read images
-  typedef itk::ImageFileReader<FloatVectorImageType> ImageReaderType;
+  typedef itk::ImageFileReader<ImageType> ImageReaderType;
   ImageReaderType::Pointer targetImageReader = ImageReaderType::New();
   targetImageReader->SetFileName(targetImageFilename);
   targetImageReader->Update();
 
   // Read mask
   Mask::Pointer mask = Mask::New();
-  mask->Read(maskFilename);
+//  mask->Read(maskFilename);
+  mask->ReadFromImage(sourceImageMaskFilename);
 
-  if(sourceImageFilename != "0")
-  {
-    ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
-    sourceImageReader->SetFileName(sourceImageFilename);
-    sourceImageReader->Update();
+  ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
+  sourceImageReader->SetFileName(sourceImageFilename);
+  sourceImageReader->Update();
 
-    sourceImage = sourceImageReader->GetOutput();
-  }
+  typedef PoissonEditing<float> PoissonEditingType;
 
-  if(guidanceFieldFilename != "0")
-  {
-    ImageReaderType::Pointer guidanceFieldReader = ImageReaderType::New();
-    guidanceFieldReader->SetFileName(sourceImageFilename);
-    guidanceFieldReader->Update();
+  PoissonEditingType::GuidanceFieldType::Pointer guidanceField =
+      PoissonEditingType::GuidanceFieldType::New();
+  ITKHelpers::ComputeGradients(sourceImageReader->GetOutput(), guidanceField.GetPointer());
 
-    guidanceField = guidanceFieldReader->GetOutput();
-  }
 //   // Output image properties
 //   std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
 //             << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
 //             << "Mask image: " << mask->GetLargestPossibleRegion().GetSize() << std::endl;
 
-  FloatVectorImageType::Pointer output = FloatVectorImageType::New();
+  ImageType::Pointer output = ImageType::New();
 
-  // TODO: Convert this to the new API
-//   PoissonEditing<float>::FillAllChannels(sourceImage, targetImageReader->GetOutput(),
-//                    mask, output.GetPointer());
+
+  PoissonEditingType::FillImage(targetImageReader->GetOutput(), mask,
+                                guidanceField.GetPointer(), output.GetPointer());
+
+//  ITKHelpers::ScaleAllChannelsTo255(output.GetPointer());
+  ITKHelpers::ClampAllChannelsTo255(output.GetPointer());
 
   // Write output
-  //Helpers::WriteImage<FloatVectorImageType>(reassembler->GetOutput(), "output.mhd");
-  ITKHelpers::WriteRGBImage(output.GetPointer(), outputFilename);
+  if(Helpers::GetFileExtension(outputFilename) == "png")
+  {
+    ITKHelpers::WriteRGBImage(output.GetPointer(), outputFilename);
+  }
+  else
+  {
+    ITKHelpers::WriteImage(output.GetPointer(), outputFilename);
+  }
 
   return EXIT_SUCCESS;
 }
