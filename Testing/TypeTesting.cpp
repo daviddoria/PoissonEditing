@@ -33,7 +33,7 @@ static void TestVectorImage();
 static void TestCovariantVectorImage();
 static void TestScalarImage();
 
-int main(int argc, char* argv[])
+int main(int, char* [])
 {
   TestVectorImage();
   TestCovariantVectorImage();

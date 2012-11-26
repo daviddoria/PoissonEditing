@@ -7,7 +7,7 @@ add_subdirectory(CMakeHelpers)
 
 # needed to allow default template arguments in function templates
 if(UNIX)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++11")
 endif()
 
 # Where to copy executables when 'make install' is run
