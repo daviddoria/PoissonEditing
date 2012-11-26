@@ -77,7 +77,8 @@ int main(int argc, char* argv[])
   ImageType::Pointer output = ImageType::New();
 
   PoissonEditing<float>::FillImage(targetImageReader->GetOutput(), mask,
-                                   zeroGuidanceField.GetPointer(), output.GetPointer());
+                                   zeroGuidanceField.GetPointer(), output.GetPointer(),
+                                   targetImageReader->GetOutput()->GetLargestPossibleRegion());
 
   // Write output
   if(Helpers::GetFileExtension(outputFilename) == "png")

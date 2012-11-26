@@ -57,7 +57,7 @@ public:
 
   /** Enumerate the potential fill methods. */
   enum class FillMethodEnum {VARIATIONAL, POISSON};
-  FillMethodEnum FillMethod;
+  FillMethodEnum FillMethod = FillMethodEnum::POISSON;;
 
   /** Construtor. */
   PoissonEditing();
@@ -70,9 +70,6 @@ public:
 
   /** Specify the region in which to fill the image. */
   void SetMask(const Mask* const mask);
-
-  /** Specify a source image from which the guidance field will be produced. */
-  void SetSourceImage(const ImageType* const image);
 
   /** Specify a guidance field. */
   void SetGuidanceField(const GuidanceFieldType* const field);
@@ -97,14 +94,15 @@ public:
   */
   template <typename TImage>
   static void FillVectorImage(const TImage* const image, const Mask* const mask,
-                              const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
+                              const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output,
+                              const itk::ImageRegion<2>& regionToProcess);
 
   /** Overload for scalar images. Note that this takes only a single guidance field instead
     * of a vector of guidance fields. */
   template <typename TScalarPixel>
   static void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
                               const GuidanceFieldType* const guidanceField,
-                              itk::Image<TScalarPixel, 2>* const output);
+                              itk::Image<TScalarPixel, 2>* const output, const itk::ImageRegion<2>& regionToProcess);
 
   /** The following functions are overloads that call one of the above functions (FillVectorImage or FillScalarImage) based on the type of images that
     * are passed. */
@@ -113,21 +111,24 @@ public:
   template <typename TScalarPixel>
   static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
                         const GuidanceFieldType* const guidanceField,
-                        itk::Image<TScalarPixel, 2>* const output);
+                        itk::Image<TScalarPixel, 2>* const output, const itk::ImageRegion<2>& regionToProcess);
 
   /** For vector images. This calls FillVectorImage with the same guidance field for each channel. */
   template <typename TImage>
   static void FillImage(const TImage* const image, const Mask* const mask,
-                        const GuidanceFieldType* const guidanceField, TImage* const output);
+                        const GuidanceFieldType* const guidanceField, TImage* const output,
+                        const itk::ImageRegion<2>& regionToProcess);
 
   /** For vector images. This calls FillVectorImage with different guidance fields for each channel. */
   template <typename TImage>
   static void FillImage(const TImage* const image, const Mask* const mask,
-                        const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
+                        const std::vector<GuidanceFieldType*>& guidanceFields,
+                        TImage* const output, const itk::ImageRegion<2>& regionToProcess);
 
   template <typename TImage>
   static void FillImage(const TImage* const image, const Mask* const mask,
-                        const std::vector<GuidanceFieldType::Pointer>& guidanceFields, TImage* const output);
+                        const std::vector<GuidanceFieldType::Pointer>& guidanceFields,
+                        TImage* const output, const itk::ImageRegion<2>& regionToProcess);
 
   /** For Image<CovariantVector> images. This calls FillVectorImage with the same guidance field for each channel. */
   template <typename TComponent, unsigned int NumberOfComponents>
@@ -135,7 +136,11 @@ public:
                               NumberOfComponents>, 2>* const image,
                         const Mask* const mask,
                         const GuidanceFieldType* const guidanceField,
-                        itk::Image<itk::CovariantVector<TComponent, NumberOfComponents>, 2>* const output);
+                        itk::Image<itk::CovariantVector<TComponent, NumberOfComponents>, 2>* const output,
+                        const itk::ImageRegion<2>& regionToProcess);
+
+  /** Set the destination location of the source image in the target image. */
+  void SetRegionToProcess(const itk::ImageRegion<2>& regionToProcess);
 
 protected:
 
@@ -163,7 +168,13 @@ protected:
   Mask::Pointer MaskImage;
 
   /** The Laplacian. */
-  FloatScalarImageType* Laplacian;
+  FloatScalarImageType* Laplacian = nullptr;
+
+  /** The region in which to do the Poisson processing.
+    * For Poisson filling, this should be the full image.
+    * For Poisson cloning, this should be the location of the source image in the target image.*/
+  itk::ImageRegion<2> RegionToProcess;
+
 };
 
 #include "PoissonEditing.hpp"

@@ -60,11 +60,13 @@ void TestVectorImage()
   std::vector<PoissonEditingType::GuidanceFieldType*> guidanceFields(
          image->GetNumberOfComponentsPerPixel(), guidanceField);
 
-  PoissonEditingType::FillImage(image.GetPointer(), mask,
-                                guidanceFields, output.GetPointer());
+  itk::ImageRegion<2> regionToProcess = image->GetLargestPossibleRegion();
 
   PoissonEditingType::FillImage(image.GetPointer(), mask,
-                                guidanceField, output.GetPointer());
+                                guidanceFields, output.GetPointer(), regionToProcess);
+
+  PoissonEditingType::FillImage(image.GetPointer(), mask,
+                                guidanceField, output.GetPointer(), regionToProcess);
 }
 
 void TestScalarImage()
@@ -82,8 +84,10 @@ void TestScalarImage()
 
   PoissonEditingType::GuidanceFieldType::Pointer guidanceField = PoissonEditingType::GuidanceFieldType::New();
 
+  itk::ImageRegion<2> regionToProcess = image->GetLargestPossibleRegion();
+
   PoissonEditingType::FillImage(image.GetPointer(), mask,
-                                guidanceField.GetPointer(), output.GetPointer());
+                                guidanceField.GetPointer(), output.GetPointer(), regionToProcess);
 }
 
 void TestCovariantVectorImage()
@@ -104,10 +108,12 @@ void TestCovariantVectorImage()
   std::vector<PoissonEditingType::GuidanceFieldType*> guidanceFields(
          image->GetNumberOfComponentsPerPixel(), guidanceField);
 
+  itk::ImageRegion<2> regionToProcess = image->GetLargestPossibleRegion();
+
   PoissonEditingType::FillImage(image.GetPointer(), mask,
-                                guidanceFields, output.GetPointer());
+                                guidanceFields, output.GetPointer(), regionToProcess);
 
   PoissonEditingType::FillImage(image.GetPointer(), mask.GetPointer(),
-                                guidanceField.GetPointer(), output.GetPointer());
+                                guidanceField.GetPointer(), output.GetPointer(), regionToProcess);
 
 }

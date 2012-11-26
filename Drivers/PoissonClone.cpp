@@ -80,14 +80,25 @@ int main(int argc, char* argv[])
   if(sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel() !=
      targetImageReader->GetOutput()->GetNumberOfComponentsPerPixel())
   {
-    throw std::runtime_error("Source and target images must have the same number of channels!");
+    throw std::runtime_error("The source and target images must have the same number of channels!");
   }
+
+  if(!targetImageReader->GetOutput()->GetLargestPossibleRegion().IsInside(sourceImageReader->GetOutput()->GetLargestPossibleRegion()))
+  {
+    throw std::runtime_error("The target image must be larger than the source image!");
+  }
+
+  // Setup where the source image should appear in the target image
+  itk::ImageRegion<2> regionToProcess = sourceImageReader->GetOutput()->GetLargestPossibleRegion();
+//  itk::Offset<2> offset = {{50,0}}; // This moves the image that gets composited into the target image 50 pixels to the right (the default is in the top left corner of the target image)
+  itk::Offset<2> offset = {{0,0}};
+  regionToProcess.SetIndex(regionToProcess.GetIndex() + offset);
+  std::cout << "Processing region " << regionToProcess << std::endl;
 
   typedef PoissonEditing<float> PoissonEditingType;
 
-  // Compute the gradient of each channel
+  // Compute the gradient of each channel to use as the guidance fields for each channel
   std::vector<PoissonEditingType::GuidanceFieldType::Pointer> guidanceFields;
-//  std::vector<PoissonEditingType::GuidanceFieldType*> guidanceFields;
 
   for(unsigned int channel = 0; channel < sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); ++channel)
   {
@@ -106,24 +117,12 @@ int main(int argc, char* argv[])
     ITKHelpers::ComputeGradients(imageChannel.GetPointer(), guidanceField.GetPointer());
   }
 
-//  ITKHelpers::ForwardDifferenceDerivatives(sourceImageReader->GetOutput(),
-//                                           guidanceField.GetPointer());
-
-
-//  ITKHelpers::WriteImage(guidanceField.GetPointer(), "GuidanceField.mha");
-
-//   // Output image properties
-//   std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-//             << "Target image: " << targetImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
-//             << "Mask image: " << mask->GetLargestPossibleRegion().GetSize() << std::endl;
-
   ImageType::Pointer output = ImageType::New();
 
-
   PoissonEditingType::FillImage(targetImageReader->GetOutput(), mask,
-                                guidanceFields, output.GetPointer());
+                                guidanceFields, output.GetPointer(), regionToProcess);
 
-//  ITKHelpers::ScaleAllChannelsTo255(output.GetPointer());
+  // Make sure the output is in the valid pixel value range
   ITKHelpers::ClampAllChannelsTo255(output.GetPointer());
 
   // Write output

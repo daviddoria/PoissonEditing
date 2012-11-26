@@ -31,10 +31,10 @@ add_test(PoissonCloneCompare ImageCompare ${CMAKE_BINARY_DIR}/Temp/F16_cloned.pn
                                           ${CMAKE_SOURCE_DIR}/Testing/baselines/F16_cloned.png)
 
 # Test reconstruction from Laplacian
-add_test(LaplacianToImageTest ${CMAKE_BINARY_DIR}/Drivers/LaplacianToImage
-        ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png
-        ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png
-        ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Laplacian.mhd
-        ${CMAKE_BINARY_DIR}/Temp/LaplacianToImage.png)
-add_test(LaplacianToImageCompare ImageCompare ${CMAKE_BINARY_DIR}/Temp/LaplacianToImage.png
-                                              ${CMAKE_SOURCE_DIR}/Testing/baselines/LaplacianToImage.png)
+#add_test(LaplacianToImageTest ${CMAKE_BINARY_DIR}/Drivers/LaplacianToImage
+#        ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Source.png
+#        ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Mask.png
+#        ${CMAKE_SOURCE_DIR}/Testing/data/F16/F16Laplacian.mhd
+#        ${CMAKE_BINARY_DIR}/Temp/LaplacianToImage.png)
+#add_test(LaplacianToImageCompare ImageCompare ${CMAKE_BINARY_DIR}/Temp/LaplacianToImage.png
+#                                              ${CMAKE_SOURCE_DIR}/Testing/baselines/LaplacianToImage.png)

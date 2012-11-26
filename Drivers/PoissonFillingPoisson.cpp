@@ -105,7 +105,8 @@ int main(int argc, char* argv[])
   ImageType::Pointer output = ImageType::New();
 
   PoissonEditing<float>::FillImage(targetImageReader->GetOutput(), maskReader->GetOutput(),
-                                   guidanceFields, output.GetPointer());
+                                   guidanceFields, output.GetPointer(),
+                                   targetImageReader->GetOutput()->GetLargestPossibleRegion());
 
   // Write output
   if(pixelType == itk::ImageIOBase::UCHAR)
