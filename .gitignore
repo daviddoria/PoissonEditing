@@ -5,3 +5,5 @@
 *.brf
 *.bbl
 *.ist
+*.autosave
+*.user
