@@ -177,19 +177,14 @@ The linear system is then
 After solving for $H_v$, the resulting $H_v$ is then remapped back to the pixels corresponding to each variable id to construct $H$. $U$ is incredibly sparse, so a sparse solver should definitely be used.
 
 \subsection{Code Snippet}
-We have packaged this implementation in a class called $PoissonEditing$. Using this class is very straight forward. The $Image$ and $Mask$ must be set. The $FillMaskedRegion()$ function does the work of filling the hole. If the Image consists of vector-valued pixels, it is internally decomposed, filled, recombined and returned by the $GetOutput()$ function. We note the use of the $SetGuidanceFieldToZero()$ function below. Though we have not yet explained this concept, we will see in the next section that the Poisson hole filling problem is simply a degenerate case of the more general Poisson Cloning problem where the guidance field is set to zero.
+We have packaged this implementation in a class called $PoissonEditing$. Using this class is very straight forward. The $TargetImage$ and $Mask$ must be set. The class is designed to operate on scalar images. As we typically want to operate on color images, or generally images with pixels of length $N$, we provide static helper functions which decompose the input image, perform the Poisson filling/cloning operation on each channel individually, and reassemble the final output.
+
+Below we show the use of one of these helper functions (as this is typically the case that the end user will use). We note the use of the $zeroGuidanceField$ object. Though we have not yet explained this concept, we will see in the next section that the Poisson hole filling problem is simply a degenerate case of the more general Poisson Cloning problem where the guidance field is set to zero. Furthermore, we must pass the full region of the target image indicating that we will be filling the hole where it is currently located. The reason for this will be clear once we show in the next section that we can position the source image anywhere in the target image for the Poisson Cloning problem.
 
 \begin{verbatim}
-  PoissonEditing<FloatVectorImageType> poissonEditing;
-  poissonEditing.SetImage(imageReader->GetOutput());
-  poissonEditing.SetMask(maskReader->GetOutput());
-  poissonEditing.SetGuidanceFieldToZero();
-  poissonEditing.FillMaskedRegion();
-
-  FloatVectorImageType::Pointer outputImage = poissonEditing.GetOutput();
-
-  Helpers::ClampImage<FloatVectorImageType>(outputImage);
-  Helpers::CastAndWriteImage<FloatVectorImageType>(outputImage, "output.png");
+PoissonEditing<float>::FillImage(targetImage, mask,
+				 zeroGuidanceField.GetPointer(), output,
+				 targetImage->GetLargestPossibleRegion());
 \end{verbatim}
 
 
@@ -261,20 +256,17 @@ The linear system
 
 is created and solved identically as before.
 
+\subsection{Positioning the Source Image in the Target Image}
+The source image is assumed to be smaller than the target image. By default, the source image is composited in the top right of the target image. However, we can position the source image anywhere on the target image as long as the moved source image is completely inside the target image. We do this using the $SetRegionToProcess(itk::ImageRegion)$ function.
+
 \subsection{Code Snippet}
 This functionality can be used almost identically as in the last section, but a TargetImage must be specified:
 
 \begin{verbatim}
-  PoissonEditing<FloatVectorImageType> poissonEditing;
-  poissonEditing.SetImage(sourceImageReader->GetOutput());
-  poissonEditing.SetTargetImage(targetImageReader->GetOutput());
-  poissonEditing.SetMask(maskReader->GetOutput());
-  poissonEditing.PasteMaskedRegionIntoTargetImage();
-
-  FloatVectorImageType::Pointer outputImage = poissonEditing.GetOutput();
-
-  ITKHelpers::ClampImage(outputImage.GetPointer());
-  ITKHelpers::CastAndWriteImage(outputImage.GetPointer(), "output.png");
+  itk::ImageRegion<2> regionToProcess = ...; // specify where in the target image the source image should be composited.
+  
+  PoissonEditingType::FillImage(targetImageReader->GetOutput(), mask,
+                                guidanceFields, outputImage.GetPointer(), regionToProcess);
 \end{verbatim}
 
 %%%%%%%%%%%%
