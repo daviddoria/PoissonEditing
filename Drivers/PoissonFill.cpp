@@ -32,26 +32,23 @@
 int main(int argc, char* argv[])
 {
   // Verify arguments
-  if(argc < 5)
-    {
-    std::cout << "Usage: ImageToFill mask guidanceField outputImage" << std::endl;
-    exit(-1);
-    }
+  if(argc < 4)
+  {
+    std::cout << "Usage: ImageToFill mask outputImage" << std::endl;
+    return EXIT_FAILURE;
+  }
 
   // Parse arguments
   std::string targetImageFilename = argv[1];
   std::string maskFilename = argv[2];
-  std::string guidanceFieldFilename = argv[3];
-  std::string outputFilename = argv[4];
+  std::string outputFilename = argv[3];
 
   // Output arguments
   std::cout << "Target image: " << targetImageFilename << std::endl
             << "Mask image: " << maskFilename << std::endl
-            << "Guidance field: " << guidanceFieldFilename << std::endl
             << "Output image: " << outputFilename << std::endl;
 
-  //typedef itk::VectorImage<float, 2> FloatVectorImageType;
-  typedef itk::Image<float, 2> ImageType;
+  typedef itk::VectorImage<float, 2> ImageType;
 
   // Read images
   typedef itk::ImageFileReader<ImageType> ImageReaderType;
@@ -59,34 +56,38 @@ int main(int argc, char* argv[])
   targetImageReader->SetFileName(targetImageFilename);
   targetImageReader->Update();
 
-  std::cout << "Read target image." << std::endl;
+  std::cout << "Finished reading target image." << std::endl;
 
   // Read mask
   Mask::Pointer mask = Mask::New();
-  mask->Read(maskFilename);
+//  mask->Read(maskFilename);
+  mask->ReadFromImage(maskFilename);
 
   std::cout << "Read mask." << std::endl;
 
   typedef itk::CovariantVector<float, 2> Vector2Type;
   typedef itk::Image<Vector2Type, 2> Vector2ImageType;
-  typedef itk::ImageFileReader<Vector2ImageType> GuidanceFieldReaderType;
-  
-  GuidanceFieldReaderType::Pointer guidanceFieldReader = GuidanceFieldReaderType::New();
-  guidanceFieldReader->SetFileName(guidanceFieldFilename);
-  guidanceFieldReader->Update();
+  Vector2ImageType::Pointer zeroGuidanceField = Vector2ImageType::New();
+  zeroGuidanceField->SetRegions(targetImageReader->GetOutput()->GetLargestPossibleRegion());
+  zeroGuidanceField->Allocate();
+  Vector2Type zeroVector;
+  zeroVector.Fill(0);
+  zeroGuidanceField->FillBuffer(zeroVector);
 
-  std::cout << "Read guidance field." << std::endl;
+  ImageType::Pointer output = ImageType::New();
 
-  typedef PoissonEditing<float> PoissonEditingFilterType;
-  PoissonEditingFilterType poissonFilter;
-  poissonFilter.SetTargetImage(targetImageReader->GetOutput());
-  poissonFilter.SetGuidanceField(guidanceFieldReader->GetOutput());
-  poissonFilter.SetMask(mask);
-  poissonFilter.FillMaskedRegion();
+  PoissonEditing<float>::FillImage(targetImageReader->GetOutput(), mask,
+                                   zeroGuidanceField.GetPointer(), output.GetPointer());
 
   // Write output
-  ITKHelpers::WriteImage(poissonFilter.GetOutput(), outputFilename);
-  // Helpers::WriteVectorImageAsPNG(output.GetPointer(), outputFilename);
+  if(Helpers::GetFileExtension(outputFilename) == "png")
+  {
+    ITKHelpers::WriteRGBImage(output.GetPointer(), outputFilename);
+  }
+  else
+  {
+    ITKHelpers::WriteImage(output.GetPointer(), outputFilename);
+  }
 
   return EXIT_SUCCESS;
 }

@@ -5,7 +5,6 @@ ENABLE_TESTING()
 
 add_subdirectory(CMakeHelpers)
 
-# needed to allow default template arguments in function templates
 if(UNIX)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++11")
 endif()
@@ -17,7 +16,7 @@ SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 if(NOT ITK_FOUND)
   FIND_PACKAGE(ITK 4 REQUIRED ITKCommon ITKIOImageBase ITKDistanceMap ITKIOPNG ITKIOMeta
                               ITKImageIntensity ITKImageFeature ITKMathematicalMorphology
-                              ITKBinaryMathematicalMorphology)
+                              ITKBinaryMathematicalMorphology ITKTestKernel)
   INCLUDE(${ITK_USE_FILE})
 endif()
 set(PoissonEditing_libraries ${PoissonEditing_libraries} ${ITK_LIBRARIES})

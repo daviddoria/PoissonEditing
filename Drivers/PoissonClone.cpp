@@ -33,10 +33,10 @@ int main(int argc, char* argv[])
 {
   // Verify arguments
   if(argc < 6)
-    {
+  {
     std::cout << "Usage: ImageToFill mask sourceImage guidanceField outputImage" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Parse arguments
   std::string targetImageFilename = argv[1];
