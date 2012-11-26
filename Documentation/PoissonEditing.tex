@@ -84,9 +84,7 @@ colorlinks,linkcolor={blue},citecolor={blue},urlcolor={blue},
 % scope of the document.
 \begin{abstract}
 \noindent
-This code provides an implementation of two techniques from ``Poisson Image Editing'' on ITK images. First, we fill a hole in an image given only the pixel values on the boundary. Second, we copy a patch of an image into another image and make the result as smooth as possible. We also explain how these techniques can be used to reconstruct an image after perform editing operations in the gradient domain.
-
-The code is available here: https://github.com/daviddoria/PoissonEditing
+This code provides an implementation of two techniques from ``Poisson Image Editing'' on ITK images. First, we fill a hole in an image given only the pixel values on the boundary. Second, we copy a region of an image into another image and make the result as smooth as possible. We also explain how these techniques can be used to reconstruct an image after perform editing operations in the gradient domain. The code is available here: https://github.com/daviddoria/PoissonEditing
 
 \end{abstract}
 
@@ -96,11 +94,7 @@ The code is available here: https://github.com/daviddoria/PoissonEditing
 
 %%%%%%%%%%%%%%%%%
 \section{Introduction}
-This code provides an implementation of two techniques from ``Poisson Image Editing'' (\cite{PoissonImageEditing}) on ITK images. First, we fill a hole in an image given only the pixel values on the boundary. Second, we copy a patch of an image into another image and make the result as smooth as possible. 
-
-The code is available here: https://github.com/daviddoria/PoissonEditing
-
-Motivation for this implementation came from an implementation available here: http://leyvand.com/research/adv-graphics/ex1.htm , but the code was written from scratch. The use of ITK's neighborhood operators greatly simplifies and clarifies the linear system construction.
+This code provides an implementation of two techniques from ``Poisson Image Editing'' \cite{PoissonImageEditing} on ITK images. First, we fill a hole in an image given only the pixel values on the hole boundary. Second, we copy a patch of an image into another image and make the resulting image as smooth as possible. The code is available here: https://github.com/daviddoria/PoissonEditing
 
 %%%%%%%%%%%%%%%%%
 \section{Hole Filling}
@@ -128,7 +122,7 @@ As a motivating example of the power of Poisson methods in image editing, we att
 The inputs to this algorithm are:
 \begin{itemize}
 \item An image, $I$.
-\item A mask. Non-zero pixels indicate the region to fill. The mask must be the same size as the image, and must not have non-zero pixels on its border.
+\item A mask indicating the region to fill. The mask must be the same size as the image, and must not have non-zero pixels on its border.
 \end{itemize}
 
 \subsection{Concept}
@@ -138,7 +132,7 @@ It has been shown using Calculus of Variations that the best solution for the re
 \nabla^2 H = 0
 \end{equation}
 
-while ensuring $H=I$ on the boundary of the hole. This setup is a Laplace equation with Dirichlet (aka first order) boundary conditions. 
+while ensuring $H=I$ on the boundary of the hole. This setup is a Laplace equation with Dirichlet (a.k.a. first order) boundary conditions. 
 
 \subsection{Discrete Solution}
 The Laplace operator is given by
@@ -148,11 +142,12 @@ The Laplace operator is given by
 
 A discrete approximation to this function at a pixel $(x,y)$ is given by
 \begin{equation}
- \nabla^2 f(x,y) \approx f(x-1,y) + f(x+1,y) + f(x,y-1) + f(x,y+1) - 4f(x,y)
+ \nabla^2 f(x,y) \approx f(x-1,y) + f(x+1,y) + f(x,y-1) + f(x,y+1) - 4f(x,y).
 \end{equation}
 
-Another way to write this is to multiply the pixel and its neighbors by a kernel:
+Another way to write this is to multiply the pixel and its neighbors by the kernel shown in \ref{eqn:kernel}.
 \begin{equation}
+\label{eqn:kernel}
 \begin{pmatrix}
 0 & 1 & 0 \\
 1 & -4 & 1\\
@@ -161,11 +156,11 @@ Another way to write this is to multiply the pixel and its neighbors by a kernel
 \end{equation}
 
 
-From this, for each unknown pixel $u_{i,j}$, the equation is:
+For each unknown pixel $u_{i,j}$, the equation is therefore
 
 \begin{equation}
 \label{eqn:DiscreteLaplacian}
--4 u_{i,j} + u_{i+1,j} + u_{i-1,j} + u_{i,j+1} + u_{i,j-1} = 0
+-4 u_{i,j} + u_{i+1,j} + u_{i-1,j} + u_{i,j+1} + u_{i,j-1} = 0.
 \end{equation}
 
 To solve the Laplace equation over the entire image, we can write a linear system of equations. We create a variable for every pixel to be filled. If the pixels are vector-valued (e.g. an RGB image), $N$ of these systems must be solved independently (where $N$ is the dimensionality of each pixel).
@@ -176,13 +171,13 @@ A vector $H_v$, the vectorized version of the solution to the set of hole pixels
 
 The linear system is then
 \begin{equation}
- U^T H_v = b
+ U^T H_v = b.
 \end{equation}
 
 After solving for $H_v$, the resulting $H_v$ is then remapped back to the pixels corresponding to each variable id to construct $H$. $U$ is incredibly sparse, so a sparse solver should definitely be used.
 
 \subsection{Code Snippet}
-We have packaged this implementation in a class called $PoissonEditing$. Using this class is very straight forward. The $Image$ and $Mask$ must be set. The $FillMaskedRegion()$ function does the work. If the Image consists of vector-valued pixels, it is internally decomposed, filled, recombined and returned by the $GetOutput()$ function.
+We have packaged this implementation in a class called $PoissonEditing$. Using this class is very straight forward. The $Image$ and $Mask$ must be set. The $FillMaskedRegion()$ function does the work of filling the hole. If the Image consists of vector-valued pixels, it is internally decomposed, filled, recombined and returned by the $GetOutput()$ function. We note the use of the $SetGuidanceFieldToZero()$ function below. Though we have not yet explained this concept, we will see in the next section that the Poisson hole filling problem is simply a degenerate case of the more general Poisson Cloning problem where the guidance field is set to zero.
 
 \begin{verbatim}
   PoissonEditing<FloatVectorImageType> poissonEditing;
@@ -199,9 +194,9 @@ We have packaged this implementation in a class called $PoissonEditing$. Using t
 
 
 %%%%%%%%%%%%%%%%%
-\section{Region Copying}
+\section{Region Copying/Poisson Cloning}
 \label{sec:RegionCopying}
-In the problem of region copying (aka seamless cloning), we are interested in copying a region from one image into another image in a visually pleasing way. This is again best motivated with an example. In our example, the goal is to copy the jet from Figure \ref{fig:RegionCopying:original} into the image of the canyon shown in Figure \ref{fig:RegionCopying:target}. This source and target pair along with the mask and the result are shown in \ref{fig:RegionCopying}.
+In the problem of region copying (a.k.a. seamless cloning or Poisson cloning), we are interested in copying a region from one image into another image in a visually pleasing way. This is again best motivated with an example. In our example, the goal is to copy the jet from Figure \ref{fig:RegionCopying:original} into the image of the canyon shown in Figure \ref{fig:RegionCopying:target}. This source and target pair along with the mask and the result are shown in \ref{fig:RegionCopying}.
 
 \begin{figure}[H]
 \centering
@@ -230,7 +225,7 @@ The inputs to this algorithm are:
 \begin{itemize}
 \item A source image, $S$.
 \item A target image, $T$.
-\item A mask, $M$. Non-zero pixels indicate the region to fill. The mask must be the same size as the image, and must not have non-zero pixels on its border.
+\item A mask, $M$, indicating the region to fill. The mask must be the same size as the image, and must not have non-zero pixels on its border.
 \end{itemize}
 
 \subsection{Concept}
@@ -238,7 +233,7 @@ The inputs to this algorithm are:
 In \cite{PoissonImageEditing}, it was argued that a good way to copy a region of one image into another image is to do something very similar to hole filling, but additionally introduce a ``guidance field'', $G$. That is, the way to copy a region of one image into another is to solve the equation
 
 \begin{equation}
-\nabla^2 H = div(G)
+\nabla^2 H = div(G).
 \end{equation}
 
 The boundary condition this time is again first order and specifies that the resulting $H$ be equal to the target image, $T$, at the hole boundary.
@@ -246,13 +241,13 @@ The boundary condition this time is again first order and specifies that the res
 The suggested guidance field $G$ is the gradient of the source image. That is,
 
 \begin{equation}
-G = \nabla S
+G = \nabla S.
 \end{equation}
 
 In this case, the right hand side of the equation has become $div(\nabla S)$, which is exactly the Laplacian of $S$.
 
 \subsection{Discrete Solution}
-Just as before, the discrete Laplacian equation is written for each pixel, but this time the right hand side is set to $\nabla^2 S(i,j)$. When the right side of this equation is non-zero, it is referred to as a Poisson equation.
+Just as before, the discrete Laplacian equation is written for each pixel, but this time the right hand side is set to $\nabla^2 S(i,j)$ as shown in \ref{eqn:DiscretePoisson}. When the right side of this equation is non-zero, it is referred to as a Poisson equation.
 
 \begin{equation}
 \label{eqn:DiscretePoisson}
@@ -267,19 +262,19 @@ The linear system
 is created and solved identically as before.
 
 \subsection{Code Snippet}
-We have packed this functionality into a class called $PoissonCloning$. Using this class is very straight forward. In fact, $PoissonCloning$ derives from $PoissonEditing$ and the only addition is that $PoissonCloning$ provides a $SetTargetImage$ function. The rest of the functionality is identical.
+This functionality can be used almost identically as in the last section, but a TargetImage must be specified:
 
 \begin{verbatim}
-  PoissonCloning<FloatVectorImageType> poissonCloning;
-  poissonCloning.SetImage(sourceImageReader->GetOutput());
-  poissonCloning.SetTargetImage(targetImageReader->GetOutput());
-  poissonCloning.SetMask(maskReader->GetOutput());
-  poissonCloning.PasteMaskedRegionIntoTargetImage();
+  PoissonEditing<FloatVectorImageType> poissonEditing;
+  poissonEditing.SetImage(sourceImageReader->GetOutput());
+  poissonEditing.SetTargetImage(targetImageReader->GetOutput());
+  poissonEditing.SetMask(maskReader->GetOutput());
+  poissonEditing.PasteMaskedRegionIntoTargetImage();
 
-  FloatVectorImageType::Pointer outputImage = poissonCloning.GetOutput();
+  FloatVectorImageType::Pointer outputImage = poissonEditing.GetOutput();
 
-  Helpers::ClampImage<FloatVectorImageType>(outputImage);
-  Helpers::CastAndWriteImage<FloatVectorImageType>(outputImage, "output.png");
+  ITKHelpers::ClampImage(outputImage.GetPointer());
+  ITKHelpers::CastAndWriteImage(outputImage.GetPointer(), "output.png");
 \end{verbatim}
 
 %%%%%%%%%%%%
@@ -289,14 +284,12 @@ There are tricks that can be done by performing operations to the derivatives of
 \subsection{Reconstructing an Image from Its Derivatives}
 \label{sec:ReconstructingFromDerivatives}
 For the task of reconstructing an image directly from its derivatives, we can use a very similar method to solving the Laplace equation. This time, however, there are two equations to be solved simultaneously:
-\begin{equation}
-\frac{d}{dx}(U) = D_x
-\end{equation}
-\begin{equation}
-\frac{d}{dy}(U) = D_y
-\end{equation}
+\begin{align}
+\frac{dU}{dx} &= D_x \\
+\frac{dU}{dy} &= D_y
+\end{align}
 
-where $D_x$ and $D_y$ are the known derivative images. Of course the first order boundary conditions must again be known. This time the boundary is the actual border of the image.
+where $D_x$ and $D_y$ are the known derivative images and $U$ is the unknown image. Of course the first order boundary conditions must again be known. This time the boundary is the actual border of the image.
 
 We can construct the same type of linear system to solve for the components of $U$ that best satisfy both equations. Any discrete derivative operator can be used. We have chosen to use the Sobel operators:
 
@@ -329,14 +322,12 @@ We can construct the same type of linear system to solve for the components of $
   \end{minipage}
 \end{figure}
 
-By applying these operators to every pixel in the unknown image $U$, we can write a system of equations, two for each pixel:
-\begin{equation}
-- u_{i-1,j-1} -2 u_{i-1,j} - u_{i-1,j+1} + u_{i+1,j+1} + 2 u_{i+1,j} + u_{i,j+1} = D_x(i,j)
-\end{equation}
+By applying these operators to every pixel in $U$, we can write a system of equations, two equations for each pixel as shown below.
 
-\begin{equation}
-- u_{i-1,j-1} -2 u_{i,j-1} - u_{i+1,j+1} + u_{i-1,j-1} + 2 u_{i,j+1} + u_{i+1,j+1} = D_y(i,j)
-\end{equation}
+\begin{align}
+- u_{i-1,j-1} -2 u_{i-1,j} - u_{i-1,j+1} + u_{i+1,j+1} + 2 u_{i+1,j} + u_{i,j+1} &= D_x(i,j) \\
+- u_{i-1,j-1} -2 u_{i,j-1} - u_{i+1,j+1} + u_{i-1,j-1} + 2 u_{i,j+1} + u_{i+1,j+1} &= D_y(i,j)
+\end{align}
 
 Again, we simply place the coefficient of each term in the column of the matrix corresponding the variable id of the pixel. As usual, we move the term to the right side of the equation (to contribute to the $b$ vector) if the pixel is known. Figure \ref{fig:DerivativeReconstruction} shows an image, its derivatives, and the image reconstructed using only the border of the image in \ref{fig:DerivativeReconstruction:original} and the derivatives.
 
@@ -369,20 +360,20 @@ We have provided this implementation in a file called $DerivativesToImage.cxx$.
 \label{sec:ReconstructingFromLaplacian}
 The technique to reconstruct an image from its Laplacian is identical to the procedure described in Section \ref{sec:RegionCopying}. We specify the Laplacian in the unknown region as the guidance field. If the manipulation was done directly on the Laplacian, this process was straight forward. However, if the manipulation was done on the derivative images, there is an additional step of going from the derivatives to the Laplacian that requires special attention.
 
-The Laplacian is defined as the divergence of the gradient:
+The Laplacian is defined as the divergence of the gradient, which can be written as
 
 \begin{equation}
-\nabla^2 I = div(\nabla I)
+\nabla^2 I = div(\nabla I).
 \end{equation}
 
-Here, we have the gradient 
+In this case, we know the gradient,
 \begin{equation}
 \nabla I (i,j) = (D_x(i,j), D_y(i,j)) 
 \end{equation}
 
 so the Laplacian is 
 \begin{equation}
-\nabla I^2(i,j) = \frac{\partial D_x(i,j)}{\partial x} + \frac{\partial D_y(i,j)}{\partial y}
+\nabla I^2(i,j) = \frac{\partial D_x(i,j)}{\partial x} + \frac{\partial D_y(i,j)}{\partial y}.
 \end{equation}
 
 That is, we must take the $x$ derivative of the $x$ derivative that we already have, and the $y$ derivative of the $y$ derivative that we already have, and add them together. NOTE: the discrete operators that you choose is critically important. If you use the 5 points Laplacian operator
@@ -395,9 +386,10 @@ That is, we must take the $x$ derivative of the $x$ derivative that we already h
 \end{pmatrix}
 \end{equation}
 
-you MUST use the forward difference operator to take the first set of derivatives (which produce the input to the algorithm):
+you MUST use the forward difference operator (shown in \ref{eqn:ForwardDifference}) to take the first set of derivatives (which produce the input to the algorithm).
 
 \begin{figure}[H]
+\label{eqn:ForwardDifference}
   \begin{minipage}[b]{0.5\linewidth}
     \centering
 
@@ -423,7 +415,7 @@ you MUST use the forward difference operator to take the first set of derivative
   \end{minipage}
 \end{figure}
 
-and the backward difference operator to take the second derivatives:
+Similarly, the backward difference operator that must be used to take the second derivatives is
 
 \begin{figure}[H]
   \begin{minipage}[b]{0.5\linewidth}
@@ -446,7 +438,7 @@ and the backward difference operator to take the second derivatives:
     0 & -1 & 0 \\
     0 & 1 & 0\\
     0 & 0 & 0
-    \end{pmatrix}
+    \end{pmatrix}.
     \end{equation}
 
   \end{minipage}
@@ -454,7 +446,6 @@ and the backward difference operator to take the second derivatives:
 
 It possible to choose different operators, but you must choose the derivative operators so that if they are applied successively they produce exactly the Laplacian operator that you choose. If you do not do this, the result of the reconstruction will be wildly incorrect.
 
-\subsubsection{Implementation}
 We have provided this implementation in a file called $LaplacianToImage.cxx$.
 
 %%%%%%%%%%%%
@@ -463,7 +454,7 @@ We have provided this implementation in a file called $LaplacianToImage.cxx$.
 It is important to note that everywhere in this document the linear systems have been solved with no constraints. This allows the resulting image to take invalid values (i.e. greater than 255 or less than 0). The resulting images must therefore be clamped or scaled to ensure the output has an appropriate range.
 
 \subsection{Efficiency}
-The hole filling example in this document took 1m30s using VNL's sparse solver (from the VXL library) on a single core machine. However, when it was replaced with the UMFPACK interface provided by Eigen, and identical result was obtained in only 0m1.5s. The VNL team is working to provide a way to specify a tuned BLAS library through CMake to achieve a more comparable result.
+The hole filling example in this document took only 0m1.5s. The computation is done using the SimplicialLDLT solver from the Eigen library.
 
 \bibliography{InsightJournal}
 \bibliographystyle{plain} % MUST include this line or will get ``undefined reference'' errors

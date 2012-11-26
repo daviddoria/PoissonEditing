@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
   poissonEditing.SetTargetImage(sourceImageReader->GetOutput());
   poissonEditing.SetLaplacian(laplacian.GetPointer());
   poissonEditing.SetMask(mask);
-  poissonEditing.FillMaskedRegionPoisson();
+  poissonEditing.FillMaskedRegion();
 
   FloatScalarImageType::Pointer outputImage = poissonEditing.GetOutput();
 

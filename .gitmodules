@@ -7,3 +7,6 @@
 [submodule "GUI/ITKQtHelpers"]
 	path = GUI/ITKQtHelpers
 	url = git@github.com:daviddoria/ITKQtHelpers.git
+[submodule "CMakeHelpers"]
+	path = CMakeHelpers
+	url = https://github.com/daviddoria/CMakeHelpers.git

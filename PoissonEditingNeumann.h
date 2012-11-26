@@ -21,6 +21,8 @@
 
 #include "PoissonEditing.h"
 
+/** Perform the filling using a different technique. This class should currently be
+  * treated as broken. */
 template <typename TPixel>
 class PoissonEditingNeumann : public PoissonEditing<TPixel>
 {

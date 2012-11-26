@@ -75,12 +75,12 @@ int main(int argc, char* argv[])
 
   // Ensure the input image file has the same number of components as the input Laplacian file
   if(laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel() != sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel())
-    {
+  {
     std::cerr << "The number of components of the source image is " <<  sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel()
-              << " which must (but does not) match the number of components of the Laplacian image: " 
+              << " which must (but does not) match the number of components of the Laplacian image: "
               << laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Read the mask
   Mask::Pointer mask = Mask::New();
@@ -93,14 +93,14 @@ int main(int argc, char* argv[])
   std::vector<PoissonEditing<float> > poissonFilters;
 
   for(unsigned int component = 0; component < laplacianImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); component++)
-    {
+  {
     // Disassemble the image into its components
 
     DisassemblerType::Pointer sourceDisassembler = DisassemblerType::New();
     sourceDisassembler->SetIndex(component);
     sourceDisassembler->SetInput(sourceImageReader->GetOutput());
     sourceDisassembler->Update();
-  
+
     DisassemblerType::Pointer laplacianDisassembler = DisassemblerType::New();
     laplacianDisassembler->SetIndex(component);
     laplacianDisassembler->SetInput(laplacianImageReader->GetOutput());
@@ -111,11 +111,11 @@ int main(int argc, char* argv[])
     poissonFilters[component].SetTargetImage(sourceDisassembler->GetOutput());
     poissonFilters[component].SetLaplacian(laplacianDisassembler->GetOutput());
     poissonFilters[component].SetMask(mask);
-    poissonFilters[component].FillMaskedRegionPoisson();
+    poissonFilters[component].FillMaskedRegion();
 
     // Reassemble the image
     reassembler->SetInput(component, poissonFilters[component].GetOutput());
-    }
+  }
 
   reassembler->Update();
 

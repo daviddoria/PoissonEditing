@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   poissonFilter.SetTargetImage(targetImageReader->GetOutput());
   poissonFilter.SetGuidanceField(guidanceFieldReader->GetOutput());
   poissonFilter.SetMask(mask);
-  poissonFilter.FillMaskedRegionVariational();
+  poissonFilter.FillMaskedRegion();
 
   // Write output
   ITKHelpers::WriteImage(poissonFilter.GetOutput(), outputFilename);

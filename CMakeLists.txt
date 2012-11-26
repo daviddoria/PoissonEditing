@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(PoissonEditing)
 ENABLE_TESTING()
 
+add_subdirectory(CMakeHelpers)
+
 # needed to allow default template arguments in function templates
 if(UNIX)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
@@ -39,24 +41,13 @@ if(NOT EIGEN3_FOUND)
 endif()
 
 # Submodules
-# Only include Mask if it is not already available
-get_property(FoundMask GLOBAL PROPERTY MaskIncludeDirs SET)
-if(NOT FoundMask)
-  add_subdirectory(Mask)
-endif()
-
-get_property(MaskIncludeDirs GLOBAL PROPERTY MaskIncludeDirs)
-set(PoissonEditing_include_dirs ${PoissonEditing_include_dirs} ${MaskIncludeDirs})
-get_property(MaskLibs GLOBAL PROPERTY MaskLibs)
-set(PoissonEditing_libraries ${PoissonEditing_libraries} ${MaskLibs})
+UseSubmodule(Mask PoissonEditing)
 
 # Give the compiler all of the required include directories
 include_directories(${PoissonEditing_include_dirs})
 
 # Allow this project to be detected and used as a submodule
-set(PoissonEditing_include_dirs ${PoissonEditing_include_dirs} ${CMAKE_CURRENT_SOURCE_DIR})
-set_property(GLOBAL PROPERTY PoissonEditingIncludeDirs ${PoissonEditing_include_dirs})
-set_property(GLOBAL PROPERTY PoissonEditingLibs ${PoissonEditing_libraries})
+CreateSubmodule(PoissonEditing)
 
 # Build the tests if requested.
 option(PoissonEditing_BuildTests "PoissonEditing_BuildTests" OFF)
@@ -79,9 +70,3 @@ PoissonEditingNeumann.hpp
 PoissonEditingVariational.h
 PoissonEditingVariational.hpp
 )
-
-# Display where this code was used from (if it is used as a submodule, there may be multiple instances of this submodule in the project, only the first of which is used)
-option(PoissonEditing_ShowSubmoduleLocation "Show the path from which PoissonEditing was used?" OFF)
-if(PoissonEditing_ShowSubmoduleLocation)
-  message("PoissonEditing used from ${CMAKE_CURRENT_SOURCE_DIR}")
-endif(PoissonEditing_ShowSubmoduleLocation)

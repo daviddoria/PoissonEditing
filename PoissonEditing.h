@@ -16,8 +16,8 @@
  *
  *=========================================================================*/
 
-#ifndef POISSONEDITING_H
-#define POISSONEDITING_H
+#ifndef PoissonEditing_H
+#define PoissonEditing_H
 
 // Submodules
 #include "Mask/Mask.h"
@@ -31,7 +31,7 @@
 #include <vector>
 
 /** This class operates on a single channel image. If you would like to use this technique on a
-  * multi-channel image,use the static FillImage functions.
+  * multi-channel image, use the static FillImage functions.
   * Inspiration for this technique came from Tommer Leyvand's implementation:
   * http://www.leyvand.com/research/adv-graphics/ex1.htm
 
@@ -56,7 +56,7 @@ public:
   typedef itk::Image<float, 2> FloatScalarImageType;
 
   /** Enumerate the potential fill methods. */
-  enum FillMethodEnum {VARIATIONAL, POISSON};
+  enum class FillMethodEnum {VARIATIONAL, POISSON};
   FillMethodEnum FillMethod;
 
   /** Construtor. */
@@ -86,51 +86,52 @@ public:
   /** Get the filled image. */
   ImageType* GetOutput();
 
+  /** Set the Laplacian. */
   void SetLaplacian(FloatScalarImageType* const laplacian);
 
   /**
-    * This function performs the hole filling operation on each channel of a VectorImage independently.
-    * The 'guidanceFields' argument must be the same length as the number of channels of 'image'.
-    * Each element of the 'guidanceFields' vector is a 2-channel derivative image (channel 0 is the
-    * x deriviative and channel 1 is the y deriviative.
-    */
-    template <typename TImage>
-    static void FillVectorImage(const TImage* const image, const Mask* const mask,
-                                const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
+  * This function performs the hole filling operation on each channel of a VectorImage independently.
+  * The 'guidanceFields' argument must be the same length as the number of channels of 'image'.
+  * Each element of the 'guidanceFields' vector is a 2-channel derivative image (channel 0 is the
+  * x deriviative and channel 1 is the y deriviative.
+  */
+  template <typename TImage>
+  static void FillVectorImage(const TImage* const image, const Mask* const mask,
+                              const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
 
-    /** Overload for scalar images. Note that this takes only a single guidance field instead
-      * of a vector of guidance fields. */
-    template <typename TScalarPixel>
-    static void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
-                                const GuidanceFieldType* const guidanceField,
-                                itk::Image<TScalarPixel, 2>* const output);
+  /** Overload for scalar images. Note that this takes only a single guidance field instead
+    * of a vector of guidance fields. */
+  template <typename TScalarPixel>
+  static void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
+                              const GuidanceFieldType* const guidanceField,
+                              itk::Image<TScalarPixel, 2>* const output);
 
-    /** The following functions are overloads that call one of the above functions (FillVectorImage or FillScalarImage) based on the type of images that
-      * are passed. */
+  /** The following functions are overloads that call one of the above functions (FillVectorImage or FillScalarImage) based on the type of images that
+    * are passed. */
 
-    /** For scalar images. This calls FillScalarImage. */
-    template <typename TScalarPixel>
-    static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
-                          const GuidanceFieldType* const guidanceField,
-                          itk::Image<TScalarPixel, 2>* const output);
+  /** For scalar images. This calls FillScalarImage. */
+  template <typename TScalarPixel>
+  static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
+                        const GuidanceFieldType* const guidanceField,
+                        itk::Image<TScalarPixel, 2>* const output);
 
-    /** For vector images. This calls FillVectorImage with the same guidance field for each channel. */
-    template <typename TImage>
-    static void FillImage(const TImage* const image, const Mask* const mask,
-                          const GuidanceFieldType* const guidanceField, TImage* const output);
+  /** For vector images. This calls FillVectorImage with the same guidance field for each channel. */
+  template <typename TImage>
+  static void FillImage(const TImage* const image, const Mask* const mask,
+                        const GuidanceFieldType* const guidanceField, TImage* const output);
 
-    /** For vector images. This calls FillVectorImage with different guidance fields for each channel. */
-    template <typename TImage>
-    static void FillImage(const TImage* const image, const Mask* const mask,
-                          const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
+  /** For vector images. This calls FillVectorImage with different guidance fields for each channel. */
+  template <typename TImage>
+  static void FillImage(const TImage* const image, const Mask* const mask,
+                        const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
 
-    /** For Image<CovariantVector> images. This calls FillVectorImage with the same guidance field for each channel. */
-    template <typename TComponent, unsigned int NumberOfComponents>
-    static void FillImage(const itk::Image<itk::CovariantVector<TComponent,
-                                NumberOfComponents>, 2>* const image,
-                          const Mask* const mask,
-                          const GuidanceFieldType* const guidanceField,
-                          itk::Image<itk::CovariantVector<TComponent, NumberOfComponents>, 2>* const output);
+  /** For Image<CovariantVector> images. This calls FillVectorImage with the same guidance field for each channel. */
+  template <typename TComponent, unsigned int NumberOfComponents>
+  static void FillImage(const itk::Image<itk::CovariantVector<TComponent,
+                              NumberOfComponents>, 2>* const image,
+                        const Mask* const mask,
+                        const GuidanceFieldType* const guidanceField,
+                        itk::Image<itk::CovariantVector<TComponent, NumberOfComponents>, 2>* const output);
 
 protected:
 

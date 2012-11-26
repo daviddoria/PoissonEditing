@@ -16,8 +16,8 @@
  *
  *=========================================================================*/
 
-#ifndef POISSONEDITING_HPP
-#define POISSONEDITING_HPP
+#ifndef PoissonEditing_HPP
+#define PoissonEditing_HPP
 
 #include "PoissonEditing.h" // Appease syntax parser
 
@@ -45,8 +45,8 @@ PoissonEditing<TPixel>::PoissonEditing()
   this->GuidanceField = GuidanceFieldType::New();
   this->MaskImage = Mask::New();
 
-  Laplacian = NULL;
-  this->FillMethod = POISSON;
+  this->Laplacian = nullptr;
+  this->FillMethod = FillMethodEnum::POISSON;
 }
 
 template <typename TPixel>
@@ -108,23 +108,23 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
   itk::ImageRegionIterator<Mask> maskIterator(MaskImage, MaskImage->GetLargestPossibleRegion());
 
   while(!maskIterator.IsAtEnd())
-    {
-     itk::Index<2> pixelIndex = maskIterator.GetIndex();
+  {
+    itk::Index<2> pixelIndex = maskIterator.GetIndex();
 
-     if(this->MaskImage->IsHole(pixelIndex))
-       {
-       //std::cout << "Adding variable " << variableIdMap.size() << std::endl;
-       // Add the pixel to the map, with ID equal to the next sequential integer.
-       variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
-       }
-     ++maskIterator;
+    if(this->MaskImage->IsHole(pixelIndex))
+    {
+      //std::cout << "Adding variable " << variableIdMap.size() << std::endl;
+      // Add the pixel to the map, with ID equal to the next sequential integer.
+      variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
     }
+    ++maskIterator;
+  }
 
   if(variableIdMap.size() == 0)
-    {
+  {
     std::cerr << "No masked pixels found!" << std::endl;
     return;
-    }
+  }
 
   // Create a 3x3 Laplacian kernel
   typedef itk::LaplacianOperator<float, 2> LaplacianOperatorType;
@@ -159,7 +159,7 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
 
   // Create the row of the matrix for each pixel
   for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
-    {
+  {
     //std::cout << "Creating equation for variable " << iter->second << std::endl;
     itk::Index<2> originalPixel = iter->first;
     unsigned int variableId = iter->second;
@@ -170,30 +170,30 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
 
     // Loop over the kernel around the current pixel
     for(unsigned int offset = 0; offset < numberOfPixelsInKernel; ++offset)
-      {
+    {
       if(laplacianOperator.GetElement(offset) == 0)
-        {
+      {
         continue; // this pixel isn't going to contribute anyway
-        }
+      }
 
       itk::Index<2> currentPixel = originalPixel + laplacianOperator.GetOffset(offset);
 
       if(!this->MaskImage->GetLargestPossibleRegion().IsInside(currentPixel))
-        {
+      {
         continue; // this pixel is on the border, just ignore it.
-        }
+      }
 
       if(this->MaskImage->IsHole(currentPixel))
-        {
+      {
         // If the pixel is masked, add it as part of the unknown matrix
         A.insert(variableId, variableIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
-        }
+      }
       else
-        {
+      {
         // If the pixel is known, move its contribution to the known (right) side of the equation
         bvalue -= this->TargetImage->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
-        }
       }
+    }
     b[variableId] = bvalue;
   }// end for variables
 
@@ -211,9 +211,9 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
   ITKHelpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
 
   for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
-    {
+  {
     this->Output->SetPixel(iter->first, x(iter->second));
-    }
+  }
 } // end FillMaskedRegion
 
 
@@ -231,32 +231,31 @@ bool PoissonEditing<TPixel>::VerifyMask() const
 
   // Verify that the image and the mask are the same size
   if(this->SourceImage->GetLargestPossibleRegion().GetSize() != this->MaskImage->GetLargestPossibleRegion().GetSize())
-    {
+  {
     std::cout << "Image size: " << this->SourceImage->GetLargestPossibleRegion().GetSize() << std::endl;
     std::cout << "Mask size: " << this->MaskImage->GetLargestPossibleRegion().GetSize() << std::endl;
     return false;
-    }
+  }
 
   // Verify that no border pixels are masked
   itk::ImageRegionConstIterator<Mask> maskIterator(this->MaskImage, this->MaskImage->GetLargestPossibleRegion());
 
   while(!maskIterator.IsAtEnd())
-    {
+  {
     if(maskIterator.GetIndex()[0] == 0 ||
-      static_cast<unsigned int>(maskIterator.GetIndex()[0]) == this->MaskImage->GetLargestPossibleRegion().GetSize()[0]-1 ||
-        maskIterator.GetIndex()[1] == 0 ||
-        static_cast<unsigned int>(maskIterator.GetIndex()[1]) == this->MaskImage->GetLargestPossibleRegion().GetSize()[1]-1)
+       static_cast<unsigned int>(maskIterator.GetIndex()[0]) == this->MaskImage->GetLargestPossibleRegion().GetSize()[0]-1 ||
+       maskIterator.GetIndex()[1] == 0 ||
+       static_cast<unsigned int>(maskIterator.GetIndex()[1]) == this->MaskImage->GetLargestPossibleRegion().GetSize()[1]-1)
       if(maskIterator.Get())
-        {
+      {
         std::cout << "Mask is invalid! Pixel " << maskIterator.GetIndex() << " is masked!" << std::endl;
         return false;
-        }
+      }
     ++maskIterator;
-    }
+  }
 
   std::cout << "Mask is valid!" << std::endl;
   return true;
-
 }
 
 
@@ -438,6 +437,5 @@ void PoissonEditing<TPixel>::FillImage(const itk::Image<itk::CovariantVector<TCo
                                                  const_cast<GuidanceFieldType*>(guidanceField));
   FillVectorImage(image, mask, guidanceFields, output);
 }
-
 
 #endif
