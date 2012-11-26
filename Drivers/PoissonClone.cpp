@@ -37,7 +37,13 @@ int main(int argc, char* argv[])
   // Verify arguments
   if(argc < 5)
   {
-    std::cout << "Usage: ImageToFill sourceImage sourceImageMask outputImage" << std::endl;
+    std::cout << "Usage: ./PoissonClone TargetImage SourceImage SourceImageMask OutputImage" << std::endl;
+    std::cout << "argc = " << argc << std::endl;
+    std::cout << "Provided arguments were: ";
+    for(int i = 1; i < argc; ++i)
+    {
+      std::cout << argv[i] << " ";
+    }
     return EXIT_FAILURE;
   }
 
@@ -53,7 +59,8 @@ int main(int argc, char* argv[])
             << "Source image mask: " << sourceImageMaskFilename << std::endl
             << "Output image: " << outputFilename << std::endl;
 
-  typedef itk::VectorImage<float, 2> ImageType;
+//  typedef itk::VectorImage<float, 2> ImageType;
+  typedef itk::Image<itk::CovariantVector<float, 3>, 2> ImageType;
 
   // Read images
   typedef itk::ImageFileReader<ImageType> ImageReaderType;
@@ -70,11 +77,40 @@ int main(int argc, char* argv[])
   sourceImageReader->SetFileName(sourceImageFilename);
   sourceImageReader->Update();
 
+  if(sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel() !=
+     targetImageReader->GetOutput()->GetNumberOfComponentsPerPixel())
+  {
+    throw std::runtime_error("Source and target images must have the same number of channels!");
+  }
+
   typedef PoissonEditing<float> PoissonEditingType;
 
-  PoissonEditingType::GuidanceFieldType::Pointer guidanceField =
-      PoissonEditingType::GuidanceFieldType::New();
-  ITKHelpers::ComputeGradients(sourceImageReader->GetOutput(), guidanceField.GetPointer());
+  // Compute the gradient of each channel
+  std::vector<PoissonEditingType::GuidanceFieldType::Pointer> guidanceFields;
+//  std::vector<PoissonEditingType::GuidanceFieldType*> guidanceFields;
+
+  for(unsigned int channel = 0; channel < sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); ++channel)
+  {
+    PoissonEditingType::GuidanceFieldType::Pointer guidanceField =
+        PoissonEditingType::GuidanceFieldType::New();
+    guidanceField->SetRegions(sourceImageReader->GetOutput()->GetLargestPossibleRegion());
+    guidanceField->Allocate();
+    guidanceFields.push_back(guidanceField);
+
+    typedef itk::Image<ImageType::PixelType::ComponentType, 2> ScalarImageType;
+    typename ScalarImageType::Pointer imageChannel = ScalarImageType::New();
+    imageChannel->SetRegions(sourceImageReader->GetOutput()->GetLargestPossibleRegion());
+    imageChannel->Allocate();
+    ITKHelpers::ExtractChannel(sourceImageReader->GetOutput(), channel, imageChannel.GetPointer());
+
+    ITKHelpers::ComputeGradients(imageChannel.GetPointer(), guidanceField.GetPointer());
+  }
+
+//  ITKHelpers::ForwardDifferenceDerivatives(sourceImageReader->GetOutput(),
+//                                           guidanceField.GetPointer());
+
+
+//  ITKHelpers::WriteImage(guidanceField.GetPointer(), "GuidanceField.mha");
 
 //   // Output image properties
 //   std::cout << "Source image: " << sourceImageReader->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl
@@ -85,7 +121,7 @@ int main(int argc, char* argv[])
 
 
   PoissonEditingType::FillImage(targetImageReader->GetOutput(), mask,
-                                guidanceField.GetPointer(), output.GetPointer());
+                                guidanceFields, output.GetPointer());
 
 //  ITKHelpers::ScaleAllChannelsTo255(output.GetPointer());
   ITKHelpers::ClampAllChannelsTo255(output.GetPointer());

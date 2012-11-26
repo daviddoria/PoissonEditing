@@ -125,6 +125,10 @@ public:
   static void FillImage(const TImage* const image, const Mask* const mask,
                         const std::vector<GuidanceFieldType*>& guidanceFields, TImage* const output);
 
+  template <typename TImage>
+  static void FillImage(const TImage* const image, const Mask* const mask,
+                        const std::vector<GuidanceFieldType::Pointer>& guidanceFields, TImage* const output);
+
   /** For Image<CovariantVector> images. This calls FillVectorImage with the same guidance field for each channel. */
   template <typename TComponent, unsigned int NumberOfComponents>
   static void FillImage(const itk::Image<itk::CovariantVector<TComponent,

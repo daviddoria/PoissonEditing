@@ -260,7 +260,8 @@ bool PoissonEditing<TPixel>::VerifyMask() const
 
 
 template <typename TPixel>
-void PoissonEditing<TPixel>::CreateGuidanceFieldFromImage(const FloatScalarImageType* const sourceImage)
+void PoissonEditing<TPixel>::
+CreateGuidanceFieldFromImage(const FloatScalarImageType* const sourceImage)
 {
   typedef itk::LaplacianImageFilter<FloatScalarImageType, FloatScalarImageType>  LaplacianFilterType;
 
@@ -302,6 +303,20 @@ PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>::Grad
   addFilter->Update();
 
   ITKHelpers::DeepCopy(addFilter->GetOutput(), outputLaplacian);
+}
+
+template <typename TPixel>
+template <typename TImage>
+void PoissonEditing<TPixel>::FillImage(const TImage* const image, const Mask* const mask,
+                                       const std::vector<GuidanceFieldType::Pointer>& guidanceFields, TImage* const output)
+{
+  std::vector<GuidanceFieldType*> guidanceFieldsRaw;
+  for(unsigned int i = 0; i < guidanceFields.size(); ++i)
+  {
+    guidanceFieldsRaw.push_back(guidanceFields[i]);
+  }
+
+  FillVectorImage(image, mask, guidanceFieldsRaw, output);
 }
 
 template <typename TPixel>
