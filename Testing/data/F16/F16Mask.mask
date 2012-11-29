@@ -1,0 +1,3 @@
+hole 255
+valid 0
+F16Mask.png
