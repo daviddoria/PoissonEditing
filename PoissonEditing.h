@@ -44,7 +44,8 @@
 template <typename TPixel>
 class PoissonEditing
 {
-  static_assert(std::is_scalar<T>::value, "PoissonEditing: TPixel must be a scalar type!");
+  static_assert(std::is_scalar<TPixel>::value,
+                "PoissonEditing: TPixel must be a scalar type!");
 public:
 
   /** Define some image types. */
@@ -58,7 +59,7 @@ public:
 
   /** Enumerate the potential fill methods. */
   enum class FillMethodEnum {VARIATIONAL, POISSON};
-  FillMethodEnum FillMethod = FillMethodEnum::POISSON;;
+  FillMethodEnum FillMethod = FillMethodEnum::POISSON;
 
   /** Construtor. */
   PoissonEditing();
