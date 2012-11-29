@@ -64,6 +64,8 @@ endif()
 add_custom_target(PoissonEditingSources SOURCES
 PoissonEditing.h
 PoissonEditing.hpp
+PoissonEditingWrappers.h
+PoissonEditingWrappers.hpp
 PoissonEditingNeumann.h
 PoissonEditingNeumann.hpp
 PoissonEditingVariational.h

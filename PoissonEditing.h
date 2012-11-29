@@ -41,21 +41,31 @@
   * http://www.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
   */
 
+class PoissonEditingParent
+{
+public:
+  typedef itk::CovariantVector<float, 2> Vector2Type;
+  typedef itk::Image<Vector2Type> Vector2ImageType;
+  typedef Vector2ImageType GuidanceFieldType;
+  typedef Vector2ImageType GradientImageType;
+};
+
 template <typename TPixel>
-class PoissonEditing
+class PoissonEditing : public PoissonEditingParent
 {
   static_assert(std::is_scalar<TPixel>::value,
                 "PoissonEditing: TPixel must be a scalar type!");
 public:
 
+  typedef PoissonEditingParent Superclass;
   /** Define some image types. */
-  typedef itk::CovariantVector<float, 2> Vector2Type;
-  typedef itk::Image<Vector2Type> Vector2ImageType;
-  typedef Vector2ImageType GuidanceFieldType;
-  typedef Vector2ImageType GradientImageType;
+  typedef Superclass::GuidanceFieldType GuidanceFieldType;
+  typedef Superclass::GradientImageType GradientImageType;
+
   typedef itk::Image<float, 2> FloatImageType;
-  typedef itk::Image<TPixel, 2> ImageType;
   typedef itk::Image<float, 2> FloatScalarImageType;
+
+  typedef itk::Image<TPixel, 2> ImageType;
 
   /** Enumerate the potential fill methods. */
   enum class FillMethodEnum {VARIATIONAL, POISSON};
@@ -127,6 +137,7 @@ public:
                         const std::vector<GuidanceFieldType*>& guidanceFields,
                         TImage* const output, const itk::ImageRegion<2>& regionToProcess);
 
+  /** For vector images with separate guidance fields specified as smart pointers. */
   template <typename TImage>
   static void FillImage(const TImage* const image, const Mask* const mask,
                         const std::vector<GuidanceFieldType::Pointer>& guidanceFields,

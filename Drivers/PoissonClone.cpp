@@ -17,6 +17,7 @@
  *=========================================================================*/
 
 #include "PoissonEditing.h"
+#include "PoissonEditingWrappers.h"
 
 // STL
 #include <iostream>
@@ -95,15 +96,14 @@ int main(int argc, char* argv[])
   regionToProcess.SetIndex(regionToProcess.GetIndex() + offset);
   std::cout << "Processing region " << regionToProcess << std::endl;
 
-  typedef PoissonEditing<float> PoissonEditingType;
-
+  typedef PoissonEditingParent::GuidanceFieldType GuidanceFieldType;
   // Compute the gradient of each channel to use as the guidance fields for each channel
-  std::vector<PoissonEditingType::GuidanceFieldType::Pointer> guidanceFields;
+  std::vector<GuidanceFieldType::Pointer> guidanceFields;
 
   for(unsigned int channel = 0; channel < sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); ++channel)
   {
-    PoissonEditingType::GuidanceFieldType::Pointer guidanceField =
-        PoissonEditingType::GuidanceFieldType::New();
+    GuidanceFieldType::Pointer guidanceField =
+        GuidanceFieldType::New();
     guidanceField->SetRegions(sourceImageReader->GetOutput()->GetLargestPossibleRegion());
     guidanceField->Allocate();
     guidanceFields.push_back(guidanceField);
@@ -119,8 +119,8 @@ int main(int argc, char* argv[])
 
   ImageType::Pointer output = ImageType::New();
 
-  PoissonEditingType::FillImage(targetImageReader->GetOutput(), mask,
-                                guidanceFields, output.GetPointer(), regionToProcess);
+  FillImage(targetImageReader->GetOutput(), mask,
+            guidanceFields, output.GetPointer(), regionToProcess);
 
   // Make sure the output is in the valid pixel value range
   ITKHelpers::ClampAllChannelsTo255(output.GetPointer());

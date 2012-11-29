@@ -17,6 +17,7 @@
  *=========================================================================*/
 
 #include "PoissonEditing.h"
+#include "PoissonEditingWrappers.h"
 
 // Submodules
 #include "Mask/ITKHelpers/ITKHelpers.h"
@@ -62,11 +63,11 @@ void TestVectorImage()
 
   itk::ImageRegion<2> regionToProcess = image->GetLargestPossibleRegion();
 
-  PoissonEditingType::FillImage(image.GetPointer(), mask,
-                                guidanceFields, output.GetPointer(), regionToProcess);
+  FillImage(image.GetPointer(), mask,
+            guidanceFields, output.GetPointer(), regionToProcess);
 
-  PoissonEditingType::FillImage(image.GetPointer(), mask,
-                                guidanceField, output.GetPointer(), regionToProcess);
+  FillImage(image.GetPointer(), mask,
+            guidanceField, output.GetPointer(), regionToProcess);
 }
 
 void TestScalarImage()
@@ -82,12 +83,13 @@ void TestScalarImage()
 
   typedef PoissonEditing<ComponentType> PoissonEditingType;
 
-  PoissonEditingType::GuidanceFieldType::Pointer guidanceField = PoissonEditingType::GuidanceFieldType::New();
+  PoissonEditingType::GuidanceFieldType::Pointer guidanceField =
+      PoissonEditingType::GuidanceFieldType::New();
 
   itk::ImageRegion<2> regionToProcess = image->GetLargestPossibleRegion();
 
-  PoissonEditingType::FillImage(image.GetPointer(), mask,
-                                guidanceField.GetPointer(), output.GetPointer(), regionToProcess);
+  FillImage(image.GetPointer(), mask,
+            guidanceField.GetPointer(), output.GetPointer(), regionToProcess);
 }
 
 void TestCovariantVectorImage()
@@ -110,10 +112,10 @@ void TestCovariantVectorImage()
 
   itk::ImageRegion<2> regionToProcess = image->GetLargestPossibleRegion();
 
-  PoissonEditingType::FillImage(image.GetPointer(), mask,
-                                guidanceFields, output.GetPointer(), regionToProcess);
+  FillImage(image.GetPointer(), mask,
+            guidanceFields, output.GetPointer(), regionToProcess);
 
-  PoissonEditingType::FillImage(image.GetPointer(), mask.GetPointer(),
-                                guidanceField.GetPointer(), output.GetPointer(), regionToProcess);
+  FillImage(image.GetPointer(), mask.GetPointer(),
+            guidanceField.GetPointer(), output.GetPointer(), regionToProcess);
 
 }

@@ -17,6 +17,7 @@
  *=========================================================================*/
 
 #include "PoissonEditing.h"
+#include "PoissonEditingWrappers.h"
 
 // STL
 #include <iostream>
@@ -65,20 +66,19 @@ int main(int argc, char* argv[])
 
   std::cout << "Read mask." << std::endl;
 
-  typedef itk::CovariantVector<float, 2> Vector2Type;
-  typedef itk::Image<Vector2Type, 2> Vector2ImageType;
-  Vector2ImageType::Pointer zeroGuidanceField = Vector2ImageType::New();
+  typedef PoissonEditingParent::GuidanceFieldType GuidanceFieldType;
+  GuidanceFieldType::Pointer zeroGuidanceField = GuidanceFieldType::New();
   zeroGuidanceField->SetRegions(targetImageReader->GetOutput()->GetLargestPossibleRegion());
   zeroGuidanceField->Allocate();
-  Vector2Type zeroVector;
+  GuidanceFieldType::PixelType zeroVector;
   zeroVector.Fill(0);
   zeroGuidanceField->FillBuffer(zeroVector);
 
   ImageType::Pointer output = ImageType::New();
 
-  PoissonEditing<float>::FillImage(targetImageReader->GetOutput(), mask,
-                                   zeroGuidanceField.GetPointer(), output.GetPointer(),
-                                   targetImageReader->GetOutput()->GetLargestPossibleRegion());
+  FillImage(targetImageReader->GetOutput(), mask,
+            zeroGuidanceField.GetPointer(), output.GetPointer(),
+            targetImageReader->GetOutput()->GetLargestPossibleRegion());
 
   // Write output
   if(Helpers::GetFileExtension(outputFilename) == "png")

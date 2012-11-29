@@ -17,6 +17,7 @@
  *=========================================================================*/
 
 #include "PoissonEditing.h"
+#include "PoissonEditingWrappers.h"
 
 // Submodules
 #include "Mask/ITKHelpers/ITKHelpers.h"
@@ -36,10 +37,10 @@ int main(int argc, char* argv[])
 {
   // Verify arguments
   if(argc < 5)
-    {
+  {
     std::cout << "Usage: ImageToFill mask guidanceField outputImage" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Parse arguments
   std::string targetImageFilename = argv[1];
@@ -81,9 +82,8 @@ int main(int argc, char* argv[])
 
   std::cout << "Read mask." << std::endl;
 
-  typedef itk::CovariantVector<float, 2> Vector2Type;
-  typedef itk::Image<Vector2Type, 2> Vector2ImageType;
-  typedef itk::ImageFileReader<Vector2ImageType> GuidanceFieldReaderType;
+  typedef PoissonEditingParent::GuidanceFieldType GuidanceFieldType;
+  typedef itk::ImageFileReader<GuidanceFieldType> GuidanceFieldReaderType;
 
   GuidanceFieldReaderType::Pointer guidanceFieldReader = GuidanceFieldReaderType::New();
   guidanceFieldReader->SetFileName(guidanceFieldFilename);
@@ -98,15 +98,15 @@ int main(int argc, char* argv[])
 //   poissonFilter.SetMask(maskReader->GetOutput());
 //   poissonFilter.FillMaskedRegionPoisson();
 
-  std::vector<Vector2ImageType*> guidanceFields(
+  std::vector<GuidanceFieldType*> guidanceFields(
          targetImageReader->GetOutput()->GetNumberOfComponentsPerPixel(),
          guidanceFieldReader->GetOutput());
 
   ImageType::Pointer output = ImageType::New();
 
-  PoissonEditing<float>::FillImage(targetImageReader->GetOutput(), maskReader->GetOutput(),
-                                   guidanceFields, output.GetPointer(),
-                                   targetImageReader->GetOutput()->GetLargestPossibleRegion());
+  FillImage(targetImageReader->GetOutput(), maskReader->GetOutput(),
+            guidanceFields, output.GetPointer(),
+            targetImageReader->GetOutput()->GetLargestPossibleRegion());
 
   // Write output
   if(pixelType == itk::ImageIOBase::UCHAR)
