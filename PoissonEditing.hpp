@@ -101,7 +101,7 @@ void PoissonEditing<TPixel>::SetMask(const Mask* const mask)
   // Make the guidance field the same size as the target image, and copy the data to the requested location
   this->MaskImage->SetRegions(this->TargetImage->GetLargestPossibleRegion());
   this->MaskImage->Allocate();
-  ITKHelpers::SetImageToConstant(this->MaskImage.GetPointer(), mask->GetValidValue());
+  ITKHelpers::SetImageToConstant(this->MaskImage.GetPointer(), HoleMaskPixelTypeEnum::VALID);
 
   ITKHelpers::CopyRegion(mask, this->MaskImage.GetPointer(), mask->GetLargestPossibleRegion(),
                          this->RegionToProcess);

@@ -71,8 +71,7 @@ int main(int argc, char* argv[])
 
   // Read mask
   Mask::Pointer mask = Mask::New();
-//  mask->Read(maskFilename);
-  mask->ReadFromImage(sourceImageMaskFilename);
+  mask->Read(sourceImageMaskFilename);
 
   ImageReaderType::Pointer sourceImageReader = ImageReaderType::New();
   sourceImageReader->SetFileName(sourceImageFilename);

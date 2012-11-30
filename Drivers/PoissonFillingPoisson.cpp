@@ -75,12 +75,10 @@ int main(int argc, char* argv[])
   std::cout << "Read target image." << std::endl;
 
   // Read mask
-  typedef itk::ImageFileReader<Mask> MaskReaderType;
-  MaskReaderType::Pointer maskReader = MaskReaderType::New();
-  maskReader->SetFileName(maskFilename);
-  maskReader->Update();
+  Mask::Pointer mask = Mask::New();
+  mask->Read(maskFilename);
 
-  std::cout << "Read mask." << std::endl;
+  std::cout << "Finished reading mask." << std::endl;
 
   typedef PoissonEditingParent::GuidanceFieldType GuidanceFieldType;
   typedef itk::ImageFileReader<GuidanceFieldType> GuidanceFieldReaderType;
@@ -104,7 +102,7 @@ int main(int argc, char* argv[])
 
   ImageType::Pointer output = ImageType::New();
 
-  FillImage(targetImageReader->GetOutput(), maskReader->GetOutput(),
+  FillImage(targetImageReader->GetOutput(), mask.GetPointer(),
             guidanceFields, output.GetPointer(),
             targetImageReader->GetOutput()->GetLargestPossibleRegion());
 

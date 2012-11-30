@@ -61,8 +61,7 @@ int main(int argc, char* argv[])
 
   // Read mask
   Mask::Pointer mask = Mask::New();
-//  mask->Read(maskFilename);
-  mask->ReadFromImage(maskFilename);
+  mask->Read(maskFilename);
 
   std::cout << "Read mask." << std::endl;
 

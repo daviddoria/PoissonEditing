@@ -86,6 +86,13 @@ static void FillImage(const itk::Image<itk::CovariantVector<TComponent,
                       itk::Image<itk::CovariantVector<TComponent, NumberOfComponents>, 2>* const output,
                       const itk::ImageRegion<2>& regionToProcess);
 
+template <typename TPixel>
+static void
+FillImage(const itk::VectorImage<TPixel>* const image,
+          const Mask* const mask,
+          const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
+          itk::VectorImage<TPixel>* const output,
+          const itk::ImageRegion<2>& regionToProcess);
 
 #include "PoissonEditingWrappers.hpp"
 
