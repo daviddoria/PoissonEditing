@@ -54,6 +54,31 @@ public:
   {
     std::vector<GuidanceFieldType::Pointer> guidanceFields;
     for(unsigned int channel = 0;
+        channel < image->GetNumberOfComponentsPerPixel(); ++channel)
+    {
+      typedef itk::Image<typename TImage::PixelType::ComponentType, 2> ScalarImageType;
+      typename ScalarImageType::Pointer imageChannel = ScalarImageType::New();
+      imageChannel->SetRegions(image->GetLargestPossibleRegion());
+      imageChannel->Allocate();
+      ITKHelpers::ExtractChannel(image, channel, imageChannel.GetPointer());
+
+      GuidanceFieldType::Pointer guidanceField =
+          GuidanceFieldType::New();
+      guidanceField->SetRegions(image->GetLargestPossibleRegion());
+      guidanceField->Allocate();
+
+      ITKHelpers::ComputeGradients(imageChannel.GetPointer(), guidanceField.GetPointer());
+      guidanceFields.push_back(guidanceField);
+    }
+
+    return guidanceFields;
+  }
+
+  template <typename TImage>
+  static std::vector<GuidanceFieldType::Pointer> CreateZeroGuidanceField(const TImage* const image)
+  {
+    std::vector<GuidanceFieldType::Pointer> guidanceFields;
+    for(unsigned int channel = 0;
         channel < image->GetNumberOfComponentsPerPixel();
         ++channel)
     {

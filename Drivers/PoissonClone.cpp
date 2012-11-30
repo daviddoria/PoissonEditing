@@ -96,25 +96,9 @@ int main(int argc, char* argv[])
   std::cout << "Processing region " << regionToProcess << std::endl;
 
   typedef PoissonEditingParent::GuidanceFieldType GuidanceFieldType;
-  // Compute the gradient of each channel to use as the guidance fields for each channel
-  std::vector<GuidanceFieldType::Pointer> guidanceFields;
 
-  for(unsigned int channel = 0; channel < sourceImageReader->GetOutput()->GetNumberOfComponentsPerPixel(); ++channel)
-  {
-    GuidanceFieldType::Pointer guidanceField =
-        GuidanceFieldType::New();
-    guidanceField->SetRegions(sourceImageReader->GetOutput()->GetLargestPossibleRegion());
-    guidanceField->Allocate();
-    guidanceFields.push_back(guidanceField);
-
-    typedef itk::Image<ImageType::PixelType::ComponentType, 2> ScalarImageType;
-    typename ScalarImageType::Pointer imageChannel = ScalarImageType::New();
-    imageChannel->SetRegions(sourceImageReader->GetOutput()->GetLargestPossibleRegion());
-    imageChannel->Allocate();
-    ITKHelpers::ExtractChannel(sourceImageReader->GetOutput(), channel, imageChannel.GetPointer());
-
-    ITKHelpers::ComputeGradients(imageChannel.GetPointer(), guidanceField.GetPointer());
-  }
+  std::vector<GuidanceFieldType::Pointer> guidanceFields =
+      PoissonEditingParent::ComputeGuidanceField(sourceImageReader->GetOutput());
 
   ImageType::Pointer output = ImageType::New();
 

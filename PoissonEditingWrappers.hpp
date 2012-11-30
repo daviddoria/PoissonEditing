@@ -70,8 +70,10 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
     std::cout << "Filling component " << component << std::endl;
 
     // Disassemble the target image into its components
-    typedef itk::VectorIndexSelectionCastImageFilter<TImage, ScalarImageType> TargetDisassemblerType;
-    typename TargetDisassemblerType::Pointer targetDisassembler = TargetDisassemblerType::New();
+    typedef itk::VectorIndexSelectionCastImageFilter<TImage, ScalarImageType>
+        TargetDisassemblerType;
+    typename TargetDisassemblerType::Pointer targetDisassembler =
+        TargetDisassemblerType::New();
     targetDisassembler->SetIndex(component);
     targetDisassembler->SetInput(image);
     targetDisassembler->Update();
