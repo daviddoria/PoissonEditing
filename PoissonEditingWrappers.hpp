@@ -54,6 +54,27 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
     throw std::runtime_error(ss.str());
   }
 
+  itk::ImageRegion<2> holeBoundingBox =
+      ITKHelpers::ComputeBoundingBox(mask, HoleMaskPixelTypeEnum::HOLE);
+
+  // Adjust the hole bounding box to be in the target position
+  itk::ImageRegion<2> holeBoundingBoxPositioned = holeBoundingBox;
+  holeBoundingBoxPositioned.SetIndex(regionToProcess.GetIndex() +
+                                     (holeBoundingBox.GetIndex() - mask->GetLargestPossibleRegion().GetIndex()));
+
+  if(!image->GetLargestPossibleRegion().IsInside(holeBoundingBoxPositioned))
+  {
+    std::cerr << "Cannot clone at this position! Source image holes are outside of the target image!" << std::endl;
+    return;
+  }
+
+  // Crop the mask
+  Mask::Pointer croppedMask = Mask::New();
+  croppedMask->Allocate();
+  ITKHelpers::ExtractRegion(mask, holeBoundingBox, croppedMask.GetPointer());
+  std::cout << "croppedMask region: " << croppedMask->GetLargestPossibleRegion() << std::endl;
+
+  // Setup components of the channel-wise processing
   typedef itk::Image<typename TypeTraits<typename TImage::PixelType>::ComponentType, 2> ScalarImageType;
 
   typedef itk::ComposeImageFilter<ScalarImageType, TImage> ReassemblerType;
@@ -65,7 +86,8 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
 
   std::vector<PoissonEditingFilterType> poissonFilters;
 
-  for(unsigned int component = 0; component < image->GetNumberOfComponentsPerPixel(); component++)
+  for(unsigned int component = 0;
+      component < image->GetNumberOfComponentsPerPixel(); ++component)
   {
     std::cout << "Filling component " << component << std::endl;
 
@@ -78,12 +100,18 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
     targetDisassembler->SetInput(image);
     targetDisassembler->Update();
 
+    PoissonEditingParent::GuidanceFieldType::Pointer croppedGuidanceField =
+        PoissonEditingParent::GuidanceFieldType::New();
+    croppedGuidanceField->Allocate();
+    ITKHelpers::ExtractRegion(guidanceFields[component], holeBoundingBox,
+                              croppedGuidanceField.GetPointer());
+
     // Perform the actual filling
     PoissonEditingFilterType poissonFilter;
     poissonFilter.SetTargetImage(targetDisassembler->GetOutput());
-    poissonFilter.SetRegionToProcess(regionToProcess);
-    poissonFilter.SetGuidanceField(guidanceFields[component]);
-    poissonFilter.SetMask(mask);
+    poissonFilter.SetRegionToProcess(holeBoundingBoxPositioned);
+    poissonFilter.SetGuidanceField(croppedGuidanceField.GetPointer());
+    poissonFilter.SetMask(croppedMask.GetPointer());
     poissonFilter.FillMaskedRegion();
 
     poissonFilters.push_back(poissonFilter);
