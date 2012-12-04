@@ -39,16 +39,19 @@
 * x deriviative and channel 1 is the y deriviative.
 */
 template <typename TImage>
-static void FillVectorImage(const TImage* const image, const Mask* const mask,
+static void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
                             const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields, TImage* const output,
-                            const itk::ImageRegion<2>& regionToProcess);
+                            const itk::ImageRegion<2>& regionToProcess,
+                            const TImage* const sourceImage = nullptr);
 
 /** Overload for scalar images. Note that this takes only a single guidance field instead
   * of a vector of guidance fields. */
 template <typename TScalarPixel>
 static void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
                             const PoissonEditingParent::GuidanceFieldType* const guidanceField,
-                            itk::Image<TScalarPixel, 2>* const output, const itk::ImageRegion<2>& regionToProcess);
+                            itk::Image<TScalarPixel, 2>* const output,
+                            const itk::ImageRegion<2>& regionToProcess,
+                            const itk::Image<TScalarPixel, 2>* const sourceImage = nullptr);
 
 /** The following functions are overloads that call one of the above functions (FillVectorImage or FillScalarImage) based on the type of images that
   * are passed. */
@@ -57,25 +60,30 @@ static void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image, cons
 template <typename TScalarPixel>
 static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
                       const PoissonEditingParent::GuidanceFieldType* const guidanceField,
-                      itk::Image<TScalarPixel, 2>* const output, const itk::ImageRegion<2>& regionToProcess);
+                      itk::Image<TScalarPixel, 2>* const output,
+                      const itk::ImageRegion<2>& regionToProcess,
+                      const itk::Image<TScalarPixel, 2>* const sourceImage = nullptr);
 
 /** For vector images. This calls FillVectorImage with the same guidance field for each channel. */
 template <typename TImage>
 static void FillImage(const TImage* const image, const Mask* const mask,
                       const PoissonEditingParent::GuidanceFieldType* const guidanceField, TImage* const output,
-                      const itk::ImageRegion<2>& regionToProcess);
+                      const itk::ImageRegion<2>& regionToProcess,
+                      const TImage* const sourceImage = nullptr);
 
 /** For vector images. This calls FillVectorImage with different guidance fields for each channel. */
 template <typename TImage>
 static void FillImage(const TImage* const image, const Mask* const mask,
                       const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
-                      TImage* const output, const itk::ImageRegion<2>& regionToProcess);
+                      TImage* const output, const itk::ImageRegion<2>& regionToProcess,
+                      const TImage* const sourceImage = nullptr);
 
 /** For vector images with separate guidance fields specified as smart pointers. */
 template <typename TImage>
 static void FillImage(const TImage* const image, const Mask* const mask,
                       const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields,
-                      TImage* const output, const itk::ImageRegion<2>& regionToProcess);
+                      TImage* const output, const itk::ImageRegion<2>& regionToProcess,
+                      const TImage* const sourceImage = nullptr);
 
 /** For Image<CovariantVector> images. This calls FillVectorImage with the same guidance field for each channel. */
 template <typename TComponent, unsigned int NumberOfComponents>
@@ -84,7 +92,9 @@ static void FillImage(const itk::Image<itk::CovariantVector<TComponent,
                       const Mask* const mask,
                       const PoissonEditingParent::GuidanceFieldType* const guidanceField,
                       itk::Image<itk::CovariantVector<TComponent, NumberOfComponents>, 2>* const output,
-                      const itk::ImageRegion<2>& regionToProcess);
+                      const itk::ImageRegion<2>& regionToProcess,
+                      const itk::Image<itk::CovariantVector<TComponent,
+                            NumberOfComponents>, 2>* const sourceImage = nullptr);
 
 template <typename TPixel>
 static void
@@ -92,7 +102,8 @@ FillImage(const itk::VectorImage<TPixel>* const image,
           const Mask* const mask,
           const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
           itk::VectorImage<TPixel>* const output,
-          const itk::ImageRegion<2>& regionToProcess);
+          const itk::ImageRegion<2>& regionToProcess,
+          const itk::VectorImage<TPixel>* const sourceImage = nullptr);
 
 #include "PoissonEditingWrappers.hpp"
 

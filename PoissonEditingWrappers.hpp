@@ -37,19 +37,20 @@
 #include <Eigen/Sparse>
 
 template <typename TImage>
-void FillVectorImage(const TImage* const image, const Mask* const mask,
+void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
                      const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
-                     TImage* const output, const itk::ImageRegion<2>& regionToProcess)
+                     TImage* const output, const itk::ImageRegion<2>& regionToProcess,
+                     const TImage* const sourceImage)
 {
   if(!mask)
   {
     throw std::runtime_error("You must specify a mask!");
   }
 
-  if(guidanceFields.size() != image->GetNumberOfComponentsPerPixel())
+  if(guidanceFields.size() != targetImage->GetNumberOfComponentsPerPixel())
   {
     std::stringstream ss;
-    ss << "There are " << image->GetNumberOfComponentsPerPixel() << " channels but "
+    ss << "There are " << targetImage->GetNumberOfComponentsPerPixel() << " channels but "
        << guidanceFields.size() << " guidance fields were specified (these must match).";
     throw std::runtime_error(ss.str());
   }
@@ -62,7 +63,7 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
   holeBoundingBoxPositioned.SetIndex(regionToProcess.GetIndex() +
                                      (holeBoundingBox.GetIndex() - mask->GetLargestPossibleRegion().GetIndex()));
 
-  if(!image->GetLargestPossibleRegion().IsInside(holeBoundingBoxPositioned))
+  if(!targetImage->GetLargestPossibleRegion().IsInside(holeBoundingBoxPositioned))
   {
     std::cerr << "Cannot clone at this position! Source image holes are outside of the target image!" << std::endl;
     return;
@@ -87,7 +88,7 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
   std::vector<PoissonEditingFilterType> poissonFilters;
 
   for(unsigned int component = 0;
-      component < image->GetNumberOfComponentsPerPixel(); ++component)
+      component < targetImage->GetNumberOfComponentsPerPixel(); ++component)
   {
     std::cout << "Filling component " << component << std::endl;
 
@@ -97,7 +98,7 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
     typename TargetDisassemblerType::Pointer targetDisassembler =
         TargetDisassemblerType::New();
     targetDisassembler->SetIndex(component);
-    targetDisassembler->SetInput(image);
+    targetDisassembler->SetInput(targetImage);
     targetDisassembler->Update();
 
     PoissonEditingParent::GuidanceFieldType::Pointer croppedGuidanceField =
@@ -110,6 +111,27 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
     PoissonEditingFilterType poissonFilter;
     poissonFilter.SetTargetImage(targetDisassembler->GetOutput());
     poissonFilter.SetRegionToProcess(holeBoundingBoxPositioned);
+
+    // Disassemble the source image into its components
+    if(sourceImage)
+    {
+      typedef itk::VectorIndexSelectionCastImageFilter<TImage, ScalarImageType>
+          SourceDisassemblerType;
+      typename SourceDisassemblerType::Pointer sourceDisassembler =
+          SourceDisassemblerType::New();
+      sourceDisassembler->SetIndex(component);
+      sourceDisassembler->SetInput(sourceImage);
+      sourceDisassembler->Update();
+
+      typename ScalarImageType::Pointer croppedSourceImage =
+          ScalarImageType::New();
+      croppedSourceImage->Allocate();
+      ITKHelpers::ExtractRegion(sourceDisassembler->GetOutput(), holeBoundingBox,
+                                croppedSourceImage.GetPointer());
+
+      poissonFilter.SetSourceImage(croppedSourceImage.GetPointer());
+    }
+
     poissonFilter.SetGuidanceField(croppedGuidanceField.GetPointer());
     poissonFilter.SetMask(croppedMask.GetPointer());
     poissonFilter.FillMaskedRegion();
@@ -117,7 +139,7 @@ void FillVectorImage(const TImage* const image, const Mask* const mask,
     poissonFilters.push_back(poissonFilter);
 
     reassembler->SetInput(component, poissonFilters[component].GetOutput());
-  }
+  } // end loop over components
 
   reassembler->Update();
 //   std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel()
@@ -133,7 +155,8 @@ void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image,
                      const Mask* const mask,
                      const PoissonEditingParent::GuidanceFieldType* const guidanceField,
                      itk::Image<TScalarPixel, 2>* const output,
-                     const itk::ImageRegion<2>& regionToProcess)
+                     const itk::ImageRegion<2>& regionToProcess,
+                     const itk::Image<TScalarPixel, 2>* const sourceImage)
 {
   typedef PoissonEditing<TScalarPixel> PoissonEditingFilterType;
   PoissonEditingFilterType poissonFilter;
@@ -153,7 +176,8 @@ void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image,
 template <typename TImage>
 void FillImage(const TImage* const image, const Mask* const mask,
                const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields, TImage* const output,
-               const itk::ImageRegion<2>& regionToProcess)
+               const itk::ImageRegion<2>& regionToProcess,
+               const TImage* const sourceImage)
 {
   std::vector<PoissonEditingParent::GuidanceFieldType*> guidanceFieldsRaw;
   for(unsigned int i = 0; i < guidanceFields.size(); ++i)
@@ -161,16 +185,18 @@ void FillImage(const TImage* const image, const Mask* const mask,
     guidanceFieldsRaw.push_back(guidanceFields[i]);
   }
 
-  FillVectorImage(image, mask, guidanceFieldsRaw, output, regionToProcess);
+  FillVectorImage(image, mask, guidanceFieldsRaw, output, regionToProcess, sourceImage);
 }
 
 /** For scalar images. */
 template <typename TScalarPixel>
 void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
                const PoissonEditingParent::GuidanceFieldType* const guidanceField,
-               itk::Image<TScalarPixel, 2>* const output, const itk::ImageRegion<2>& regionToProcess)
+               itk::Image<TScalarPixel, 2>* const output,
+               const itk::ImageRegion<2>& regionToProcess,
+               const itk::Image<TScalarPixel, 2>* const sourceImage)
 {
-  FillScalarImage(image, mask, guidanceField, output, regionToProcess);
+  FillScalarImage(image, mask, guidanceField, output, regionToProcess, sourceImage);
 }
 
 /** For vector images with the same guidance field for each channel. */
@@ -178,12 +204,13 @@ template <typename TImage>
 void
 FillImage(const TImage* const image, const Mask* const mask,
           const PoissonEditingParent::GuidanceFieldType* const guidanceField,
-          TImage* const output, const itk::ImageRegion<2>& regionToProcess)
+          TImage* const output, const itk::ImageRegion<2>& regionToProcess,
+          const TImage* const sourceImage)
 {
   std::vector<PoissonEditingParent::GuidanceFieldType*>
       guidanceFields(image->GetNumberOfComponentsPerPixel(),
                      const_cast<PoissonEditingParent::GuidanceFieldType*>(guidanceField));
-  FillVectorImage(image, mask, guidanceFields, output, regionToProcess);
+  FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
 }
 
 /** For vector images with different guidance fields for each channel. */
@@ -191,11 +218,12 @@ template <typename TImage>
 void
 FillImage(const TImage* const image, const Mask* const mask,
           const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
-          TImage* const output, const itk::ImageRegion<2>& regionToProcess)
+          TImage* const output, const itk::ImageRegion<2>& regionToProcess,
+          const TImage* const sourceImage)
 {
   // Always call the vector version, as it is the only one that makes sense
   // to have passed a collection of guidance fields.
-  FillVectorImage(image, mask, guidanceFields, output, regionToProcess);
+  FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
 }
 
 /** For vector images with different guidance fields for each channel. */
@@ -205,9 +233,10 @@ FillImage(const itk::VectorImage<TPixel>* const image,
           const Mask* const mask,
           const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
           itk::VectorImage<TPixel>* const output,
-          const itk::ImageRegion<2>& regionToProcess)
+          const itk::ImageRegion<2>& regionToProcess,
+          const itk::VectorImage<TPixel>* const sourceImage)
 {
-  FillVectorImage(image, mask, guidanceFields, output, regionToProcess);
+  FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
 }
 
 /** For Image<CovariantVector> images. */
@@ -218,12 +247,14 @@ void FillImage(const itk::Image<itk::CovariantVector<TComponent,
                const PoissonEditingParent::GuidanceFieldType* const guidanceField,
                itk::Image<itk::CovariantVector<TComponent,
                      NumberOfComponents>, 2>* const output,
-               const itk::ImageRegion<2>& regionToProcess)
+               const itk::ImageRegion<2>& regionToProcess,
+               const itk::Image<itk::CovariantVector<TComponent,
+                     NumberOfComponents>, 2>* const sourceImage)
 {
   std::vector<PoissonEditingParent::GuidanceFieldType*>
       guidanceFields(image->GetNumberOfComponentsPerPixel(),
                      const_cast<PoissonEditingParent::GuidanceFieldType*>(guidanceField));
-  FillVectorImage(image, mask, guidanceFields, output, regionToProcess);
+  FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
 }
 
 #endif

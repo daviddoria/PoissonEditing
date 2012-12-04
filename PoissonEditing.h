@@ -125,7 +125,10 @@ public:
   void SetFillMethod(FillMethodEnum fillMethod);
 
   /** Specify the image to fill. */
-  void SetTargetImage(const ImageType* const image);
+  void SetTargetImage(const ImageType* const targetImage);
+
+  /** Specify the source image. */
+  void SetSourceImage(const ImageType* const sourceImage);
 
   /** Specify the region in which to fill the image. */
   void SetMask(const Mask* const mask);
@@ -135,6 +138,7 @@ public:
 
   /** Perform the filling. Use a discretization of the Poisson equation. */
   void FillMaskedRegion();
+  void FillMaskedRegionNoColorCorrection();
 
   /** If no source image is provided, use a zero guidance field. */
   void SetGuidanceFieldToZero();
@@ -163,6 +167,9 @@ protected:
 
   /** The image in which to fill pixels. */
   typename ImageType::Pointer TargetImage;
+
+  /** The image from which to take pixels. */
+  typename ImageType::Pointer SourceImage;
 
   /** The result of the algorithm. */
   typename ImageType::Pointer Output;

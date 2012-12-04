@@ -40,6 +40,7 @@ template <typename TPixel>
 PoissonEditing<TPixel>::PoissonEditing()
 {
   this->TargetImage = ImageType::New();
+  this->SourceImage = ImageType::New();
   this->Output = ImageType::New();
 
   this->GuidanceField = GuidanceFieldType::New();
@@ -59,9 +60,33 @@ void PoissonEditing<TPixel>::SetFillMethod(FillMethodEnum fillMethod)
 }
 
 template <typename TPixel>
-void PoissonEditing<TPixel>::SetTargetImage(const ImageType* const image)
+void PoissonEditing<TPixel>::SetTargetImage(const ImageType* const targetImage)
 {
-  ITKHelpers::DeepCopy(image, this->TargetImage.GetPointer());
+  ITKHelpers::DeepCopy(targetImage, this->TargetImage.GetPointer());
+}
+
+template <typename TPixel>
+void PoissonEditing<TPixel>::SetSourceImage(const ImageType* const sourceImage)
+{
+//  ITKHelpers::DeepCopy(sourceImage, this->SourceImage.GetPointer());
+
+  if(this->RegionToProcess.GetSize()[0] == 0 || this->RegionToProcess.GetSize()[1] == 0)
+  {
+    throw std::runtime_error("RegionToProcess must be set before calling SetSourceImage!");
+  }
+
+  if(!this->TargetImage->GetLargestPossibleRegion().IsInside(sourceImage->GetLargestPossibleRegion()))
+  {
+    throw std::runtime_error("Guidance field must be smaller than the target image!");
+  }
+
+  // Make the guidance field the same size as the target image, and copy the data to the requested location
+  this->SourceImage->SetRegions(this->TargetImage->GetLargestPossibleRegion());
+  this->SourceImage->Allocate();
+  ITKHelpers::SetImageToConstant(this->SourceImage.GetPointer(), 0);
+
+  ITKHelpers::CopyRegion(sourceImage, this->SourceImage.GetPointer(), sourceImage->GetLargestPossibleRegion(),
+                         this->RegionToProcess);
 }
 
 template <typename TPixel>
@@ -98,7 +123,7 @@ void PoissonEditing<TPixel>::SetMask(const Mask* const mask)
     throw std::runtime_error("Guidance field must be smaller than the target image!");
   }
 
-  // Make the guidance field the same size as the target image, and copy the data to the requested location
+  // Make the mask field the same size as the target image, and copy the data to the requested location
   this->MaskImage->SetRegions(this->TargetImage->GetLargestPossibleRegion());
   this->MaskImage->Allocate();
   ITKHelpers::SetImageToConstant(this->MaskImage.GetPointer(), HoleMaskPixelTypeEnum::VALID);
@@ -115,7 +140,6 @@ void PoissonEditing<TPixel>::SetGuidanceFieldToZero()
   GuidanceField->Allocate();
   GuidanceField->FillBuffer(0);
 }
-
 
 template <typename TPixel>
 void PoissonEditing<TPixel>::FillMaskedRegion()
@@ -166,11 +190,163 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
 
   // Create a laplacian image from the provided gradient field if it is not provided directly
   FloatImageType::Pointer laplacian = FloatImageType::New();
-  laplacian->SetRegions(MaskImage->GetLargestPossibleRegion());
+  laplacian->SetRegions(this->MaskImage->GetLargestPossibleRegion());
   laplacian->Allocate();
   if(!this->Laplacian)
   {
-    LaplacianFromGradient(GuidanceField, laplacian);
+    LaplacianFromGradient(this->GuidanceField, laplacian);
+  }
+  else
+  {
+    ITKHelpers::DeepCopy(this->Laplacian, laplacian.GetPointer());
+  }
+
+  ITKHelpers::WriteImage(laplacian.GetPointer(), "laplacian.mha");
+
+  if(this->SourceImage->GetLargestPossibleRegion().GetSize()[0] != 0)
+  {
+    if(this->SourceImage->GetLargestPossibleRegion().GetSize() !=
+       laplacian->GetLargestPossibleRegion().GetSize())
+    {
+      std::cerr << "SourceImage and laplacian are not the same size!"
+                << "SourceImage size: " << this->SourceImage->GetLargestPossibleRegion().GetSize() << std::endl
+                << "laplacian size: " << laplacian->GetLargestPossibleRegion().GetSize() << std::endl
+                << "GuidanceField size: " << this->GuidanceField->GetLargestPossibleRegion().GetSize() << std::endl
+                << std::endl;
+      return;
+    }
+  }
+
+  // Create the row of the matrix for each pixel
+  for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
+  {
+    //std::cout << "Creating equation for variable " << iter->second << std::endl;
+    itk::Index<2> originalPixel = iter->first;
+    unsigned int variableId = iter->second;
+    //std::cout << "originalPixel " << originalPixel << std::endl;
+
+    // The right hand side of the equation starts equal to the value of the guidance field
+    double bvalue = laplacian->GetPixel(originalPixel);
+
+    // Use the nearly-white pixels of the source image (if it is specified)
+//    if(this->SourceImage->GetLargestPossibleRegion().GetSize()[0] != 0 &&
+//       this->SourceImage->GetPixel(originalPixel) > 220)
+    // Use random pixels from the source image (if it is specified)
+    if(this->SourceImage->GetLargestPossibleRegion().GetSize()[0] != 0 &&
+       drand48() < .5)
+    {
+//      std::cout << "Using source pixel values." << std::endl;
+//      double sourceWeight = .5;
+      double sourceWeight = 0.005;
+      A.coeffRef(variableId, variableIdMap[originalPixel]) -= 1 * sourceWeight;
+      bvalue -= sourceWeight * this->SourceImage->GetPixel(originalPixel);
+    }
+
+    // Loop over the kernel around the current pixel
+    for(unsigned int offset = 0; offset < numberOfPixelsInKernel; ++offset)
+    {
+      if(laplacianOperator.GetElement(offset) == 0)
+      {
+        continue; // this pixel isn't going to contribute anyway
+      }
+
+      itk::Index<2> currentPixel = originalPixel + laplacianOperator.GetOffset(offset);
+
+      if(!this->MaskImage->GetLargestPossibleRegion().IsInside(currentPixel))
+      {
+        continue; // this pixel is on the border, just ignore it.
+      }
+
+      if(this->MaskImage->IsHole(currentPixel))
+      {
+        // If the pixel is masked, add it as part of the unknown matrix
+        double value = laplacianOperator.GetElement(offset);
+//        A.insert(variableId, variableIdMap[currentPixel]) += laplacianOperator.GetElement(offset);
+        A.coeffRef(variableId, variableIdMap[currentPixel]) += value;
+      }
+      else
+      {
+        // If the pixel is known, move its contribution to the known (right) side of the equation
+        bvalue -= this->TargetImage->GetPixel(currentPixel) * laplacianOperator.GetElement(offset);
+      }
+    }
+    b[variableId] = bvalue;
+  }// end for variables
+
+  // Solve the (symmetric) system
+  Eigen::SimplicialLDLT<SparseMatrixType> sparseSolver(A);
+  Eigen::VectorXd x = sparseSolver.solve(b);
+  if(sparseSolver.info() != Eigen::Success)
+  {
+    throw std::runtime_error("Decomposition failed!");
+  }
+
+  // Convert solution vector back to image
+  // Initialize the output by copying the target image into the output.
+  // Pixels that are not filled will remain the same in the output.
+  ITKHelpers::DeepCopy(this->TargetImage.GetPointer(), this->Output.GetPointer());
+
+  for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)
+  {
+    this->Output->SetPixel(iter->first, x(iter->second));
+  }
+} // end FillMaskedRegion
+
+
+template <typename TPixel>
+void PoissonEditing<TPixel>::FillMaskedRegionNoColorCorrection()
+{
+  //ITKHelpers::WriteImage(this->TargetImage, "FillMaskedRegion_TargetImage.mha");
+  //ITKHelpers::WriteImage(this->Output, "InitializedOutput.mha");
+
+  // Create a map that stores the ID of each hole pixel
+  typedef std::map<itk::Index<2>, unsigned int, itk::Index<2>::LexicographicCompare> VariableIdMapType;
+  VariableIdMapType variableIdMap;
+
+  itk::ImageRegionIterator<Mask> maskIterator(this->MaskImage, this->MaskImage->GetLargestPossibleRegion());
+
+  while(!maskIterator.IsAtEnd())
+  {
+    itk::Index<2> pixelIndex = maskIterator.GetIndex();
+
+    if(this->MaskImage->IsHole(pixelIndex))
+    {
+      //std::cout << "Adding variable " << variableIdMap.size() << std::endl;
+      // Add the pixel to the map, with ID equal to the next sequential integer.
+      variableIdMap.insert(VariableIdMapType::value_type(pixelIndex, variableIdMap.size()));
+    }
+    ++maskIterator;
+  }
+
+  if(variableIdMap.size() == 0)
+  {
+    std::cerr << "PoissonEditing::FillMaskedRegion(): No masked pixels found!" << std::endl;
+    return;
+  }
+
+  // Create a 3x3 Laplacian kernel
+  typedef itk::LaplacianOperator<float, 2> LaplacianOperatorType;
+  LaplacianOperatorType laplacianOperator;
+  itk::Size<2> radius;
+  radius.Fill(1);
+  laplacianOperator.CreateToRadius(radius);
+  unsigned int numberOfPixelsInKernel = laplacianOperator.GetSize()[0] * laplacianOperator.GetSize()[1];
+
+  // Create the sparse matrix
+  typedef Eigen::SparseMatrix<double> SparseMatrixType;
+  SparseMatrixType A(variableIdMap.size(), variableIdMap.size());
+  A.reserve(Eigen::VectorXi::Constant(variableIdMap.size(),5));
+
+  // Create the right-hand-side vector
+  Eigen::VectorXd b(variableIdMap.size());
+
+  // Create a laplacian image from the provided gradient field if it is not provided directly
+  FloatImageType::Pointer laplacian = FloatImageType::New();
+  laplacian->SetRegions(this->MaskImage->GetLargestPossibleRegion());
+  laplacian->Allocate();
+  if(!this->Laplacian)
+  {
+    LaplacianFromGradient(this->GuidanceField, laplacian);
   }
   else
   {
@@ -208,7 +384,9 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
       if(this->MaskImage->IsHole(currentPixel))
       {
         // If the pixel is masked, add it as part of the unknown matrix
-        A.insert(variableId, variableIdMap[currentPixel]) = laplacianOperator.GetElement(offset);
+        double value = laplacianOperator.GetElement(offset);
+//        A.insert(variableId, variableIdMap[currentPixel]) += laplacianOperator.GetElement(offset);
+        A.coeffRef(variableId, variableIdMap[currentPixel]) += value;
       }
       else
       {
