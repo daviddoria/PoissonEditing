@@ -1,12 +1,6 @@
 [submodule "Mask"]
 	path = Mask
-	url = git@github.com:daviddoria/Mask.git
-[submodule "GUI/QtHelpers"]
-	path = GUI/QtHelpers
-	url = git@github.com:daviddoria/QtHelpers.git
-[submodule "GUI/ITKQtHelpers"]
-	path = GUI/ITKQtHelpers
-	url = git@github.com:daviddoria/ITKQtHelpers.git
+	url = git://github.com:daviddoria/Mask.git
 [submodule "CMakeHelpers"]
 	path = CMakeHelpers
-	url = https://github.com/daviddoria/CMakeHelpers.git
+	url = git://github.com/daviddoria/CMakeHelpers.git
