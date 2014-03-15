@@ -67,7 +67,8 @@ static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask
 /** For vector images. This calls FillVectorImage with the same guidance field for each channel. */
 template <typename TImage>
 static void FillImage(const TImage* const image, const Mask* const mask,
-                      const PoissonEditingParent::GuidanceFieldType* const guidanceField, TImage* const output,
+                      const PoissonEditingParent::GuidanceFieldType* const guidanceField,
+                      TImage* const output,
                       const itk::ImageRegion<2>& regionToProcess,
                       const TImage* const sourceImage = nullptr);
 

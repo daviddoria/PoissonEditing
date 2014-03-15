@@ -65,13 +65,8 @@ int main(int argc, char* argv[])
 
   std::cout << "Read mask." << std::endl;
 
-  typedef PoissonEditingParent::GuidanceFieldType GuidanceFieldType;
-  GuidanceFieldType::Pointer zeroGuidanceField = GuidanceFieldType::New();
-  zeroGuidanceField->SetRegions(targetImageReader->GetOutput()->GetLargestPossibleRegion());
-  zeroGuidanceField->Allocate();
-  GuidanceFieldType::PixelType zeroVector;
-  zeroVector.Fill(0);
-  zeroGuidanceField->FillBuffer(zeroVector);
+  PoissonEditing<float>::GuidanceFieldType::Pointer zeroGuidanceField =
+      PoissonEditing<float>::CreateZeroGuidanceField(targetImageReader->GetOutput());
 
   ImageType::Pointer output = ImageType::New();
 

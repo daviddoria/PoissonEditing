@@ -42,6 +42,7 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
                      TImage* const output, const itk::ImageRegion<2>& regionToProcess,
                      const TImage* const sourceImage)
 {
+  std::cout << "FillVectorImage()" << std::endl;
   if(!mask)
   {
     throw std::runtime_error("You must specify a mask!");
@@ -179,6 +180,7 @@ void FillImage(const TImage* const image, const Mask* const mask,
                const itk::ImageRegion<2>& regionToProcess,
                const TImage* const sourceImage)
 {
+  std::cout << "FillImage()" << std::endl;
   std::vector<PoissonEditingParent::GuidanceFieldType*> guidanceFieldsRaw;
   for(unsigned int i = 0; i < guidanceFields.size(); ++i)
   {
@@ -207,6 +209,7 @@ FillImage(const TImage* const image, const Mask* const mask,
           TImage* const output, const itk::ImageRegion<2>& regionToProcess,
           const TImage* const sourceImage)
 {
+  std::cout << "Fill image with same guidance field for each channel." << std::endl;
   std::vector<PoissonEditingParent::GuidanceFieldType*>
       guidanceFields(image->GetNumberOfComponentsPerPixel(),
                      const_cast<PoissonEditingParent::GuidanceFieldType*>(guidanceField));

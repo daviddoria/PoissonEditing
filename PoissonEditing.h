@@ -75,22 +75,28 @@ public:
   }
 
   template <typename TImage>
-  static std::vector<GuidanceFieldType::Pointer> CreateZeroGuidanceField(const TImage* const image)
+  static GuidanceFieldType::Pointer CreateZeroGuidanceField(const TImage* const image)
+  {
+    GuidanceFieldType::Pointer guidanceField =
+        GuidanceFieldType::New();
+    guidanceField->SetRegions(image->GetLargestPossibleRegion());
+    guidanceField->Allocate();
+    GuidanceFieldType::PixelType zeroVector;
+    zeroVector.Fill(0);
+    ITKHelpers::SetImageToConstant(guidanceField.GetPointer(),
+                                   zeroVector);
+    return guidanceField;
+  }
+
+  template <typename TImage>
+  static std::vector<GuidanceFieldType::Pointer> CreateZeroGuidanceFields(const TImage* const image)
   {
     std::vector<GuidanceFieldType::Pointer> guidanceFields;
     for(unsigned int channel = 0;
         channel < image->GetNumberOfComponentsPerPixel();
         ++channel)
     {
-      GuidanceFieldType::Pointer guidanceField =
-          GuidanceFieldType::New();
-      guidanceField->SetRegions(image->GetLargestPossibleRegion());
-      guidanceField->Allocate();
-      GuidanceFieldType::PixelType zeroVector;
-      zeroVector.Fill(0);
-      ITKHelpers::SetImageToConstant(guidanceField.GetPointer(),
-                                     zeroVector);
-      guidanceFields.push_back(guidanceField);
+      guidanceFields.push_back(CreateZeroGuidanceField(image));
     }
 
     return guidanceFields;
