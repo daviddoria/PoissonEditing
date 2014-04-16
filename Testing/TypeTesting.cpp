@@ -56,18 +56,19 @@ void TestVectorImage()
 
   typedef PoissonEditing<ComponentType> PoissonEditingType;
 
-  PoissonEditingType::GuidanceFieldType::Pointer guidanceField = PoissonEditingType::GuidanceFieldType::New();
+  PoissonEditingType::GuidanceFieldType::Pointer guidanceField =
+          PoissonEditingType::GuidanceFieldType::New();
 
-  std::vector<PoissonEditingType::GuidanceFieldType*> guidanceFields(
+  std::vector<PoissonEditingType::GuidanceFieldType::Pointer> guidanceFields(
          image->GetNumberOfComponentsPerPixel(), guidanceField);
 
   itk::ImageRegion<2> regionToProcess = image->GetLargestPossibleRegion();
 
-  FillImage(image.GetPointer(), mask,
+  FillImage(image.GetPointer(), mask.GetPointer(),
             guidanceFields, output.GetPointer(), regionToProcess);
 
-  FillImage(image.GetPointer(), mask,
-            guidanceField, output.GetPointer(), regionToProcess);
+  FillImage(image.GetPointer(), mask.GetPointer(),
+            guidanceField.GetPointer(), output.GetPointer(), regionToProcess);
 }
 
 void TestScalarImage()
@@ -107,7 +108,7 @@ void TestCovariantVectorImage()
 
   PoissonEditingType::GuidanceFieldType::Pointer guidanceField = PoissonEditingType::GuidanceFieldType::New();
 
-  std::vector<PoissonEditingType::GuidanceFieldType*> guidanceFields(
+  std::vector<PoissonEditingType::GuidanceFieldType::Pointer> guidanceFields(
          image->GetNumberOfComponentsPerPixel(), guidanceField);
 
   itk::ImageRegion<2> regionToProcess = image->GetLargestPossibleRegion();

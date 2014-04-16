@@ -106,8 +106,13 @@ void PoissonEditing<TPixel>::SetGuidanceField(const GuidanceFieldType* const fie
   this->GuidanceField->SetRegions(this->TargetImage->GetLargestPossibleRegion());
   this->GuidanceField->Allocate();
 
+  SetGuidanceFieldToZero();
+
   ITKHelpers::CopyRegion(field, this->GuidanceField.GetPointer(), field->GetLargestPossibleRegion(),
                          this->RegionToProcess);
+
+//  ITKHelpers::WriteImage(field, "Field.mha");
+//  ITKHelpers::WriteImage(this->GuidanceField.GetPointer(), "GuidanceFieldSet.mha");
 }
 
 template <typename TPixel>
@@ -136,9 +141,9 @@ template <typename TPixel>
 void PoissonEditing<TPixel>::SetGuidanceFieldToZero()
 {
   // In the hole filling problem, we want the guidance field fo be zero
-  GuidanceField->SetRegions(this->TargetImage->GetLargestPossibleRegion());
-  GuidanceField->Allocate();
-  GuidanceField->FillBuffer(0);
+  this->GuidanceField->SetRegions(this->TargetImage->GetLargestPossibleRegion());
+  this->GuidanceField->Allocate();
+  this->GuidanceField->FillBuffer(itk::NumericTraits<typename GuidanceFieldType::PixelType>::Zero);
 }
 
 template <typename TPixel>
@@ -191,14 +196,17 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
   laplacian->Allocate();
   if(!this->Laplacian)
   {
+    std::cout << "Computing Laplacian from provided GuidanceField..." << std::endl;
+    //ITKHelpers::WriteImage(this->GuidanceField.GetPointer(), "guidance.mha");
     LaplacianFromGradient(this->GuidanceField, laplacian);
   }
   else
   {
+    std::cout << "Using provided Laplacian..." << std::endl;
     ITKHelpers::DeepCopy(this->Laplacian, laplacian.GetPointer());
   }
 
-  ITKHelpers::WriteImage(laplacian.GetPointer(), "laplacian.mha");
+  //ITKHelpers::WriteImage(laplacian.GetPointer(), "laplacian.mha");
 
   if(this->SourceImage->GetLargestPossibleRegion().GetSize()[0] != 0)
   {
@@ -232,7 +240,7 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
     if(this->SourceImage->GetLargestPossibleRegion().GetSize()[0] != 0 &&
        drand48() < .5)
     {
-//      std::cout << "Using source pixel values." << std::endl;
+      std::cout << "Using source pixel values..." << std::endl;
 //      double sourceWeight = .5;
       double sourceWeight = 0.005;
       A.coeffRef(variableId, variableIdMap[originalPixel]) -= 1 * sourceWeight;
@@ -350,7 +358,7 @@ void PoissonEditing<TPixel>::FillMaskedRegionNoColorCorrection()
     ITKHelpers::DeepCopy(this->Laplacian, laplacian.GetPointer());
   }
 
-  ITKHelpers::WriteImage(laplacian.GetPointer(), "laplacian.mha");
+  //ITKHelpers::WriteImage(laplacian.GetPointer(), "laplacian.mha");
 
   // Create the row of the matrix for each pixel
   for(VariableIdMapType::const_iterator iter = variableIdMap.begin(); iter != variableIdMap.end(); ++iter)

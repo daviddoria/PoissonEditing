@@ -40,7 +40,7 @@
 */
 template <typename TImage>
 static void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
-                            const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields, TImage* const output,
+                            const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields, TImage* const output,
                             const itk::ImageRegion<2>& regionToProcess,
                             const TImage* const sourceImage = nullptr);
 
@@ -56,7 +56,7 @@ static void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image, cons
 /** The following functions are overloads that call one of the above functions (FillVectorImage or FillScalarImage) based on the type of images that
   * are passed. */
 
-/** For scalar images. This calls FillScalarImage. */
+/** For scalar images. This just calls FillScalarImage. */
 template <typename TScalarPixel>
 static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const mask,
                       const PoissonEditingParent::GuidanceFieldType* const guidanceField,
@@ -64,7 +64,7 @@ static void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask
                       const itk::ImageRegion<2>& regionToProcess,
                       const itk::Image<TScalarPixel, 2>* const sourceImage = nullptr);
 
-/** For vector images. This calls FillVectorImage with the same guidance field for each channel. */
+/** For multi-channel images with the same guidance field for each channel. */
 template <typename TImage>
 static void FillImage(const TImage* const image, const Mask* const mask,
                       const PoissonEditingParent::GuidanceFieldType* const guidanceField,
@@ -72,14 +72,7 @@ static void FillImage(const TImage* const image, const Mask* const mask,
                       const itk::ImageRegion<2>& regionToProcess,
                       const TImage* const sourceImage = nullptr);
 
-/** For vector images. This calls FillVectorImage with different guidance fields for each channel. */
-template <typename TImage>
-static void FillImage(const TImage* const image, const Mask* const mask,
-                      const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
-                      TImage* const output, const itk::ImageRegion<2>& regionToProcess,
-                      const TImage* const sourceImage = nullptr);
-
-/** For vector images with separate guidance fields specified as smart pointers. */
+/** For multi-channel images with different guidance fields for each channel. */
 template <typename TImage>
 static void FillImage(const TImage* const image, const Mask* const mask,
                       const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields,
@@ -97,14 +90,27 @@ static void FillImage(const itk::Image<itk::CovariantVector<TComponent,
                       const itk::Image<itk::CovariantVector<TComponent,
                             NumberOfComponents>, 2>* const sourceImage = nullptr);
 
+/** For VectorImage images with the same guidance field for each channel.*/
 template <typename TPixel>
 static void
 FillImage(const itk::VectorImage<TPixel>* const image,
           const Mask* const mask,
-          const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
+          const PoissonEditingParent::GuidanceFieldType* guidanceField,
           itk::VectorImage<TPixel>* const output,
           const itk::ImageRegion<2>& regionToProcess,
           const itk::VectorImage<TPixel>* const sourceImage = nullptr);
+
+
+/** For VectorImage images with differenct guidance fields for each channel.*/
+template <typename TPixel>
+static void
+FillImage(const itk::VectorImage<TPixel>* const image,
+          const Mask* const mask,
+          const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields,
+          itk::VectorImage<TPixel>* const output,
+          const itk::ImageRegion<2>& regionToProcess,
+          const itk::VectorImage<TPixel>* const sourceImage = nullptr);
+
 
 #include "PoissonEditingWrappers.hpp"
 

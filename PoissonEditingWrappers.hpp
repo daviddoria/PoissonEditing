@@ -42,7 +42,7 @@
  */
 template <typename TImage>
 void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
-                     const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
+                     const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields,
                      TImage* const output, const itk::ImageRegion<2>& regionToProcess,
                      const TImage* const sourceImage)
 {
@@ -78,7 +78,7 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
   Mask::Pointer croppedMask = Mask::New();
   croppedMask->Allocate();
   ITKHelpers::ExtractRegion(mask, holeBoundingBox, croppedMask.GetPointer());
-  std::cout << "croppedMask region: " << croppedMask->GetLargestPossibleRegion() << std::endl;
+//  std::cout << "croppedMask region: " << croppedMask->GetLargestPossibleRegion() << std::endl;
 
   // Setup components of the channel-wise processing
   typedef itk::Image<typename TypeTraits<typename TImage::PixelType>::ComponentType, 2> ScalarImageType;
@@ -110,8 +110,9 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
     PoissonEditingParent::GuidanceFieldType::Pointer croppedGuidanceField =
         PoissonEditingParent::GuidanceFieldType::New();
     croppedGuidanceField->Allocate();
-    ITKHelpers::ExtractRegion(guidanceFields[component], holeBoundingBox,
+    ITKHelpers::ExtractRegion(guidanceFields[component].GetPointer(), holeBoundingBox,
                               croppedGuidanceField.GetPointer());
+//    ITKHelpers::WriteImage(croppedGuidanceField.GetPointer(), "CroppedGuidanceField_" + std::to_string(component) + ".mha");
 
     // Perform the actual filling
     PoissonEditingFilterType poissonFilter;
@@ -152,7 +153,6 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
 
     reassembler->SetInput(component, outputChannels[component]);
 
-//    std::cout << "Finished filling component " << component << std::endl;
   } // end loop over components
 
   reassembler->Update();
@@ -188,22 +188,6 @@ void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image,
   ITKHelpers::DeepCopy(poissonFilter.GetOutput(), output);
 }
 
-/** For vector images with smart pointers to different guidance fields.*/
-template <typename TImage>
-void FillImage(const TImage* const image, const Mask* const mask,
-               const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields, TImage* const output,
-               const itk::ImageRegion<2>& regionToProcess,
-               const TImage* const sourceImage)
-{
-  std::cout << "FillImage()" << std::endl;
-  std::vector<PoissonEditingParent::GuidanceFieldType*> guidanceFieldsRaw;
-  for(unsigned int i = 0; i < guidanceFields.size(); ++i)
-  {
-    guidanceFieldsRaw.push_back(guidanceFields[i]);
-  }
-
-  FillVectorImage(image, mask, guidanceFieldsRaw, output, regionToProcess, sourceImage);
-}
 
 /** For scalar images. */
 template <typename TScalarPixel>
@@ -216,16 +200,16 @@ void FillImage(const itk::Image<TScalarPixel, 2>* const image, const Mask* const
   FillScalarImage(image, mask, guidanceField, output, regionToProcess, sourceImage);
 }
 
-/** For vector images with the same guidance field for each channel. */
+/** For multi-channel images with the same guidance field for each channel. */
 template <typename TImage>
 void
 FillImage(const TImage* const image, const Mask* const mask,
-          const PoissonEditingParent::GuidanceFieldType* const guidanceField,
+          const PoissonEditingParent::GuidanceFieldType* guidanceField,
           TImage* const output, const itk::ImageRegion<2>& regionToProcess,
           const TImage* const sourceImage)
 {
   std::cout << "FillImage with same guidance field for each channel." << std::endl;
-  std::vector<PoissonEditingParent::GuidanceFieldType*>
+  std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>
       guidanceFields(image->GetNumberOfComponentsPerPixel(),
                      const_cast<PoissonEditingParent::GuidanceFieldType*>(guidanceField));
   std::cout << "Duplicated guidance field for each of the "
@@ -233,29 +217,16 @@ FillImage(const TImage* const image, const Mask* const mask,
   FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
 }
 
-/** For vector images with different guidance fields for each channel. */
+/** For multi-channel images with different guidance fields for each channel. */
 template <typename TImage>
 void
 FillImage(const TImage* const image, const Mask* const mask,
-          const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
+          const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields,
           TImage* const output, const itk::ImageRegion<2>& regionToProcess,
           const TImage* const sourceImage)
 {
   // Always call the vector version, as it is the only one that makes sense
   // to have passed a collection of guidance fields.
-  FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
-}
-
-/** For vector images with different guidance fields for each channel. */
-template <typename TPixel>
-void
-FillImage(const itk::VectorImage<TPixel>* const image,
-          const Mask* const mask,
-          const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
-          itk::VectorImage<TPixel>* const output,
-          const itk::ImageRegion<2>& regionToProcess,
-          const itk::VectorImage<TPixel>* const sourceImage)
-{
   FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
 }
 
@@ -271,9 +242,38 @@ void FillImage(const itk::Image<itk::CovariantVector<TComponent,
                const itk::Image<itk::CovariantVector<TComponent,
                      NumberOfComponents>, 2>* const sourceImage)
 {
-  std::vector<PoissonEditingParent::GuidanceFieldType*>
+  std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>
       guidanceFields(image->GetNumberOfComponentsPerPixel(),
                      const_cast<PoissonEditingParent::GuidanceFieldType*>(guidanceField));
+  FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
+}
+
+/** For VectorImage images with the same guidance field for each channel.*/
+template <typename TPixel>
+static void
+FillImage(const itk::VectorImage<TPixel>* const image,
+          const Mask* const mask,
+          const PoissonEditingParent::GuidanceFieldType* guidanceField,
+          itk::VectorImage<TPixel>* const output,
+          const itk::ImageRegion<2>& regionToProcess,
+          const itk::VectorImage<TPixel>* const sourceImage = nullptr)
+{
+    std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>
+        guidanceFields(image->GetNumberOfComponentsPerPixel(),
+                       const_cast<PoissonEditingParent::GuidanceFieldType*>(guidanceField));
+    FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
+}
+
+/** For VectorImages with different guidance fields for each channel. */
+template <typename TPixel>
+void
+FillImage(const itk::VectorImage<TPixel>* const image,
+          const Mask* const mask,
+          const std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>& guidanceFields,
+          itk::VectorImage<TPixel>* const output,
+          const itk::ImageRegion<2>& regionToProcess,
+          const itk::VectorImage<TPixel>* const sourceImage)
+{
   FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
 }
 

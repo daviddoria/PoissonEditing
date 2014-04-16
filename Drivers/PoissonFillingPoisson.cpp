@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 //   poissonFilter.SetMask(maskReader->GetOutput());
 //   poissonFilter.FillMaskedRegionPoisson();
 
-  std::vector<GuidanceFieldType*> guidanceFields(
+  std::vector<GuidanceFieldType::Pointer> guidanceFields(
          targetImageReader->GetOutput()->GetNumberOfComponentsPerPixel(),
          guidanceFieldReader->GetOutput());
 
