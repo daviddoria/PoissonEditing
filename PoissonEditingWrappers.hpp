@@ -90,9 +90,9 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
   typedef typename TypeTraits<typename TImage::PixelType>::ComponentType ComponentType;
   typedef PoissonEditing<ComponentType> PoissonEditingFilterType;
 
-  std::vector<PoissonEditingFilterType> poissonFilters;
+  std::vector<typename ScalarImageType::Pointer> outputChannels(targetImage->GetNumberOfComponentsPerPixel());
 
-  std::cout << "There are " << targetImage->GetNumberOfComponentsPerPixel() << " components in the output image." << std::endl;
+  //std::cout << "There are " << targetImage->GetNumberOfComponentsPerPixel() << " components in the output image." << std::endl;
   for(unsigned int component = 0;
       component < targetImage->GetNumberOfComponentsPerPixel(); ++component)
   {
@@ -121,6 +121,7 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
     // Disassemble the source image into its components
     if(sourceImage)
     {
+      std::cout << "Using sourceImage..." << std::endl;
       typedef itk::VectorIndexSelectionCastImageFilter<TImage, ScalarImageType>
           SourceDisassemblerType;
       typename SourceDisassemblerType::Pointer sourceDisassembler =
@@ -137,22 +138,29 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
 
       poissonFilter.SetSourceImage(croppedSourceImage.GetPointer());
     }
+    else
+    {
+        std::cout << "No source image provided - assuming Poisson Filling (versus Cloning)." << std::endl;
+    }
 
     poissonFilter.SetGuidanceField(croppedGuidanceField.GetPointer());
     poissonFilter.SetMask(croppedMask.GetPointer());
     poissonFilter.FillMaskedRegion();
 
-    poissonFilters.push_back(poissonFilter);
+    outputChannels[component] = ScalarImageType::New();
+    ITKHelpers::DeepCopy(poissonFilter.GetOutput(), outputChannels[component].GetPointer());
 
-    reassembler->SetInput(component, poissonFilters[component].GetOutput());
+    reassembler->SetInput(component, outputChannels[component]);
 
-    std::cout << "Finished filling component " << component << std::endl;
+//    std::cout << "Finished filling component " << component << std::endl;
   } // end loop over components
 
   reassembler->Update();
 //   std::cout << "Output components per pixel: " << reassembler->GetOutput()->GetNumberOfComponentsPerPixel()
 //             << std::endl;
 //   std::cout << "Output size: " << reassembler->GetOutput()->GetLargestPossibleRegion().GetSize() << std::endl;
+
+//  ITKHelpers::WriteImage(reassembler->GetOutput(), "Output.mha");
 
   ITKHelpers::DeepCopy(reassembler->GetOutput(), output);
 }

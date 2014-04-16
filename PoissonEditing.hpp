@@ -144,9 +144,6 @@ void PoissonEditing<TPixel>::SetGuidanceFieldToZero()
 template <typename TPixel>
 void PoissonEditing<TPixel>::FillMaskedRegion()
 {
-  //ITKHelpers::WriteImage(this->TargetImage, "FillMaskedRegion_TargetImage.mha");
-  //ITKHelpers::WriteImage(this->Output, "InitializedOutput.mha");
-
   // Create a map that stores the ID of each hole pixel
   typedef std::map<itk::Index<2>, unsigned int, itk::Index<2>::LexicographicCompare> VariableIdMapType;
   VariableIdMapType variableIdMap;
