@@ -36,6 +36,10 @@
 // Eigen
 #include <Eigen/Sparse>
 
+/** The terminology "targetImage" and "sourceImage" come from Poisson Cloning.
+ * To interpret these arguments in a Poisson Filling context, there is no source image
+ * (sourceImage must be nullptr), and the targetImage is the image to be filled.
+ */
 template <typename TImage>
 void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
                      const std::vector<PoissonEditingParent::GuidanceFieldType*>& guidanceFields,
@@ -88,6 +92,7 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
 
   std::vector<PoissonEditingFilterType> poissonFilters;
 
+  std::cout << "There are " << targetImage->GetNumberOfComponentsPerPixel() << " components in the output image." << std::endl;
   for(unsigned int component = 0;
       component < targetImage->GetNumberOfComponentsPerPixel(); ++component)
   {
@@ -140,6 +145,8 @@ void FillVectorImage(const TImage* const targetImage, const Mask* const mask,
     poissonFilters.push_back(poissonFilter);
 
     reassembler->SetInput(component, poissonFilters[component].GetOutput());
+
+    std::cout << "Finished filling component " << component << std::endl;
   } // end loop over components
 
   reassembler->Update();
@@ -209,10 +216,12 @@ FillImage(const TImage* const image, const Mask* const mask,
           TImage* const output, const itk::ImageRegion<2>& regionToProcess,
           const TImage* const sourceImage)
 {
-  std::cout << "Fill image with same guidance field for each channel." << std::endl;
+  std::cout << "FillImage with same guidance field for each channel." << std::endl;
   std::vector<PoissonEditingParent::GuidanceFieldType*>
       guidanceFields(image->GetNumberOfComponentsPerPixel(),
                      const_cast<PoissonEditingParent::GuidanceFieldType*>(guidanceField));
+  std::cout << "Duplicated guidance field for each of the "
+            << image->GetNumberOfComponentsPerPixel() << " channels." << std::endl;
   FillVectorImage(image, mask, guidanceFields, output, regionToProcess, sourceImage);
 }
 
