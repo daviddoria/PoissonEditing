@@ -228,24 +228,9 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
     //std::cout << "Creating equation for variable " << iter->second << std::endl;
     itk::Index<2> originalPixel = iter->first;
     unsigned int variableId = iter->second;
-    //std::cout << "originalPixel " << originalPixel << std::endl;
 
     // The right hand side of the equation starts equal to the value of the guidance field
     double bvalue = laplacian->GetPixel(originalPixel);
-
-    // Use the nearly-white pixels of the source image (if it is specified)
-//    if(this->SourceImage->GetLargestPossibleRegion().GetSize()[0] != 0 &&
-//       this->SourceImage->GetPixel(originalPixel) > 220)
-    // Use random pixels from the source image (if it is specified)
-    if(this->SourceImage->GetLargestPossibleRegion().GetSize()[0] != 0 &&
-       drand48() < .5)
-    {
-      std::cout << "Using source pixel values..." << std::endl;
-//      double sourceWeight = .5;
-      double sourceWeight = 0.005;
-      A.coeffRef(variableId, variableIdMap[originalPixel]) -= 1 * sourceWeight;
-      bvalue -= sourceWeight * this->SourceImage->GetPixel(originalPixel);
-    }
 
     // Loop over the kernel around the current pixel
     for(unsigned int offset = 0; offset < numberOfPixelsInKernel; ++offset)
@@ -266,7 +251,6 @@ void PoissonEditing<TPixel>::FillMaskedRegion()
       {
         // If the pixel is masked, add it as part of the unknown matrix
         double value = laplacianOperator.GetElement(offset);
-//        A.insert(variableId, variableIdMap[currentPixel]) += laplacianOperator.GetElement(offset);
         A.coeffRef(variableId, variableIdMap[currentPixel]) += value;
       }
       else
