@@ -182,6 +182,11 @@ void FillScalarImage(const itk::Image<TScalarPixel, 2>* const image,
   poissonFilter.SetGuidanceField(guidanceField);
   poissonFilter.SetMask(mask);
 
+  if(sourceImage)
+  {
+    poissonFilter.SetSourceImage(sourceImage);
+  }
+
   // Perform the actual filling
   poissonFilter.FillMaskedRegion();
 
