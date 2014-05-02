@@ -256,7 +256,7 @@ FillImage(const itk::VectorImage<TPixel>* const image,
           const PoissonEditingParent::GuidanceFieldType* guidanceField,
           itk::VectorImage<TPixel>* const output,
           const itk::ImageRegion<2>& regionToProcess,
-          const itk::VectorImage<TPixel>* const sourceImage = nullptr)
+          const itk::VectorImage<TPixel>* const sourceImage)
 {
     std::vector<PoissonEditingParent::GuidanceFieldType::Pointer>
         guidanceFields(image->GetNumberOfComponentsPerPixel(),

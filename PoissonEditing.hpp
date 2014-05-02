@@ -435,11 +435,13 @@ bool PoissonEditing<TPixel>::VerifyMask() const
        static_cast<unsigned int>(maskIterator.GetIndex()[0]) == this->MaskImage->GetLargestPossibleRegion().GetSize()[0]-1 ||
        maskIterator.GetIndex()[1] == 0 ||
        static_cast<unsigned int>(maskIterator.GetIndex()[1]) == this->MaskImage->GetLargestPossibleRegion().GetSize()[1]-1)
-      if(maskIterator.Get())
+    {
+      if(maskIterator.Get() == HoleMaskPixelTypeEnum::HOLE)
       {
-        std::cout << "Mask is invalid! Pixel " << maskIterator.GetIndex() << " is masked!" << std::endl;
+        std::cout << "Mask is invalid! Boundary pixel " << maskIterator.GetIndex() << " is a hole!" << std::endl;
         return false;
       }
+    }
     ++maskIterator;
   }
 
