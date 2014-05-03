@@ -464,7 +464,7 @@ CreateGuidanceFieldFromImage(const FloatScalarImageType* const sourceImage)
 
 template <typename TPixel>
 void
-PoissonEditing<TPixel>::LaplacianFromGradient(const PoissonEditing<TPixel>::GradientImageType* const gradientImage,
+PoissonEditing<TPixel>::LaplacianFromGradient(const typename PoissonEditing<TPixel>::GradientImageType* const gradientImage,
                                               FloatImageType* const outputLaplacian)
 {
   typedef itk::VectorIndexSelectionCastImageFilter<GradientImageType, FloatImageType> IndexSelectionType;
