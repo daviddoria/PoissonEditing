@@ -6,7 +6,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 # Editing
 ADD_EXECUTABLE(PoissonFill PoissonFill.cpp)
 TARGET_LINK_LIBRARIES(PoissonFill ${ITK_LIBRARIES} ${PoissonEditing_libraries})
-set_target_properties(PoissonFill PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
 INSTALL( TARGETS PoissonFill RUNTIME DESTINATION ${INSTALL_DIR} )
 
 # Cloning
@@ -24,7 +23,6 @@ INSTALL( TARGETS PoissonFillingNeumann RUNTIME DESTINATION ${INSTALL_DIR} )
 
 ADD_EXECUTABLE(DerivativesToImage DerivativesToImage.cxx)
 TARGET_LINK_LIBRARIES(DerivativesToImage ${ITK_LIBRARIES} ${PoissonEditing_libraries})
-set_target_properties(DerivativesToImage PROPERTIES COMPILE_DEFINITIONS "${DEFINITIONS}")
 INSTALL( TARGETS DerivativesToImage RUNTIME DESTINATION ${INSTALL_DIR} )
 
 ADD_EXECUTABLE(LaplacianToImage LaplacianToImage.cxx)
