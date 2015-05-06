@@ -66,8 +66,4 @@ PoissonEditing.h
 PoissonEditing.hpp
 PoissonEditingWrappers.h
 PoissonEditingWrappers.hpp
-PoissonEditingNeumann.h
-PoissonEditingNeumann.hpp
-PoissonEditingVariational.h
-PoissonEditingVariational.hpp
 )
