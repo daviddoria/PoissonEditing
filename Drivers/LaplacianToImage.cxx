@@ -48,7 +48,6 @@ int main(int argc, char* argv[])
 
   typedef itk::VectorImage<float, 2> FloatVectorImageType;
   typedef itk::Image<float, 2> FloatScalarImageType;
-  typedef itk::Image<unsigned char, 2> UnsignedCharScalarImageType;
   
   // Parse arguments
   std::string sourceImageFilename = argv[1];

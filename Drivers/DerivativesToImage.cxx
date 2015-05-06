@@ -69,8 +69,6 @@ int main(int argc, char* argv[])
   derivativeImageReader->SetFileName(derivativeImageFilename);
   derivativeImageReader->Update();
 
-  typedef itk::Image<unsigned char, 2> UnsignedCharScalarImageType;
-
   Mask::Pointer mask = Mask::New();
   mask->Read(maskFilename);
 
