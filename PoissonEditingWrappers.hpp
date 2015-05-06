@@ -29,8 +29,6 @@
 #include "itkAddImageFilter.h"
 #include "itkImageRegionConstIterator.h"
 #include "itkComposeImageFilter.h"
-#include "itkLaplacianOperator.h"
-#include "itkLaplacianImageFilter.h"
 #include "itkVectorIndexSelectionCastImageFilter.h"
 
 // Eigen

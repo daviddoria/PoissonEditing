@@ -89,13 +89,6 @@ int main(int argc, char* argv[])
 
   std::cout << "Read guidance field." << std::endl;
 
-//   typedef PoissonEditing<float> PoissonEditingFilterType;
-//   PoissonEditingFilterType poissonFilter;
-//   poissonFilter.SetTargetImage(targetImageReader->GetOutput());
-//   poissonFilter.SetGuidanceField(guidanceFieldReader->GetOutput());
-//   poissonFilter.SetMask(maskReader->GetOutput());
-//   poissonFilter.FillMaskedRegionPoisson();
-
   std::vector<GuidanceFieldType::Pointer> guidanceFields(
          targetImageReader->GetOutput()->GetNumberOfComponentsPerPixel(),
          guidanceFieldReader->GetOutput());
