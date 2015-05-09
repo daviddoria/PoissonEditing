@@ -17,10 +17,14 @@ ADD_EXECUTABLE(PoissonFillWithGuidance PoissonFillWithGuidance.cpp)
 TARGET_LINK_LIBRARIES(PoissonFillWithGuidance ${ITK_LIBRARIES} ${PoissonEditing_libraries})
 INSTALL( TARGETS PoissonFillWithGuidance RUNTIME DESTINATION ${INSTALL_DIR} )
 
-ADD_EXECUTABLE(DerivativesToImage DerivativesToImage.cxx)
+ADD_EXECUTABLE(DerivativesToImage DerivativesToImage.cpp)
 TARGET_LINK_LIBRARIES(DerivativesToImage ${ITK_LIBRARIES} ${PoissonEditing_libraries})
 INSTALL( TARGETS DerivativesToImage RUNTIME DESTINATION ${INSTALL_DIR} )
 
-ADD_EXECUTABLE(LaplacianToImage LaplacianToImage.cxx)
+ADD_EXECUTABLE(LaplacianToImage LaplacianToImage.cpp)
 TARGET_LINK_LIBRARIES(LaplacianToImage ${ITK_LIBRARIES} ${PoissonEditing_libraries})
-INSTALL( TARGETS LaplacianToImage  RUNTIME DESTINATION ${INSTALL_DIR} )
+INSTALL( TARGETS LaplacianToImage RUNTIME DESTINATION ${INSTALL_DIR} )
+
+ADD_EXECUTABLE(SeamlessTiling SeamlessTiling.cpp)
+TARGET_LINK_LIBRARIES(SeamlessTiling ${ITK_LIBRARIES} ${PoissonEditing_libraries})
+INSTALL( TARGETS SeamlessTiling RUNTIME DESTINATION ${INSTALL_DIR} )

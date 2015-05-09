@@ -100,6 +100,8 @@ int main(int argc, char* argv[])
   return EXIT_SUCCESS;
 }
 
+// Inputs: xDerivative, yDerivative
+// Outputs: laplacian
 void DerivativesToLaplacian(FloatScalarImageType::Pointer xDerivative,
                             FloatScalarImageType::Pointer yDerivative,
                             FloatScalarImageType::Pointer laplacian)
@@ -110,20 +112,6 @@ void DerivativesToLaplacian(FloatScalarImageType::Pointer xDerivative,
   laplacian->Allocate();
 
   // Take derivatives of both derivative images
-#if 0
-  typedef itk::DerivativeImageFilter<FloatScalarImageType, FloatScalarImageType>  DerivativeFilterType;
-
-  DerivativeFilterType::Pointer derivativeFilterX = DerivativeFilterType::New();
-  derivativeFilterX->SetInput(xDerivative);
-  derivativeFilterX->SetDirection(0); // "x" axis
-  derivativeFilterX->Update();
-
-  DerivativeFilterType::Pointer derivativeFilterY = DerivativeFilterType::New();
-  derivativeFilterY->SetInput(yDerivative);
-  derivativeFilterY->SetDirection(1); // "y" axis
-  derivativeFilterY->Update();
-#endif
-
   typedef itk::BackwardDifferenceOperator<float, 2> OperatorType;
   itk::Size<2> radius;
   radius.Fill(1); // a radius of 1x1 creates a 3x3 operator
@@ -156,7 +144,6 @@ void DerivativesToLaplacian(FloatScalarImageType::Pointer xDerivative,
 
   while(!laplacianIterator.IsAtEnd())
     {
-    //laplacianIterator.Set(2.* xSecondDerivativeIterator.Get() + 2.* ySecondDerivativeIterator.Get());
     laplacianIterator.Set(xSecondDerivativeIterator.Get() + ySecondDerivativeIterator.Get());
 
     ++xSecondDerivativeIterator;
